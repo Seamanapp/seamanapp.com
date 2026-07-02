@@ -1,0 +1,172 @@
+/* Seaman App — seamanapp.com */
+:root {
+  --navy: #0b2a4a;
+  --navy-deep: #071d34;
+  --gold: #d4a94a;
+  --ink: #14283c;
+  --mist: #f4f7fb;
+  --line: #dce5ef;
+  --muted: #5b7085;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  color: var(--ink);
+  background: #fff;
+  line-height: 1.65;
+}
+.wrap { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+/* Header */
+header {
+  background: var(--navy);
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 12px rgba(7, 29, 52, 0.35);
+}
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 0.3px;
+}
+.brand svg { display: block; }
+.nav a.link {
+  color: #cfe0f2;
+  text-decoration: none;
+  margin-left: 22px;
+  font-size: 0.95rem;
+}
+.nav a.link:hover { color: var(--gold); }
+
+/* Hero */
+.hero {
+  background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
+  color: #fff;
+  text-align: center;
+  padding: 84px 24px 96px;
+}
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  line-height: 1.15;
+  max-width: 780px;
+  margin: 0 auto 18px;
+}
+.hero h1 em { color: var(--gold); font-style: normal; }
+.hero p.sub {
+  color: #b8cadd;
+  max-width: 640px;
+  margin: 0 auto 34px;
+  font-size: 1.12rem;
+}
+.badge {
+  display: inline-block;
+  border: 1px solid rgba(212, 169, 74, 0.6);
+  color: var(--gold);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 26px;
+}
+.cta {
+  display: inline-block;
+  background: var(--gold);
+  color: var(--navy-deep);
+  font-weight: 700;
+  text-decoration: none;
+  padding: 14px 34px;
+  border-radius: 10px;
+  font-size: 1.05rem;
+}
+.cta:hover { filter: brightness(1.07); }
+.cta.ghost {
+  background: transparent;
+  color: #cfe0f2;
+  border: 1px solid #40597a;
+  margin-left: 12px;
+}
+
+/* Sections */
+section { padding: 72px 0; }
+section.alt { background: var(--mist); }
+h2 { font-size: 1.9rem; color: var(--navy); margin-bottom: 12px; }
+p.lead { color: var(--muted); max-width: 700px; margin-bottom: 40px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 22px;
+}
+.card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 26px;
+}
+.card .ico { font-size: 1.7rem; margin-bottom: 10px; }
+.card h3 { color: var(--navy); font-size: 1.12rem; margin-bottom: 8px; }
+.card p { color: var(--muted); font-size: 0.96rem; }
+
+/* Principle band */
+.principle {
+  background: var(--navy);
+  color: #fff;
+  text-align: center;
+}
+.principle blockquote {
+  font-size: clamp(1.15rem, 2.6vw, 1.55rem);
+  max-width: 760px;
+  margin: 0 auto;
+  font-style: italic;
+  color: #e8eff7;
+}
+.principle blockquote strong { color: var(--gold); }
+
+/* Legal pages */
+.legal { max-width: 760px; margin: 0 auto; padding: 56px 24px 80px; }
+.legal h1 { color: var(--navy); font-size: 2rem; margin-bottom: 6px; }
+.legal p.updated { color: var(--muted); font-size: 0.9rem; margin-bottom: 34px; }
+.legal h2 { font-size: 1.25rem; margin: 30px 0 10px; }
+.legal ul, .legal ol { margin: 10px 0 10px 24px; }
+.legal li { margin-bottom: 6px; }
+.notice {
+  background: var(--mist);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--gold);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin: 22px 0;
+}
+a { color: #1a5da0; }
+
+/* Footer */
+footer {
+  background: var(--navy-deep);
+  color: #93a9bf;
+  padding: 34px 0;
+  font-size: 0.9rem;
+}
+footer .wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+}
+footer a { color: #cfe0f2; text-decoration: none; margin-right: 18px; }
+footer a:hover { color: var(--gold); }
