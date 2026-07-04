@@ -304,6 +304,10 @@ footer a{color:var(--muted);margin-left:18px}footer a:hover{color:var(--ink)}
 .art::after{content:"";position:absolute;inset:0;border-radius:24px;pointer-events:none;
   background:radial-gradient(60% 50% at 30% 0%,rgba(79,195,247,.10),transparent 70%)}
 .art svg{width:100%;height:auto;display:block;position:relative;z-index:1}
+/* real app screenshot cropped to a landscape band inside an art frame */
+.art .shot-land{position:relative;z-index:1;border-radius:14px;overflow:hidden;aspect-ratio:440/250;
+  box-shadow:0 12px 30px rgba(0,0,0,.4)}
+.art .shot-land img{width:100%;height:100%;object-fit:cover;object-position:50% 30%;display:block}
 .cap .tagline{color:var(--gold2);font-weight:700;font-size:13px;letter-spacing:.04em}
 .cap h3{font-size:clamp(22px,3vw,30px);font-weight:700;margin:8px 0 10px}
 .cap p{color:var(--muted);font-size:16px;max-width:460px}
