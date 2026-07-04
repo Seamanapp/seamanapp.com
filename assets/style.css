@@ -240,6 +240,10 @@ footer a{color:var(--muted);margin-left:18px}footer a:hover{color:var(--ink)}
 .mock{display:flex;flex-direction:column;align-items:center;gap:14px}
 .mock .frame{width:100%;max-width:290px;transition:transform .35s cubic-bezier(.2,.8,.2,1);
   filter:drop-shadow(0 34px 60px rgba(0,0,0,.55))}
+/* real-screenshot device bezel */
+.mock .device{padding:9px;border-radius:44px;background:linear-gradient(155deg,#16273a,#0a1622);
+  border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 0 0 2px rgba(0,0,0,.4)}
+.mock .device img{display:block;width:100%;border-radius:36px}
 .mock:nth-child(1) .frame{transform:rotate(-3deg)}
 .mock:nth-child(3) .frame{transform:rotate(3deg)}
 .mock:hover .frame{transform:rotate(0) translateY(-10px) scale(1.03)}
