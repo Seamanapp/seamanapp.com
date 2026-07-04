@@ -232,6 +232,21 @@ footer{border-top:1px solid var(--line);padding:34px 0;color:var(--muted);font-s
 footer .wrap{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
 footer a{color:var(--muted);margin-left:18px}footer a:hover{color:var(--ink)}
 
+/* ── app screen mockups (colorful phone gallery) ── */
+.screens{text-align:center}
+.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:50px;align-items:start;
+  max-width:980px;margin-inline:auto}
+@media(max-width:860px){.gallery{grid-template-columns:1fr;max-width:320px;gap:46px}}
+.mock{display:flex;flex-direction:column;align-items:center;gap:14px}
+.mock .frame{width:100%;max-width:290px;transition:transform .35s cubic-bezier(.2,.8,.2,1);
+  filter:drop-shadow(0 34px 60px rgba(0,0,0,.55))}
+.mock:nth-child(1) .frame{transform:rotate(-3deg)}
+.mock:nth-child(3) .frame{transform:rotate(3deg)}
+.mock:hover .frame{transform:rotate(0) translateY(-10px) scale(1.03)}
+.mock .cap2{max-width:250px}
+.mock .cap2 b{display:block;font-family:'Space Grotesk',sans-serif;font-size:16px;color:var(--ink);margin-bottom:2px}
+.mock .cap2 span{color:var(--muted);font-size:13px}
+
 /* ── chapters + visual feature rows ── */
 .chapter{text-align:center;margin-bottom:8px}
 .chapter .big{font-size:clamp(30px,5vw,52px);font-weight:700;margin:10px 0 8px}
