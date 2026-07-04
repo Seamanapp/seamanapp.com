@@ -1,6 +1,12 @@
 // Seaman App — seamanapp.com. Vanilla, no frameworks, no tracking.
+// Mark that JS is running: reveal-hiding only applies when .js is present, so
+// if this script ever fails the page still shows all content (never blank).
+document.documentElement.classList.add('js');
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Safety net: reveal everything after 2.5s even if the observer misfires.
+  setTimeout(() => document.querySelectorAll('.reveal:not(.in)')
+    .forEach(el => el.classList.add('in')), 2500);
 
   // ── scroll progress + sticky header ──
   const bar = document.getElementById('bar');
