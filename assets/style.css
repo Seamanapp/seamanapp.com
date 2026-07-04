@@ -259,6 +259,46 @@ footer{border-top:1px solid var(--line);padding:34px 0;color:var(--muted);font-s
 footer .wrap{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
 footer a{color:var(--muted);margin-left:18px}footer a:hover{color:var(--ink)}
 
+/* ── legal pages (privacy / terms / delete account) ── */
+.legal{max-width:840px;margin:0 auto;padding:118px 22px 70px}
+.legal .eyebrow{color:var(--gold2);font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:12px}
+.legal h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(30px,5.4vw,48px);font-weight:700;line-height:1.05;margin:8px 0 10px}
+.legal .updated{display:inline-block;color:var(--gold2);background:var(--glass);border:1px solid var(--line);
+  border-radius:22px;padding:6px 15px;font-size:12.5px;margin-bottom:24px;backdrop-filter:blur(8px)}
+.legal .intro{color:var(--ink);font-size:17px;line-height:1.7;max-width:680px;margin-bottom:14px}
+.legal .toc{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 26px}
+.legal .toc a{background:var(--glass);border:1px solid var(--line);border-radius:20px;padding:7px 14px;
+  font-size:12.5px;color:var(--muted);backdrop-filter:blur(8px);transition:color .2s,border-color .2s}
+.legal .toc a:hover{color:var(--ink);border-color:rgba(246,185,66,.4)}
+.lg{background:var(--glass);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:14px;
+  backdrop-filter:blur(8px);scroll-margin-top:96px}
+.lg h2{font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700;margin:0 0 10px;
+  display:flex;align-items:center;gap:11px;color:var(--ink)}
+.lg h2 .i{width:20px;height:20px;color:var(--gold2);flex:none}
+.lg p{color:var(--muted);font-size:15px;line-height:1.75;margin:0 0 10px}
+.lg p:last-child,.lg ul:last-child{margin-bottom:0}
+.lg strong,.lg b{color:var(--ink);font-weight:600}
+.lg a{color:var(--cyan)}.lg a:hover{color:var(--gold2)}
+.lg ul{margin:4px 0 10px;padding:0;list-style:none}
+.lg li{color:var(--muted);font-size:15px;line-height:1.65;padding-left:24px;position:relative;margin-bottom:9px}
+.lg li::before{content:"";position:absolute;left:2px;top:8px;width:7px;height:7px;border-radius:2px;
+  background:linear-gradient(120deg,var(--gold),var(--gold2))}
+.lg li strong{color:var(--ink)}
+.lg.gold{border-color:rgba(246,185,66,.35);background:linear-gradient(160deg,rgba(246,185,66,.08),var(--glass))}
+.lg .note{color:var(--muted);font-size:13px;margin-top:10px}
+.rights{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+@media(max-width:560px){.rights{grid-template-columns:1fr}}
+.rights .r{background:rgba(4,14,26,.4);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.rights .r b{display:block;color:var(--ink);font-size:14px;margin-bottom:3px}
+.rights .r span{color:var(--muted);font-size:12.5px;line-height:1.5}
+.lg ol{counter-reset:st;list-style:none;padding:0;margin:4px 0 10px}
+.lg ol li{counter-increment:st;color:var(--muted);font-size:15px;line-height:1.6;padding-left:32px;position:relative;margin-bottom:10px}
+.lg ol li::before{content:counter(st);position:absolute;left:0;top:0;width:21px;height:21px;border-radius:50%;
+  background:linear-gradient(120deg,var(--gold),var(--gold2));color:#241800;font-size:11.5px;font-weight:800;display:grid;place-items:center}
+.lg .callout{background:rgba(246,185,66,.1);border:1px solid rgba(246,185,66,.3);border-radius:12px;
+  padding:14px 16px;color:var(--muted);font-size:14px;line-height:1.65;margin-top:6px}
+.lg .callout strong{color:var(--gold2)}
+
 /* ── app screen mockups (colorful phone gallery) ── */
 .screens{text-align:center}
 .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:46px;align-items:start;
