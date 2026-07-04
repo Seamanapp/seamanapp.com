@@ -129,3 +129,63 @@ document.documentElement.classList.add('js');
     });
   });
 })();
+
+// ── waitlist: real capture to Supabase (publishable key, insert-only RLS),
+//    with a graceful mailto fallback so a lead is never lost ──
+(() => {
+  const SB_URL = 'https://iegxzjflqqoxxarfomnv.supabase.co';
+  const SB_KEY = 'sb_publishable_we44OUTEJHf3kacz0Opi4w_TBWkj0Q2';
+  const form = document.getElementById('waitlist');
+  if (!form) return;
+  const msg = document.getElementById('wlMsg');
+  const sc = document.getElementById('scarcity');
+  const box = form.closest('.cta-box');
+  const H = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' };
+  const setMsg = (t, cls) => { msg.textContent = t; msg.className = 'wl-msg show ' + cls; };
+
+  // Live founding-crew count (aggregate only — no rows/emails exposed).
+  // Stays on the static line until there's a meaningful number (avoids "0 aboard").
+  fetch(SB_URL + '/rest/v1/rpc/waitlist_count', { method: 'POST', headers: H, body: '{}' })
+    .then(r => (r.ok ? r.json() : null))
+    .then(n => {
+      if (typeof n === 'number' && n >= 12 && sc) {
+        const left = Math.max(0, 100 - n);
+        sc.innerHTML = '<b>' + n.toLocaleString() + '</b> sailors already aboard · <b>' + left +
+          '</b> of the first 100 founding bunks left · your email stays private, no spam.';
+      }
+    }).catch(() => {});
+
+  const mailFallback = (email) => {
+    location.href = 'mailto:hello@seamanapp.com?subject=' + encodeURIComponent('Beta tester') +
+      '&body=' + encodeURIComponent('Please add me to the founding beta: ' + email);
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (form.company && form.company.value) return; // honeypot: silently drop bots
+    const email = (form.email.value || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setMsg('Please enter a valid email so we can reach you.', 'err'); form.email.focus(); return;
+    }
+    form.classList.add('busy');
+    try {
+      const r = await fetch(SB_URL + '/rest/v1/waitlist', {
+        method: 'POST', headers: Object.assign({ Prefer: 'return=minimal' }, H),
+        body: JSON.stringify({ email, source: 'website' }),
+      });
+      if (r.ok || r.status === 201 || r.status === 204) {
+        box.classList.add('done'); setMsg('You’re on the list — welcome aboard, sailor. Watch your inbox. ⚓', 'ok');
+      } else if (r.status === 409) {
+        box.classList.add('done'); setMsg('You’re already on the list — we’ve got you. ⚓', 'ok');
+      } else {
+        throw new Error('http ' + r.status);
+      }
+    } catch (err) {
+      // Never lose a lead: hand off to the mail client.
+      setMsg('Opening your mail app to finish your request…', 'ok');
+      mailFallback(email);
+    } finally {
+      form.classList.remove('busy');
+    }
+  });
+})();

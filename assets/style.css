@@ -227,6 +227,33 @@ section{padding:88px 0;position:relative}
 .cta-box h2{font-size:clamp(28px,4.4vw,46px);margin-bottom:12px}
 .cta-box p{color:var(--muted);max-width:520px;margin:0 auto 26px}
 
+/* waitlist form */
+.waitlist{display:flex;gap:10px;max-width:520px;margin:0 auto;flex-wrap:wrap;position:relative;z-index:1}
+.waitlist input[type=email]{flex:1 1 240px;min-width:0;background:rgba(4,14,26,.6);border:1px solid var(--line);
+  border-radius:14px;padding:15px 18px;color:var(--ink);font-size:16px;font-family:inherit;transition:border-color .2s,box-shadow .2s}
+.waitlist input[type=email]::placeholder{color:#607a97}
+.waitlist input[type=email]:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(246,185,66,.18)}
+.waitlist .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none}
+.waitlist .btn{white-space:nowrap;flex:0 0 auto}
+.waitlist.busy .btn{opacity:.7;pointer-events:none}
+.waitlist.busy .btn .lbl::after{content:"…"}
+.cta-box.done .waitlist{display:none}
+.wl-msg{min-height:0;margin:14px auto 0;max-width:520px;font-size:14.5px;font-weight:600;display:none}
+.wl-msg.show{display:block}
+.wl-msg.ok{color:var(--teal)}
+.wl-msg.err{color:#ff9a9a}
+.scarcity{color:var(--muted);font-size:13px;margin:16px auto 0;max-width:520px}
+.scarcity b{color:var(--gold2)}
+@media(max-width:520px){
+  .waitlist{flex-direction:column}
+  .waitlist input[type=email]{flex:1 1 auto;width:100%}
+  .waitlist .btn{width:100%;justify-content:center}
+}
+
+/* reviews provenance header */
+.reviews-head{text-align:center;margin:52px auto 24px;max-width:600px}
+.reviews-head p{color:var(--muted);font-size:15px;margin-top:8px}
+
 /* ── footer ── */
 footer{border-top:1px solid var(--line);padding:34px 0;color:var(--muted);font-size:13.5px}
 footer .wrap{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
@@ -243,7 +270,8 @@ footer a{color:var(--muted);margin-left:18px}footer a:hover{color:var(--ink)}
 /* real-screenshot device bezel */
 .mock .device{padding:6px;border-radius:32px;background:linear-gradient(155deg,#16273a,#0a1622);
   border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 0 0 2px rgba(0,0,0,.4)}
-.mock .device img{display:block;width:100%;border-radius:26px}
+.mock .device .shot{display:block;border-radius:26px;overflow:hidden;aspect-ratio:1080/2308}
+.mock .device .shot img{display:block;width:100%;height:100%;object-fit:cover;object-position:bottom}
 .mock:nth-child(1) .frame{transform:rotate(-3deg)}
 .mock:nth-child(3) .frame{transform:rotate(3deg)}
 .mock:hover .frame{transform:rotate(0) translateY(-10px) scale(1.03)}
