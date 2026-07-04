@@ -3,290 +3,215 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Seaman App — Level up your seagoing career</title>
-  <meta name="description" content="The offline-first career companion for seafarers. Certificates, sea service, expiry radar and rank readiness — gamified, private by default, and fully working mid-ocean." />
-  <meta property="og:title" content="Seaman App — Level up your seagoing career" />
-  <meta property="og:description" content="Certificates, sea service, expiry radar and rank readiness — offline-first and private by default." />
+  <title>Seaman App — the seafarer's whole career, in one app</title>
+  <meta name="description" content="Offline-first productivity, career and learning for seafarers. Certificates & expiry radar, MLC rest hours, watch-day planner, bridge nav tools, verified sea service, crew-vouched medals and the Navigators Club — private by default, fully usable mid-ocean." />
+  <meta property="og:title" content="Seaman App — the seafarer's whole career, in one app" />
+  <meta property="og:description" content="Certificates, rest hours, planning, nav tools, a verified record and a real crew community — offline-first and private by default." />
   <meta property="og:url" content="https://seamanapp.com" />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#04101f" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/style.css" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f5b942' d='M12 2a3 3 0 0 0-1 5.83V9H8v2h3v8.92A8 8 0 0 1 4.26 14H6v-2H2v4h1.35A10 10 0 0 0 12 22a10 10 0 0 0 8.65-6H22v-4h-4v2h1.74A8 8 0 0 1 13 19.92V11h3V9h-3V7.83A3 3 0 0 0 12 2m0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z'/%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f6b942' d='M12 2a3 3 0 0 0-1 5.83V9H8v2h3v8.92A8 8 0 0 1 4.26 14H6v-2H2v4h1.35A10 10 0 0 0 12 22a10 10 0 0 0 8.65-6H22v-4h-4v2h1.74A8 8 0 0 1 13 19.92V11h3V9h-3V7.83A3 3 0 0 0 12 2m0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z'/%3E%3C/svg%3E" />
 </head>
 <body>
-  <div class="sea"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div>
+  <div id="bar"></div>
+  <div class="aurora"><span class="a"></span><span class="b"></span><span class="c"></span></div>
+  <canvas id="stars"></canvas>
+  <div class="grain"></div>
 
   <header id="top">
     <div class="wrap nav">
       <a class="brand" href="/">
-        <span class="logo">
-          <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#f5b942" d="M12 2a3 3 0 0 0-1 5.83V9H8v2h3v8.92A8 8 0 0 1 4.26 14H6v-2H2v4h1.35A10 10 0 0 0 12 22a10 10 0 0 0 8.65-6H22v-4h-4v2h1.74A8 8 0 0 1 13 19.92V11h3V9h-3V7.83A3 3 0 0 0 12 2m0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/></svg>
-        </span>
+        <span class="logo"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#241800" d="M12 2a3 3 0 0 0-1 5.83V9H8v2h3v8.92A8 8 0 0 1 4.26 14H6v-2H2v4h1.35A10 10 0 0 0 12 22a10 10 0 0 0 8.65-6H22v-4h-4v2h1.74A8 8 0 0 1 13 19.92V11h3V9h-3V7.83A3 3 0 0 0 12 2m0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/></svg></span>
         Seaman App
       </a>
+      <button class="menu-btn" aria-label="Menu">☰</button>
       <nav>
         <a class="link" href="#features">Features</a>
+        <a class="link" href="#club">Navigators Club</a>
         <a class="link" href="#pro">Pro</a>
         <a class="link" href="#how">How it works</a>
-        <a class="link" href="/privacy.html">Privacy</a>
         <a class="btn gold" href="mailto:hello@seamanapp.com?subject=Beta%20tester">Join the beta</a>
       </nav>
     </div>
   </header>
 
   <!-- ═══ HERO ═══ -->
-  <section class="hero">
-    <div class="wrap hero-grid">
-      <div>
-        <span class="pill"><span class="dot"></span> Closed beta · boarding soon</span>
-        <h1>Your career is the voyage.<br /><span class="grad">This is your bridge.</span></h1>
-        <p class="sub">
-          Certificates, sea service, expiry radar and rank readiness — in one
-          app that feels like a game, not paperwork. Works mid-ocean, syncs at port.
-        </p>
-        <div class="ctas">
-          <a class="btn gold big" href="mailto:hello@seamanapp.com?subject=Beta%20tester">⚓ Board the beta</a>
-          <a class="btn ghost big" href="#features">Explore the deck</a>
-        </div>
-        <p class="hint">Free for seafarers · <b>Your data stays yours</b> · Android first, iOS on the horizon</p>
+  <section class="hero"><div class="wrap hero-grid">
+    <div>
+      <span class="badge reveal"><span class="pulse"></span> Coming to Google Play · founding crew boarding</span>
+      <h1 class="reveal">Your career is the voyage.<br /><span class="grad">This is your bridge.</span></h1>
+      <p class="sub reveal">Certificates, rest hours, planning, bridge tools, a verified record and a real
+        crew community — one app that feels like a game, not paperwork. Works mid-ocean, syncs at port.</p>
+      <div class="ctas reveal">
+        <a class="btn gold big" href="mailto:hello@seamanapp.com?subject=Beta%20tester">⚓ Board the beta</a>
+        <a class="btn ghost big" href="#features">Explore the deck</a>
       </div>
+      <div class="trust reveal">
+        <span>🌊 <b>Offline-first</b> — usable for months at sea</span>
+        <span>🔒 <b>Your data, your consent</b></span>
+        <span>⚓ <b>Verified</b> by the crew who were there</span>
+      </div>
+    </div>
 
-      <div class="stage reveal">
-        <div class="toast t1">🏅 GMDSS secured<small>Certificate added to your vault</small></div>
-        <div class="toast t2">🧭 Rank quest: 8 / 12<small>Third Officer readiness</small></div>
+    <div class="stage reveal">
+      <div class="tilt">
+        <div class="toast t1">🏅 GMDSS secured<small>Added to your vault · verified</small></div>
+        <div class="toast t2">🧭 Rank quest 9 / 13<small>Second Officer readiness</small></div>
         <div class="toast t3">☁️ Synced at port<small>3 changes pushed · 0 lost at sea</small></div>
         <div class="phone">
+          <div class="notch"></div>
           <div class="screen">
-            <div class="s-head">
-              <span>⚓ My Bridge</span>
-              <span class="lvl">3/O TRACK</span>
-            </div>
-            <div class="s-card">
-              <div class="s-row">
-                <div>
-                  <div class="s-title">GMDSS Operator</div>
-                  <div class="s-sub">No. GOC-2024-114 · exp 2027-03</div>
-                </div>
-                <span class="chip ok">VALID</span>
-              </div>
-            </div>
-            <div class="s-card">
-              <div class="s-row">
-                <div>
-                  <div class="s-title">Medical Certificate</div>
-                  <div class="s-sub">expires in 42 days</div>
-                </div>
-                <span class="chip warn">EXPIRING</span>
-              </div>
-            </div>
-            <div class="s-card">
-              <div class="s-row">
-                <div>
-                  <div class="s-title">Second Officer quest</div>
-                  <div class="s-sub">9 of 13 requirements held</div>
-                </div>
-              </div>
-              <div class="bar"><i></i></div>
-            </div>
+            <div class="s-head"><b>⚓ My Bridge</b><span class="lvl">2/O TRACK</span></div>
+            <div class="s-card"><div class="s-row"><div><div class="s-title">GMDSS Operator</div><div class="s-sub">No. GOC-2024-114 · exp 2027-03</div></div><span class="chip ok">VALID</span></div></div>
+            <div class="s-card"><div class="s-row"><div><div class="s-title">Medical Certificate</div><div class="s-sub">expires in 42 days</div></div><span class="chip warn">EXPIRING</span></div></div>
+            <div class="s-card"><div class="s-row"><div><div class="s-title">Second Officer quest</div><div class="s-sub">9 of 13 requirements held</div></div></div><div class="bar"><i data-w="69"></i></div></div>
+            <div class="s-card"><div class="s-title" style="margin-bottom:8px">Medals · vouched by the crew</div><div class="medals"><span class="m">🌊</span><span class="m">🧭</span><span class="m">🏅</span><span class="m">⭐</span></div></div>
             <div class="s-sync"><span class="dot"></span> offline-first · working from local copy</div>
           </div>
         </div>
       </div>
     </div>
-  </section>
+  </div></section>
+
+  <!-- ═══ MARQUEE ═══ -->
+  <div class="marquee"><div class="track" aria-hidden="true">
+    <span>Certificate vault</span><span>MLC rest hours</span><span>Watch-day planner</span><span>Ship voyage &amp; ports</span><span>Bridge nav tools</span><span>Crew community</span><span>Achievements &amp; vouching</span><span>Navigators Club</span><span>Rank readiness</span>
+    <span>Certificate vault</span><span>MLC rest hours</span><span>Watch-day planner</span><span>Ship voyage &amp; ports</span><span>Bridge nav tools</span><span>Crew community</span><span>Achievements &amp; vouching</span><span>Navigators Club</span><span>Rank readiness</span>
+  </div></div>
 
   <!-- ═══ STATS ═══ -->
-  <section class="stats">
-    <div class="wrap row">
-      <div class="stat reveal"><b data-count="20">0</b><span>certificate types tracked, STCW-aligned</span></div>
-      <div class="stat reveal"><b>60·30·7</b><span>day expiry radar — before it bites</span></div>
-      <div class="stat reveal"><b>100%</b><span>usable offline, mid-ocean</span></div>
-      <div class="stat reveal"><b>0</b><span>data sold or shared without your say. Ever.</span></div>
-    </div>
-  </section>
+  <section class="stats" style="padding:56px 0"><div class="wrap row">
+    <div class="stat reveal"><b data-count="20">0</b><span>certificate types, STCW-aligned</span></div>
+    <div class="stat reveal"><b data-count="13922">0</b><span>ports &amp; terminals on board</span></div>
+    <div class="stat reveal"><b>100%</b><span>usable offline, mid-ocean</span></div>
+    <div class="stat reveal"><b>0</b><span>data sold or shared without your say</span></div>
+  </div></section>
 
   <!-- ═══ FEATURES ═══ -->
-  <section id="features">
-    <div class="wrap">
-      <div class="kicker reveal">The loadout</div>
-      <h2 class="title reveal">Everything a seafarer carries — <span class="grad">minus the folder of photocopies</span></h2>
-      <p class="lead reveal">Built by people who know what a PSC inspection at 6am feels like.</p>
-
-      <div class="bento">
-        <div class="cardx wide goldc reveal">
-          <div class="ico">🧭</div>
-          <h3>Rank readiness — your career quest line</h3>
-          <p>Pick a target rank and watch the checklist light up: what you already hold,
-             what's expiring, what's missing. Promotion stops being a mystery.</p>
-          <div class="quest">
-            <div class="q-item"><span class="tick">✔</span> Basic Safety Training <span class="xp">HELD</span></div>
-            <div class="q-item"><span class="tick">✔</span> GMDSS Operator <span class="xp">HELD</span></div>
-            <div class="q-item off"><span class="tick">•</span> Advanced Fire Fighting <span class="xp">NEXT UP</span></div>
-          </div>
-        </div>
-        <div class="cardx reveal">
-          <div class="ico">📜</div>
-          <h3>Certificate vault</h3>
-          <p>Every COC, COP and course with its scan attached. Valid, expiring or expired — one glance.</p>
-          <div class="glow"></div>
-        </div>
-        <div class="cardx reveal">
-          <div class="ico">⏰</div>
-          <h3>Expiry radar</h3>
-          <p>Your phone pings you 60, 30 and 7 days out — even with the app closed, even offline.</p>
-        </div>
-        <div class="cardx reveal">
-          <div class="ico">🚢</div>
-          <h3>Sea service log</h3>
-          <p>Vessels, IMO numbers, tonnage, kW, contracts — the exact fields promotions are judged on, plus your total sea time.</p>
-          <div class="glow"></div>
-        </div>
-        <div class="cardx reveal">
-          <div class="ico">✈️</div>
-          <h3>Built for the middle of nowhere</h3>
-          <p>Offline-first by design. Add records mid-Pacific; they queue and sync themselves the moment you catch a signal.</p>
-        </div>
-        <div class="cardx goldc reveal">
-          <div class="ico">🔐</div>
-          <h3>You hold the keys</h3>
-          <p>Private by default, enforced in the database itself. Grant an agency a view — and revoke it — any time.</p>
-        </div>
-        <div class="cardx reveal">
-          <div class="ico">😴</div>
-          <h3>Rest hours, done right</h3>
-          <p>Log rest against MLC 2006 / STCW, see compliance live, and export the official Record of Hours of Rest for any inspection.</p>
-        </div>
-        <div class="cardx reveal">
-          <div class="ico">🗓️</div>
-          <h3>Watch-day planner</h3>
-          <p>Your day built around your watch — tasks auto-prioritised, personal &amp; OT blocks, and shareable routines from the crew.</p>
-        </div>
-        <div class="cardx reveal">
-          <div class="ico">🧭</div>
-          <h3>Bridge nav tools</h3>
-          <p>Celestial sights, gyro error, ETA &amp; port-to-port routing, route converter, anchoring and true wind — all offline.</p>
-        </div>
-        <div class="cardx wide reveal">
-          <div class="ico">🏅</div>
-          <h3>Achievements the crew can trust</h3>
-          <p>Earn medals for real feats — Suez, the Equator, Cape Horn — then have the shipmates who were there <b>vouch</b> for them.
-             Prestige that's witnessed, not just tapped. Map every country you've visited as you go.</p>
-        </div>
-        <div class="cardx reveal">
-          <div class="ico">👥</div>
-          <h3>The crew community</h3>
-          <p>Share tips, routes and routines, follow crewmates, climb the leaderboards — moderated and respectful, by design.</p>
-        </div>
-        <div class="cardx goldc reveal">
-          <div class="ico">🎓</div>
-          <h3>Navigators Club 2.0</h3>
-          <p>Members-only mentored courses and webinars, download-and-study-offline, with 5-star reviews from the crew.</p>
-        </div>
-        <div class="cardx reveal">
-          <div class="ico">📇</div>
-          <h3>Recruiter-ready in a tap</h3>
-          <p>Your verified sea service, certificates and achievements export as a branded CV — walk into every office prepared.</p>
+  <section id="features"><div class="wrap">
+    <div class="kicker reveal">The loadout</div>
+    <h2 class="title reveal">Everything a seafarer carries — <span class="grad">minus the folder of photocopies</span></h2>
+    <p class="lead reveal">Built by people who know what a PSC inspection at 6&nbsp;am feels like.</p>
+    <div class="bento">
+      <div class="cardx wide goldc reveal">
+        <div class="ico">🧭</div>
+        <h3>Rank readiness — your career quest line</h3>
+        <p>Pick a target rank and watch the checklist light up: what you hold, what's expiring, what's missing —
+           plus your country's exam rules and which flags recognise your CoC. Promotion stops being a mystery.</p>
+        <div class="quest">
+          <div class="q-item"><span class="tick">✔</span> Basic Safety Training <span class="xp">HELD</span></div>
+          <div class="q-item"><span class="tick">✔</span> GMDSS Operator <span class="xp">HELD</span></div>
+          <div class="q-item off"><span class="tick">•</span> Advanced Fire Fighting <span class="xp">NEXT UP</span></div>
         </div>
       </div>
+      <div class="cardx reveal"><div class="ico">📜</div><h3>Certificate vault + expiry radar</h3><p>Every COC, GMDSS, medical and course with its scan attached — and a ping 60, 30 and 7 days out, even offline.</p></div>
+      <div class="cardx reveal"><div class="ico">😴</div><h3>Rest hours, done right</h3><p>Log rest against MLC 2006 / STCW, see compliance live, and export the official Record of Hours of Rest.</p></div>
+      <div class="cardx reveal"><div class="ico">🗓️</div><h3>Watch-day planner</h3><p>Your day built around your watch — tasks auto-prioritised, personal &amp; OT blocks, and routines shared by the crew.</p></div>
+      <div class="cardx reveal"><div class="ico">🚢</div><h3>Voyage &amp; sea-service log</h3><p>Ports, anchorages, IMO, tonnage, kW, contracts — the exact fields promotion is judged on, plus your total sea time.</p></div>
+      <div class="cardx reveal"><div class="ico">⚓</div><h3>Bridge nav tools</h3><p>Celestial sights, gyro error, ETA &amp; port-to-port routing, route converter, anchoring and true wind — all offline.</p></div>
+      <div class="cardx wide reveal">
+        <div class="ico">🏅</div><h3>Achievements the crew can trust</h3>
+        <p>Earn medals for real feats — Suez, the Equator, Cape Horn — then have the shipmates who were there
+           <b>vouch</b> for them. Prestige that's witnessed, not just tapped. Map every country you visit as you go.</p>
+      </div>
+      <div class="cardx reveal"><div class="ico">👥</div><h3>The crew community</h3><p>Share tips, routes and routines, follow crewmates, climb the leaderboards — moderated and respectful, by design.</p></div>
+      <div class="cardx goldc reveal"><div class="ico">📇</div><h3>Recruiter-ready in a tap</h3><p>Your verified sea service, certificates and achievements export as a branded CV — walk into every office prepared.</p></div>
     </div>
-  </section>
+  </div></section>
 
-  <!-- ═══ PRO ═══ -->
-  <section id="pro">
-    <div class="wrap">
-      <div class="kicker reveal">Free where it matters</div>
-      <h2 class="title reveal">Your safety tools are <span class="grad">free, forever</span></h2>
-      <p class="lead reveal">Rest hours, certificate alerts, PSC readiness and the whole community stay free. Pro unlocks the depth.</p>
-      <div class="bento">
-        <div class="cardx reveal">
-          <div class="ico">🆓</div>
-          <h3>Free</h3>
-          <p>Rest-hours &amp; MLC report · certificate expiry alerts · watch-day planner &amp; tasks · community &amp; leaderboards ·
-             achievements &amp; vouching · your core career record.</p>
-        </div>
-        <div class="cardx goldc reveal">
-          <div class="ico">⭐</div>
-          <h3>Seaman Pro</h3>
-          <p>The full 13,900-port registry &amp; all pack items · advanced nav tools &amp; route exports · crew tips inside every task &amp; port ·
-             rank readiness for your country &amp; CoC recognition · branded CV · unlimited countries on your map.</p>
-        </div>
+  <!-- ═══ NAVIGATORS CLUB ═══ -->
+  <section id="club"><div class="wrap center">
+    <div class="kicker reveal">Navigators Club 2.0</div>
+    <h2 class="title reveal">Learn from officers who've <span class="grad">been there</span></h2>
+    <p class="lead reveal">Members-only mentored courses, webinars and files — cadet to management level — download-and-study-offline, rated ★★★★★ by the crew.</p>
+    <div class="reviews">
+      <div class="rev reveal"><div class="stars">★★★★★</div><p>“The knowledge I gained here removed my self-doubt as I progressed from cadet to 3rd Officer.”</p><div class="who"><span class="av">RJ</span><div><b>Rick Mark Javier</b><small>Deck Officer</small></div></div></div>
+      <div class="rev reveal"><div class="stars">★★★★★</div><p>“More than webinars — the mentors actively explain and share their real experience.”</p><div class="who"><span class="av">PC</span><div><b>Patrick Crisosto</b><small>Navigators Club member</small></div></div></div>
+      <div class="rev reveal"><div class="stars">★★★★★</div><p>“A game-changer that bridges theory and real-life practice, and builds a positive work culture.”</p><div class="who"><span class="av">AT</span><div><b>Agustin Tamonan</b><small>Navigators Club member</small></div></div></div>
+    </div>
+  </div></section>
+
+  <!-- ═══ PRICING ═══ -->
+  <section id="pro"><div class="wrap center">
+    <div class="kicker reveal">Free where it matters</div>
+    <h2 class="title reveal">Your safety tools are <span class="grad">free, forever</span></h2>
+    <p class="lead reveal">Rest hours, certificate alerts, PSC readiness and the whole community stay free. Pro unlocks the depth.</p>
+    <div class="plans" style="text-align:left">
+      <div class="plan reveal">
+        <h3>Free</h3><div class="pr">Always</div>
+        <ul>
+          <li>Rest hours + MLC report</li>
+          <li>Certificate expiry alerts</li>
+          <li>Watch-day planner &amp; tasks</li>
+          <li>Community feed &amp; leaderboards</li>
+          <li>Achievements &amp; crew vouching</li>
+          <li>Your core career record</li>
+        </ul>
+      </div>
+      <div class="plan gold reveal">
+        <span class="tag">MOST POPULAR</span>
+        <h3>Seaman Pro</h3><div class="pr">Monthly or annual</div>
+        <ul>
+          <li>Full 13,900-port registry &amp; all pack items</li>
+          <li>Advanced nav tools &amp; route exports</li>
+          <li>Crew tips inside every task &amp; port</li>
+          <li>Rank readiness — country rules &amp; CoC recognition</li>
+          <li>Branded recruiter CV &amp; unlimited exports</li>
+          <li>Unlimited countries on your world map</li>
+        </ul>
       </div>
     </div>
-  </section>
+  </div></section>
 
   <!-- ═══ PRINCIPLE ═══ -->
-  <section class="principle">
-    <div class="wrap reveal">
-      <blockquote>
-        “The seafarer <b>owns</b> their data. Everyone else borrows a view of it —
-        <b>with consent</b>, for a purpose.”
-      </blockquote>
-      <div class="rule"></div>
-    </div>
-  </section>
+  <section class="principle"><div class="wrap reveal">
+    <blockquote>“The seafarer <b>owns</b> their data. Everyone else borrows a view of it — <b>with consent</b>, for a purpose.”</blockquote>
+    <div class="rule"></div>
+  </div></section>
 
   <!-- ═══ HOW ═══ -->
-  <section id="how">
-    <div class="wrap">
-      <div class="kicker reveal">Cast off in minutes</div>
-      <h2 class="title reveal">Three steps to a lighter sea bag</h2>
-      <p class="lead reveal">No manuals. No training course. If you can send a message, you can run your career here.</p>
-      <div class="steps">
-        <div class="step reveal">
-          <div class="num">01</div>
-          <h3>Sign on</h3>
-          <p>Create your account, set your rank and target. Your bridge is ready in under a minute.</p>
-        </div>
-        <div class="step reveal">
-          <div class="num">02</div>
-          <h3>Load your documents</h3>
-          <p>Add certificates with scans and log your contracts. The app starts watching expiry dates immediately.</p>
-        </div>
-        <div class="step reveal">
-          <div class="num">03</div>
-          <h3>Sail worry-free</h3>
-          <p>Get pinged before anything lapses, see your next-rank gaps close, and walk into every office prepared.</p>
-        </div>
-      </div>
+  <section id="how"><div class="wrap center">
+    <div class="kicker reveal">Cast off in minutes</div>
+    <h2 class="title reveal">Three steps to a lighter sea bag</h2>
+    <p class="lead reveal">No manuals, no training course. If you can send a message, you can run your career here.</p>
+    <div class="steps" style="text-align:left">
+      <div class="step reveal"><div class="num">01</div><h3>Sign on</h3><p>Create your account with email or Google, set your rank and target. Your bridge is ready in under a minute.</p></div>
+      <div class="step reveal"><div class="num">02</div><h3>Load your record</h3><p>Add certificates with scans, log your contracts and ports. The app starts watching expiry dates immediately.</p></div>
+      <div class="step reveal"><div class="num">03</div><h3>Sail worry-free</h3><p>Get pinged before anything lapses, watch your next-rank gaps close, and earn medals the crew can vouch for.</p></div>
     </div>
-  </section>
+  </div></section>
 
-  <!-- ═══ COMING SOON ═══ -->
-  <section class="soon">
-    <div class="wrap" style="text-align:center">
-      <div class="kicker reveal">On the horizon</div>
-      <div class="strip reveal">
-        <span class="tagchip">📱 iOS app</span>
-        <span class="tagchip">🤝 Recruiter matching</span>
-        <span class="tagchip">🚢 Vessel &amp; crew workspace</span>
-        <span class="tagchip">📊 Agency fleet dashboard</span>
-        <span class="tagchip">🌐 More national CoC rules</span>
-      </div>
+  <!-- ═══ HORIZON ═══ -->
+  <section class="soon" style="padding:40px 0"><div class="wrap center">
+    <div class="kicker reveal">On the horizon</div>
+    <div class="strip reveal">
+      <span class="tagchip">📱 iOS app</span>
+      <span class="tagchip">🤝 Recruiter matching</span>
+      <span class="tagchip">🚢 Vessel &amp; crew workspace</span>
+      <span class="tagchip">📊 Agency fleet dashboard</span>
+      <span class="tagchip">🌐 More national CoC rules</span>
     </div>
-  </section>
+  </div></section>
 
   <!-- ═══ CTA ═══ -->
-  <section class="cta-sec">
-    <div class="wrap">
-      <div class="cta-box reveal">
-        <h2>Join the <span class="grad">first crew</span></h2>
-        <p>We're hand-picking the founding testers. Grab a bunk before they're gone.</p>
-        <a class="btn gold big" href="mailto:hello@seamanapp.com?subject=Beta%20tester&body=Rank%3A%0AVessel%20type%3A%0A">⚓ Request boarding pass</a>
-      </div>
-    </div>
-  </section>
+  <section class="cta-sec"><div class="wrap"><div class="cta-box reveal">
+    <h2>Join the <span class="grad">first crew</span></h2>
+    <p>We're hand-picking the founding testers. Grab a bunk before they're gone.</p>
+    <a class="btn gold big" href="mailto:hello@seamanapp.com?subject=Beta%20tester&body=Rank%3A%0AVessel%20type%3A%0A">⚓ Request boarding pass</a>
+  </div></div></section>
 
-  <footer>
-    <div class="wrap">
-      <div>© 2026 Seaman App · seamanapp.com · made for the people who move the world</div>
-      <div>
-        <a href="/privacy.html">Privacy</a>
-        <a href="/delete-account.html">Delete account</a>
-        <a href="mailto:hello@seamanapp.com">Contact</a>
-      </div>
+  <footer><div class="wrap">
+    <div>© 2026 Seaman App · seamanapp.com · made for the people who move the world</div>
+    <div>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/delete-account.html">Delete account</a>
+      <a href="mailto:hello@seamanapp.com">Contact</a>
     </div>
-  </footer>
+  </div></footer>
 
   <script src="assets/site.js"></script>
 </body>
