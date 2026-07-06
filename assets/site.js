@@ -155,8 +155,13 @@ document.documentElement.classList.add('js');
       }
     }).catch(() => {});
 
+  // Capture goes to Supabase (insert-only RLS). A Database Webhook on the
+  // `waitlist` table then emails admin@seamanapp.com server-side via the
+  // `waitlist-notify` Edge Function — first-party, no third-party relay, and the
+  // destination address never appears in this page source.
+  // Last-ditch fallback if Supabase is unreachable: open the visitor's mail app.
   const mailFallback = (email) => {
-    location.href = 'mailto:hello@seamanapp.com?subject=' + encodeURIComponent('Beta tester') +
+    location.href = 'mailto:admin@seamanapp.com?subject=' + encodeURIComponent('Claim my bunk') +
       '&body=' + encodeURIComponent('Please add me to the founding beta: ' + email);
   };
 
@@ -181,7 +186,7 @@ document.documentElement.classList.add('js');
         throw new Error('http ' + r.status);
       }
     } catch (err) {
-      // Never lose a lead: hand off to the mail client.
+      // Never lose a lead: hand off to the visitor's mail client, addressed to admin.
       setMsg('Opening your mail app to finish your request…', 'ok');
       mailFallback(email);
     } finally {

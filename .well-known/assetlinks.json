@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.seamanapp.seafarer_app",
+      "sha256_cert_fingerprints": [
+        "B7:DF:80:A1:58:2F:AE:F0:6F:0A:48:5D:EA:90:7B:2F:6C:B1:4B:9F:5E:42:48:EF:9A:E4:19:79:5D:E1:31:BB",
+        "F8:D9:ED:86:49:95:63:58:78:36:AA:2F:69:07:2E:7B:35:23:9D:7F:78:6D:72:CE:45:5C:63:AA:2E:A7:E2:8D"
+      ]
+    }
+  }
+]

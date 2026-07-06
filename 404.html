@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Seaman App</title>
+  <script>
+    // GitHub Pages serves this file for any path it doesn't have a file for.
+    // Short vouch links (seamanapp.com/v/<short>) have no static file, so route
+    // them to the vouch landing page, which resolves the short and deep-links
+    // into the app. Everything else goes home.
+    (function () {
+      var p = location.pathname || '';
+      var m = p.match(/^\/v\/([^\/?#]+)/i);
+      if (m) {
+        location.replace('/vouch/?v=' + encodeURIComponent(m[1]) + location.hash);
+      } else {
+        location.replace('/');
+      }
+    })();
+  </script>
+</head>
+<body style="margin:0;background:#04101f;color:#9fb2c8;font-family:system-ui,sans-serif;
+  display:flex;align-items:center;justify-content:center;min-height:100vh;">
+  Redirecting… If nothing happens, <a href="/" style="color:#4fc3f7;margin-left:6px;">go to seamanapp.com</a>.
+</body>
+</html>

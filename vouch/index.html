@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vouch a shipmate · Seaman App</title>
+  <meta name="robots" content="noindex">
+  <style>
+    :root{
+      --navy:#04101f; --navy2:#0b2a4a; --gold:#f6b942; --gold2:#ffd071;
+      --cyan:#4fc3f7; --ink:#eaf2fb; --muted:#9fb2c8; --line:#1c3350;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+      font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+      background:radial-gradient(1200px 600px at 50% -10%,#0b2a4a 0%,#04101f 60%);
+      color:var(--ink);padding:24px;
+    }
+    .card{
+      max-width:440px;width:100%;background:rgba(11,42,74,.55);
+      border:1px solid var(--line);border-radius:22px;padding:34px 26px;text-align:center;
+      backdrop-filter:blur(8px);
+    }
+    .anchor{width:70px;height:70px;border-radius:18px;margin:0 auto 18px;
+      background:linear-gradient(135deg,var(--gold),var(--gold2));
+      display:flex;align-items:center;justify-content:center;font-size:38px;}
+    h1{font-family:'Space Grotesk',sans-serif;font-size:24px;margin:0 0 6px;letter-spacing:-.3px}
+    .grad{background:linear-gradient(90deg,var(--gold),var(--gold2));
+      -webkit-background-clip:text;background-clip:text;color:transparent}
+    p{color:var(--muted);font-size:14.5px;line-height:1.6;margin:0 0 22px}
+    .btn{display:block;width:100%;padding:15px 18px;border-radius:14px;border:0;cursor:pointer;
+      font-size:15px;font-weight:700;text-decoration:none;margin-bottom:12px}
+    .btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#241800}
+    .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+    .small{font-size:12px;color:var(--muted);margin-top:6px}
+    .code{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--cyan);
+      word-break:break-all;background:rgba(4,16,31,.6);border:1px solid var(--line);
+      border-radius:10px;padding:10px;margin-top:14px;display:none}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="anchor">⚓</div>
+    <h1>Vouch for a <span class="grad">shipmate</span></h1>
+    <p id="msg">A crewmate asked you to confirm a medal they earned at sea. Open Seaman App to vouch — just add the ship &amp; year you sailed together.</p>
+
+    <a class="btn btn-gold" id="openApp" href="#">Open in Seaman App</a>
+    <a class="btn btn-ghost" id="getApp" href="https://play.google.com/store/apps/details?id=com.seamanapp.seafarer_app">Get Seaman App</a>
+    <div class="small">Already have the app? Tapping “Open in Seaman App” takes you straight to the vouch screen.</div>
+    <div class="code" id="codeBox"></div>
+  </div>
+
+  <script>
+    (function () {
+      // Public (publishable) key — used only to resolve a short vouch id to its
+      // (already-public) code via the resolve_vouch_link RPC.
+      var SB_URL = 'https://iegxzjflqqoxxarfomnv.supabase.co';
+      var SB_KEY = 'sb_publishable_we44OUTEJHf3kacz0Opi4w_TBWkj0Q2';
+      var params = new URLSearchParams(location.search);
+      var code = params.get('code') || '';
+      var short = params.get('v') || '';
+      var openBtn = document.getElementById('openApp');
+      var box = document.getElementById('codeBox');
+
+      function setup(finalCode) {
+        var deep = 'seamanapp://open/vouch' +
+          (finalCode ? ('?code=' + encodeURIComponent(finalCode)) : '');
+        openBtn.setAttribute('href', deep);
+        if (finalCode) {
+          box.style.display = 'block';
+          box.textContent = 'If asked to paste a code: ' + finalCode;
+        }
+        function tryOpen() { window.open(deep, '_self'); }
+        openBtn.addEventListener('click', function (e) { e.preventDefault(); tryOpen(); });
+        // Auto-attempt once on mobile so it bounces straight into the app.
+        if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+          setTimeout(tryOpen, 350);
+        }
+      }
+
+      if (code) {
+        setup(code);
+      } else if (short) {
+        // Turn the short id (seamanapp.com/v/<short>) back into the vouch code.
+        fetch(SB_URL + '/rest/v1/rpc/resolve_vouch_link', {
+          method: 'POST',
+          headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_short: short })
+        }).then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (c) { setup(typeof c === 'string' ? c : ''); })
+          .catch(function () { setup(''); });
+      } else {
+        setup('');
+      }
+    })();
+  </script>
+</body>
+</html>
