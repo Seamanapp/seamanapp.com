@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join the Navigators Club · Seaman App</title>
+  <!-- Open Graph so Facebook / Messenger unfurl a rich card when shared. -->
+  <meta property="og:title" content="You're invited to the Navigators Club — 24h member discount" />
+  <meta property="og:description" content="Mentored maritime courses, checklists and a crew that helps. Join within 24 hours to claim your member discount." />
+  <meta property="og:image" content="https://seamanapp.com/assets/shots/achievements.png" />
+  <meta property="og:type" content="website" />
+  <meta name="robots" content="noindex">
+  <style>
+    :root{
+      --navy:#04101f; --navy2:#0b2a4a; --gold:#f6b942; --gold2:#ffd071;
+      --cyan:#4fc3f7; --ink:#eaf2fb; --muted:#9fb2c8; --line:#1c3350;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+      font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+      background:radial-gradient(1200px 600px at 50% -10%,#0b2a4a 0%,#04101f 60%);
+      color:var(--ink);padding:24px;
+    }
+    .card{
+      max-width:440px;width:100%;background:rgba(11,42,74,.55);
+      border:1px solid var(--line);border-radius:22px;padding:34px 26px;text-align:center;
+      backdrop-filter:blur(8px);
+    }
+    .anchor{width:70px;height:70px;border-radius:18px;margin:0 auto 18px;
+      background:linear-gradient(135deg,var(--gold),var(--gold2));
+      display:flex;align-items:center;justify-content:center;font-size:38px;}
+    h1{font-family:'Space Grotesk',sans-serif;font-size:24px;margin:0 0 6px;letter-spacing:-.3px}
+    .grad{background:linear-gradient(90deg,var(--gold),var(--gold2));
+      -webkit-background-clip:text;background-clip:text;color:transparent}
+    p{color:var(--muted);font-size:14.5px;line-height:1.6;margin:0 0 22px}
+    .pill{display:inline-block;background:rgba(246,185,66,.16);border:1px solid rgba(246,185,66,.5);
+      color:var(--gold2);font-weight:700;font-size:12.5px;border-radius:999px;padding:6px 12px;margin-bottom:14px}
+    .btn{display:block;width:100%;padding:15px 18px;border-radius:14px;border:0;cursor:pointer;
+      font-size:15px;font-weight:700;text-decoration:none;margin-bottom:12px}
+    .btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#241800}
+    .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+    .small{font-size:12px;color:var(--muted);margin-top:6px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="anchor">⚓</div>
+    <div class="pill">🎁 24-hour member discount</div>
+    <h1>Join the <span class="grad">Navigators Club</span></h1>
+    <p>A shipmate invited you. Open Seaman App to claim your member discount — mentored courses, checklists and a crew that actually helps.</p>
+
+    <a class="btn btn-gold" id="openApp" href="#">Open in Seaman App</a>
+    <a class="btn btn-ghost" id="getApp" href="https://play.google.com/store/apps/details?id=com.seamanapp.seafarer_app">Get Seaman App</a>
+    <div class="small">Already have the app? “Open in Seaman App” takes you straight to your invite.</div>
+  </div>
+
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var code = params.get('c') || '';
+      var openBtn = document.getElementById('openApp');
+      var deep = 'seamanapp://open/join' + (code ? ('?c=' + encodeURIComponent(code)) : '');
+      openBtn.setAttribute('href', deep);
+      function tryOpen() { window.open(deep, '_self'); }
+      openBtn.addEventListener('click', function (e) { e.preventDefault(); tryOpen(); });
+      // Auto-bounce into the app on mobile if it's installed.
+      if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        setTimeout(tryOpen, 350);
+      }
+    })();
+  </script>
+</body>
+</html>
