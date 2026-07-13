@@ -28,7 +28,8 @@ const state = {
   modules: [],
   lessons: [],
   enrolled: false,
-  mediaUrlCache: new Map(), // lessonId -> { url, exp }
+  mediaUrlCache: new Map(),  // lessonId -> { url, exp }  (R2 signed URL)
+  streamUrlCache: new Map(), // lessonId -> { url, exp }  (Cloudflare Stream signed HLS)
   watermarkTimer: null,
   currentGuide: null,
   lbScope: 'week',
@@ -521,7 +522,7 @@ async function openCourse(course) {
   const [modRes, lesRes] = await Promise.all([
     sb.from('course_module').select('id,title,seq').eq('course_id', course.id).order('seq'),
     sb.from('lesson').select(
-      'id,module_id,title,seq,content_type,media_file_id,media_url,body_md,duration_sec,free_preview'
+      'id,module_id,title,seq,content_type,media_file_id,media_url,body_md,duration_sec,free_preview,stream_uid,stream_status'
     ).eq('course_id', course.id).order('seq'),
   ]);
 
@@ -673,9 +674,52 @@ async function resolveMediaUrl(lesson, forceRefresh = false) {
   }
 }
 
+/** Resolve a playable video source for the web. Prefers Cloudflare Stream
+ * (protected adaptive HLS, "require signed URLs") when the lesson has been
+ * ingested and is ready; otherwise falls back to the R2 signed URL (the same
+ * source the Android app uses). Returns { url, kind } or null. */
+async function resolveVideoSource(lesson, forceRefresh = false) {
+  // Try Stream whenever the lesson has a Stream video at all — even if it's
+  // still marked 'pending' (a fresh mentor upload). stream-token lazy-finalizes
+  // it once Cloudflare reports the encode is done; until then it returns 409
+  // and we fall back to R2 below.
+  if (lesson.stream_uid) {
+    const s = await resolveStreamUrl(lesson, forceRefresh);
+    if (s) return { url: s, kind: 'stream' };
+  }
+  const r = await resolveMediaUrl(lesson, forceRefresh);
+  if (r) return { url: r, kind: 'r2' };
+  return null;
+}
+
+/** Ask the stream-token Edge Function for a short-lived signed HLS URL. The
+ * function re-checks the same enrol/author/manage boundary as lms-media, then
+ * mints a ~2h RS256 token scoped to this one video. Cached until just before
+ * expiry. Returns null on 409 (no stream video) / 403 / network — the caller
+ * then falls back to R2. */
+async function resolveStreamUrl(lesson, forceRefresh = false) {
+  if (!forceRefresh) {
+    const cached = state.streamUrlCache.get(lesson.id);
+    if (cached && cached.exp > Date.now()) return cached.url;
+  }
+  try {
+    const { data, error } = await sb.functions.invoke('stream-token', {
+      body: { lesson_id: lesson.id },
+    });
+    if (error) throw error;
+    const url = data?.hls;
+    if (!url) return null;
+    const exp = (data.exp ? data.exp * 1000 : Date.now() + 2 * 3600 * 1000) - 60000;
+    state.streamUrlCache.set(lesson.id, { url, exp });
+    return url;
+  } catch (_) {
+    return null;
+  }
+}
+
 async function renderVideoLesson(lesson, body) {
-  const url = await resolveMediaUrl(lesson);
-  if (!url) {
+  const src = await resolveVideoSource(lesson);
+  if (!src) {
     body.innerHTML = lockedMessageHtml();
     return;
   }
@@ -695,33 +739,56 @@ async function renderVideoLesson(lesson, body) {
   video.oncontextmenu = () => false;
   video.addEventListener('contextmenu', (e) => e.preventDefault());
 
-  attachVideoSource(video, url);
-
+  let kind = src.kind;
   let retried = false;
-  video.addEventListener('error', async () => {
+
+  // A single recovery path for BOTH an expired Stream token (surfaces as an
+  // hls.js fatal error) and an expired R2 URL (surfaces as a <video> error):
+  // once, re-resolve the source and re-attach; twice, give the user a retry.
+  async function recover() {
     if (retried) {
-      document.getElementById('playerWrap').outerHTML =
-        '<div class="retry-box">This lesson\'s video link expired. <button class="linklike" id="retryVideoBtn">Tap to retry</button></div>';
-      const retryBtn = document.getElementById('retryVideoBtn');
-      if (retryBtn) retryBtn.addEventListener('click', () => openLesson(lesson));
+      const wrap = document.getElementById('playerWrap');
+      if (wrap) {
+        wrap.outerHTML =
+          '<div class="retry-box">This lesson\'s video link expired. <button class="linklike" id="retryVideoBtn">Tap to retry</button></div>';
+        const retryBtn = document.getElementById('retryVideoBtn');
+        if (retryBtn) retryBtn.addEventListener('click', () => openLesson(lesson));
+      }
       return;
     }
     retried = true;
-    const fresh = await resolveMediaUrl(lesson, true);
-    if (fresh) attachVideoSource(video, fresh);
-  });
+    // Refresh the same source kind; if Stream is unavailable this round,
+    // resolveVideoSource transparently falls back to R2.
+    const fresh = kind === 'stream'
+      ? await resolveVideoSource(lesson, true)
+      : { url: await resolveMediaUrl(lesson, true), kind: 'r2' };
+    if (fresh && fresh.url) { kind = fresh.kind; attachVideoSource(video, fresh.url, recover); }
+  }
 
+  attachVideoSource(video, src.url, recover);
+  video.addEventListener('error', recover);
   startWatermark(document.getElementById('watermarkEl'));
 }
 
-function attachVideoSource(video, url) {
+/** Attach a video URL to the <video>, choosing the right playback path:
+ *  1. HLS + hls.js supported (desktop Chrome/Firefox, Android web) → hls.js.
+ *  2. HLS + native HLS (iOS/macOS Safari — the iOS members) → video.src.
+ *  3. progressive mp4 (R2 fallback) → video.src.
+ * onFatal fires on an unrecoverable hls.js error (e.g. an expired signed token),
+ * which the <video> 'error' event does NOT surface. */
+function attachVideoSource(video, url, onFatal) {
+  if (video._hls) { try { video._hls.destroy(); } catch (_) {} video._hls = null; }
   const isHls = /\.m3u8($|\?)/i.test(url);
   if (isHls && window.Hls && window.Hls.isSupported()) {
-    const hls = new window.Hls();
+    const hls = new window.Hls({ maxBufferLength: 30 });
+    hls.on(window.Hls.Events.ERROR, (_evt, data) => {
+      if (data && data.fatal && typeof onFatal === 'function') onFatal();
+    });
     hls.loadSource(url);
     hls.attachMedia(video);
     video._hls = hls;
   } else {
+    // Native HLS (iOS/macOS Safari) OR progressive mp4 — both play via src.
     video.src = url;
   }
 }
