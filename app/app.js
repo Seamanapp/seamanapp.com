@@ -522,7 +522,7 @@ async function openCourse(course) {
   const [modRes, lesRes] = await Promise.all([
     sb.from('course_module').select('id,title,seq').eq('course_id', course.id).order('seq'),
     sb.from('lesson').select(
-      'id,module_id,title,seq,content_type,media_file_id,media_url,body_md,duration_sec,free_preview,stream_uid,stream_status'
+      'id,module_id,title,seq,content_type,media_file_id,media_url,body_md,duration_sec,free_preview,stream_uid,stream_status,stream_protect'
     ).eq('course_id', course.id).order('seq'),
   ]);
 
@@ -679,11 +679,12 @@ async function resolveMediaUrl(lesson, forceRefresh = false) {
  * ingested and is ready; otherwise falls back to the R2 signed URL (the same
  * source the Android app uses). Returns { url, kind } or null. */
 async function resolveVideoSource(lesson, forceRefresh = false) {
-  // Try Stream whenever the lesson has a Stream video at all — even if it's
-  // still marked 'pending' (a fresh mentor upload). stream-token lazy-finalizes
-  // it once Cloudflare reports the encode is done; until then it returns 409
-  // and we fall back to R2 below.
-  if (lesson.stream_uid) {
+  // Try Stream only for videos a mentor/admin has PROTECTED (stream_protect)
+  // and that have a Stream video — even if still 'pending' (a fresh upload):
+  // stream-token lazy-finalizes once Cloudflare reports the encode is done,
+  // and returns 409 until then so we fall back to R2. Un-protected videos skip
+  // Stream entirely (no cost) and play from R2.
+  if (lesson.stream_protect && lesson.stream_uid) {
     const s = await resolveStreamUrl(lesson, forceRefresh);
     if (s) return { url: s, kind: 'stream' };
   }
