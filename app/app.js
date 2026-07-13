@@ -727,18 +727,38 @@ async function renderVideoLesson(lesson, body) {
 
   body.innerHTML = `
     <div class="player-wrap" id="playerWrap">
-      <video id="lessonVideo" playsinline controls controlslist="nodownload noremoteplayback"
+      <video id="lessonVideo" playsinline controls controlslist="nodownload noremoteplayback noplaybackrate"
         disablepictureinpicture preload="metadata"></video>
       <div class="watermark" id="watermarkEl"></div>
     </div>
     <p class="player-note">
-      For members only — this link is personal and expires automatically. Screen recording is traceable to your account.
+      Members only. This video streams on a personal, expiring link and is
+      watermarked with your account and a live clock — any screen recording or
+      re-sharing is traceable to you and breaks the club terms.
     </p>
   `;
 
   const video = document.getElementById('lessonVideo');
   video.oncontextmenu = () => false;
   video.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // Anti-capture deterrents (best-effort — a browser cannot hardware-block a
+  // screenshot like the Android app's FLAG_SECURE; these deter casual copying,
+  // and the live per-member watermark makes any leak traceable). Pause when the
+  // tab is hidden or the window loses focus, and blur the frame while unfocused
+  // so a background capture grabs nothing usable.
+  const wrap = document.getElementById('playerWrap');
+  const onHide = () => { if (document.hidden) { try { video.pause(); } catch (_) {} } };
+  const onBlur = () => { if (wrap) wrap.classList.add('obscured'); try { video.pause(); } catch (_) {} };
+  const onFocus = () => { if (wrap) wrap.classList.remove('obscured'); };
+  document.addEventListener('visibilitychange', onHide);
+  window.addEventListener('blur', onBlur);
+  window.addEventListener('focus', onFocus);
+  state.captureGuards = () => {
+    document.removeEventListener('visibilitychange', onHide);
+    window.removeEventListener('blur', onBlur);
+    window.removeEventListener('focus', onFocus);
+  };
 
   let kind = src.kind;
   let retried = false;
@@ -805,26 +825,28 @@ function teardownLessonMedia() {
   }
 }
 
-// ── Watermark (deterrence layer — see README "Video protection") ────────
+// ── Watermark (deterrence + traceability layer) ─────────────────────────
+// Identity (email + short account id) + a LIVE clock that updates every second,
+// so any recording visibly carries who watched and when — and it moves around
+// the frame so it can't be cropped out of a whole session.
 function startWatermark(el) {
   stopWatermark();
   if (!el || !state.user) return;
-  const label = (state.user.email || 'member') + ' · ' + new Date().toISOString().slice(0, 10);
-  el.textContent = label;
+  const who = (state.user.email || 'member') + ' · ' + (state.user.id || '').slice(0, 8);
+  const paint = () => { el.textContent = who + ' · ' + new Date().toLocaleTimeString(); };
   const reposition = () => {
-    const top = 8 + Math.random() * 74;   // % within the video frame
-    const left = 6 + Math.random() * 60;  // %
-    el.style.top = top + '%';
-    el.style.left = left + '%';
+    el.style.top = (6 + Math.random() * 80) + '%';
+    el.style.left = (4 + Math.random() * 62) + '%';
   };
+  paint();
   reposition();
-  state.watermarkTimer = setInterval(reposition, 14000 + Math.random() * 6000);
+  state.watermarkTimer = setInterval(paint, 1000);          // live clock
+  state.watermarkMoveTimer = setInterval(reposition, 5000); // relocate
 }
 function stopWatermark() {
-  if (state.watermarkTimer) {
-    clearInterval(state.watermarkTimer);
-    state.watermarkTimer = null;
-  }
+  if (state.watermarkTimer) { clearInterval(state.watermarkTimer); state.watermarkTimer = null; }
+  if (state.watermarkMoveTimer) { clearInterval(state.watermarkMoveTimer); state.watermarkMoveTimer = null; }
+  if (state.captureGuards) { try { state.captureGuards(); } catch (_) {} state.captureGuards = null; }
 }
 
 // ── PWA install + service worker ───────────────────────────────────────

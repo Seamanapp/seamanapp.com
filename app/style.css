@@ -199,9 +199,15 @@ h2.h{font-size:19.5px;font-weight:700;margin:0 0 4px;letter-spacing:-.015em}
   box-shadow:var(--shadow-lg),0 0 0 1px rgba(255,255,255,.06),inset 0 0 0 1px rgba(255,255,255,.03);
   padding:5px}
 .player-wrap video{display:block;width:100%;max-height:70vh;background:#000;border-radius:13px}
-.watermark{position:absolute;pointer-events:none;color:rgba(255,255,255,.34);font-weight:700;font-size:12px;
-  text-shadow:0 1px 4px rgba(0,0,0,.8);white-space:nowrap;transition:top 1.4s ease,left 1.4s ease;
+.watermark{position:absolute;pointer-events:none;color:rgba(255,255,255,.42);font-weight:700;font-size:12px;
+  text-shadow:0 1px 4px rgba(0,0,0,.9);white-space:nowrap;transition:top 1.2s ease,left 1.2s ease;
   user-select:none;letter-spacing:.03em;z-index:2}
+/* Blur the frame + pause overlay while the window/tab is not focused, so a
+   background screen-capture grabs nothing usable. */
+.player-wrap.obscured video{filter:blur(26px) brightness(.35);transition:filter .12s}
+.player-wrap.obscured::after{content:"Paused — this window isn't focused";position:absolute;inset:5px;
+  display:grid;place-items:center;text-align:center;color:#fff;font-weight:700;font-size:13px;
+  background:rgba(4,16,31,.5);border-radius:13px;z-index:3;pointer-events:none}
 .player-note{color:var(--muted);font-size:12px;margin-top:12px;line-height:1.55;
   display:flex;gap:8px;padding:11px 13px;background:var(--glass);border:1px solid var(--line);border-radius:12px}
 .player-note::before{content:"🔒";flex:none;opacity:.8}
