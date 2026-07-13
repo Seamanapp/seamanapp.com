@@ -30,16 +30,51 @@ const state = {
   enrolled: false,
   mediaUrlCache: new Map(), // lessonId -> { url, exp }
   watermarkTimer: null,
+  currentGuide: null,
+  lbScope: 'week',
 };
 
 // ── View switching ──────────────────────────────────────────────────────
-const VIEWS = ['loading', 'login', 'forgot', 'gate', 'courses', 'course', 'lesson'];
+const VIEWS = [
+  'loading', 'login', 'forgot', 'gate', 'courses', 'course', 'lesson',
+  'guides', 'guide', 'community', 'leaderboard', 'club',
+];
+// The top-level tabs the bottom nav switches between — everything else
+// (login/gate/course-detail/lesson/guide-reader/…) is a drill-down that keeps
+// its own back button and hides the tab bar, same pattern the app already
+// used for course → lesson.
+const TAB_VIEWS = ['courses', 'guides', 'community', 'leaderboard', 'club'];
+
 function showView(name) {
   for (const v of VIEWS) {
     const el = document.getElementById('view-' + v);
     if (el) el.classList.toggle('hidden', v !== name);
   }
+  updateChrome(name);
   window.scrollTo(0, 0);
+}
+
+function updateChrome(name) {
+  const nav = document.getElementById('bottomNav');
+  const showNav = TAB_VIEWS.includes(name);
+  if (nav) nav.classList.toggle('hidden', !showNav);
+  document.body.classList.toggle('with-nav', showNav);
+  if (showNav) {
+    document.querySelectorAll('#bottomNav .navbtn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.tab === name);
+    });
+  }
+}
+
+/** Switches to a bottom-nav tab, (re)loading its data. Cache-first inside
+ * each loader, so re-tapping a tab you've already visited this session is
+ * instant, then refreshes quietly in the background. */
+function openTab(name) {
+  if (name === 'courses') return loadCourses();
+  if (name === 'guides') return loadGuides();
+  if (name === 'community') return loadFeed();
+  if (name === 'leaderboard') return loadLeaderboard(state.lbScope || 'week');
+  if (name === 'club') return loadClubHome();
 }
 function setLoadingLine(text) {
   const el = document.getElementById('loadingLine');
@@ -54,23 +89,37 @@ function escapeHtml(s) {
 }
 
 /** A tiny, safe-by-construction Markdown → HTML renderer (headings, bold,
- * italics, links, unordered lists, paragraphs). Escapes everything first,
- * so a lesson body can never inject a script tag or attribute. Enough for
- * mentor lesson text — not a full CommonMark implementation. */
+ * italics, inline code, links, unordered lists, blockquotes, horizontal
+ * rules, paragraphs). Escapes everything first, so lesson/guide text can
+ * never inject a script tag or attribute. Enough for mentor lesson text and
+ * the field guides (their figures render as plain "*Figure — Caption*"
+ * placeholders, not raw markup) — not a full CommonMark implementation. */
 function renderMarkdown(md) {
   const lines = escapeHtml(md || '').split(/\r?\n/);
   let html = '';
   let inList = false;
+  let inQuote = false;
   const closeList = () => { if (inList) { html += '</ul>'; inList = false; } };
+  const closeQuote = () => { if (inQuote) { html += '</blockquote>'; inQuote = false; } };
   const inline = (t) => t
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/\[(.+?)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
 
   for (const raw of lines) {
     const line = raw.trim();
-    if (!line) { closeList(); continue; }
+    if (!line) { closeList(); closeQuote(); continue; }
     let m;
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) { closeList(); closeQuote(); html += '<hr/>'; continue; }
+    // '>' was already escaped to '&gt;' above — match the escaped form.
+    if ((m = line.match(/^&gt;\s?(.*)$/))) {
+      closeList();
+      if (!inQuote) { html += '<blockquote>'; inQuote = true; }
+      html += `<p>${inline(m[1])}</p>`;
+      continue;
+    }
+    closeQuote();
     if ((m = line.match(/^### (.*)$/))) { closeList(); html += `<h3>${inline(m[1])}</h3>`; continue; }
     if ((m = line.match(/^## (.*)$/))) { closeList(); html += `<h2>${inline(m[1])}</h2>`; continue; }
     if ((m = line.match(/^# (.*)$/))) { closeList(); html += `<h1>${inline(m[1])}</h1>`; continue; }
@@ -83,6 +132,7 @@ function renderMarkdown(md) {
     html += `<p>${inline(line)}</p>`;
   }
   closeList();
+  closeQuote();
   return html;
 }
 
@@ -90,10 +140,85 @@ function contentIcon(type) {
   return { video: '▶', pdf: '📄', markdown: '📝', file: '📎', link: '🔗' }[type] || '•';
 }
 
+// ── Rank / department label helpers (ports of lib/features/profile/rank.dart
+// so the web feed/leaderboard read the same as the app — same rules, same
+// output, independently reproduced since this is a separate static site). ──
+function rankLabel(code) {
+  return String(code || '')
+    .split('_')
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(' ');
+}
+function channelLabel(s) {
+  const v = (s || '').trim();
+  if (!v) return v;
+  return v[0].toUpperCase() + v.slice(1).toLowerCase();
+}
+function prettyRankHeadline(s) {
+  const v = (s || '').trim();
+  if (!v) return v;
+  return /^[a-z]+(_[a-z]+)*$/.test(v) ? rankLabel(v) : v;
+}
+function timeAgo(iso) {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const diffMs = Math.max(0, Date.now() - d.getTime());
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return days + 'd ago';
+  return d.toLocaleDateString();
+}
+
+// ── Offline data cache (the owner's main complaint: opening offline showed
+// nothing) ──────────────────────────────────────────────────────────────
+// localStorage, namespaced. Every tab's loader is "cache-first, then
+// refresh": render the last-known copy instantly (no spinner) if we have
+// one, quietly refetch, and only show a spinner on a first-ever, cold load.
+// On a failed refetch we keep showing the cached copy with a small
+// "offline — showing saved copy" note instead of an error screen. The
+// service worker (sw.js) separately caches the app SHELL (html/css/js); this
+// is the DATA layer on top of that, which is what actually makes a
+// previously-opened guide/feed/leaderboard/club page readable with no
+// connection.
+const CACHE_PREFIX = 'ncw:1:'; // bump the "1" if the cached shape ever changes
+function cacheSet(key, value) {
+  try {
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ v: value, t: Date.now() }));
+  } catch (_) {
+    // Storage full / unavailable (e.g. Safari private mode) — non-fatal,
+    // the tab simply won't have an offline copy this time.
+  }
+}
+function cacheGet(key) {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && Object.prototype.hasOwnProperty.call(parsed, 'v') ? parsed.v : null;
+  } catch (_) {
+    return null;
+  }
+}
+function clearDataCache() {
+  try {
+    const doomed = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf(CACHE_PREFIX) === 0) doomed.push(k);
+    }
+    doomed.forEach((k) => localStorage.removeItem(k));
+  } catch (_) {}
+}
+
 // ── Auth ────────────────────────────────────────────────────────────────
 async function boot() {
   registerServiceWorker();
   maybeShowInstallBanner();
+  maybeShowInstallButton();
   wireStaticHandlers();
 
   showView('loading');
@@ -122,6 +247,7 @@ function resetAppState() {
   state.modules = [];
   state.lessons = [];
   state.enrolled = false;
+  state.currentGuide = null;
   document.getElementById('signOutBtn').classList.add('hidden');
 }
 
@@ -222,6 +348,29 @@ function wireStaticHandlers() {
     teardownLessonMedia();
     showView('course');
   });
+
+  // Bottom tab bar.
+  document.querySelectorAll('#bottomNav .navbtn').forEach((btn) => {
+    btn.addEventListener('click', () => openTab(btn.dataset.tab));
+  });
+
+  // Field guides.
+  document.getElementById('guideBackBtn').addEventListener('click', () => showView('guides'));
+
+  // Leaderboard scope toggle.
+  document.querySelectorAll('#lbScopeRow .seg').forEach((btn) => {
+    btn.addEventListener('click', () => loadLeaderboard(btn.dataset.scope));
+  });
+
+  // Club home shortcuts.
+  document.getElementById('clubCoursesBtn').addEventListener('click', () => openTab('courses'));
+  document.getElementById('clubGuidesBtn').addEventListener('click', () => openTab('guides'));
+
+  // Install (Android/Chromium beforeinstallprompt, or the iOS instructions).
+  document.getElementById('installBtn').addEventListener('click', onInstallClick);
+  document.getElementById('iosInstallCloseBtn').addEventListener('click', () => {
+    document.getElementById('iosInstallModal').classList.add('hidden');
+  });
 }
 
 async function onLoginSubmit(e) {
@@ -269,6 +418,11 @@ async function signOut() {
   teardownLessonMedia();
   await sb.auth.signOut();
   resetAppState();
+  // The cached feed/leaderboard/club/guide data is tied to whatever account
+  // was signed in (guide entitlement, in particular, can differ per member)
+  // — clear it on sign-out so the next login never renders someone else's
+  // stale offline copy before its own first fetch completes.
+  clearDataCache();
   showView('login');
 }
 
@@ -612,14 +766,578 @@ function registerServiceWorker() {
   }
 }
 
+function isStandaloneDisplay() {
+  return window.navigator.standalone === true ||
+    window.matchMedia('(display-mode: standalone)').matches;
+}
+
 function maybeShowInstallBanner() {
   const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isStandalone = window.navigator.standalone === true ||
-    window.matchMedia('(display-mode: standalone)').matches;
-  if (isIos && !isStandalone) {
+  if (isIos && !isStandaloneDisplay()) {
     const banner = document.getElementById('installBanner');
     if (banner) banner.classList.remove('hidden');
   }
+}
+
+// Android/Chromium: the browser fires this when it decides the page is
+// installable. We stash the event and swap it for our own "Install app"
+// button (the header icon), since the browser's native mini-infobar is easy
+// to miss and can't be re-triggered on demand otherwise.
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  if (!isStandaloneDisplay()) {
+    const btn = document.getElementById('installBtn');
+    if (btn) btn.classList.remove('hidden');
+  }
+});
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  const btn = document.getElementById('installBtn');
+  if (btn) btn.classList.add('hidden');
+  const banner = document.getElementById('installBanner');
+  if (banner) banner.classList.add('hidden');
+});
+
+/** iOS Safari never fires `beforeinstallprompt`, so on iOS we show the same
+ * header button unconditionally (until standalone) and it opens a short
+ * "tap Share → Add to Home Screen" instruction sheet instead of a native
+ * prompt. On Android/Chromium the button only appears once the browser has
+ * actually signalled installability (above) so it's never a dead button. */
+function maybeShowInstallButton() {
+  if (isStandaloneDisplay()) return;
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (isIos) {
+    const btn = document.getElementById('installBtn');
+    if (btn) btn.classList.remove('hidden');
+  }
+}
+
+async function onInstallClick() {
+  if (deferredInstallPrompt) {
+    const promptEvent = deferredInstallPrompt;
+    deferredInstallPrompt = null;
+    try {
+      promptEvent.prompt();
+      await promptEvent.userChoice;
+    } catch (_) { /* user dismissed — fine, nothing to recover */ }
+    document.getElementById('installBtn').classList.add('hidden');
+    return;
+  }
+  // No native prompt available (iOS Safari, or Android before the browser
+  // has offered one) — show the manual instructions instead of doing nothing.
+  document.getElementById('iosInstallModal').classList.remove('hidden');
+}
+
+// ── Shared: resolve a `user_files` storage path to a signed URL ─────────
+// Every image referenced by guides/feed/leaderboard/club (avatars, cover
+// photos, post attachments) lives under user_files/<uid>/community/… and is
+// readable by any signed-in user (storage RLS: `user_files_read_community`),
+// the same rule the course cover art already relies on. Best-effort: skipped
+// entirely while offline so we never burn a retry on a call that can't work,
+// and any failure just leaves the initials/placeholder fallback in place.
+async function resolveStorageImage(path, { seconds = 3600 } = {}) {
+  if (!path || !navigator.onLine) return null;
+  try {
+    const { data, error } = await sb.storage.from('user_files').createSignedUrl(path, seconds);
+    if (error || !data?.signedUrl) return null;
+    return data.signedUrl;
+  } catch (_) {
+    return null;
+  }
+}
+async function resolveAvatarInto(el, path) {
+  const url = await resolveStorageImage(path);
+  if (url) { el.style.backgroundImage = `url('${url}')`; el.textContent = ''; }
+}
+async function resolvePhotoInto(el, path) {
+  const url = await resolveStorageImage(path);
+  if (url) el.innerHTML = `<img src="${escapeHtml(url)}" alt="" loading="lazy" />`;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  FIELD GUIDES — cloud-delivered markdown (content_manifest/content_download,
+//  the same RPCs the Flutter app's Learn tab and lib/features/pro/cloud_content
+//  use). Cache-first: the shelf list and every opened guide's body are
+//  written to localStorage, so a guide you've already read stays readable
+//  with no connection — the app's own "offline-first hero" feature.
+// ══════════════════════════════════════════════════════════════════════
+
+const GUIDE_ICONS = {
+  policy: '📋', fact_check: '✅', local_gas_station: '⛽', radar: '📡',
+  explore: '🧭', layers: '🗺️', gps_fixed: '📍', public: '🌐', checklist: '📝',
+};
+function guideIcon(name) { return GUIDE_ICONS[name] || '📘'; }
+
+async function loadGuides() {
+  const cached = cacheGet('guides:list');
+  if (cached) { renderGuideList(cached, false); showView('guides'); }
+  else { showView('loading'); setLoadingLine('Loading field guides…'); }
+
+  const errEl = document.getElementById('guidesErr');
+  errEl.classList.add('hidden');
+  try {
+    const { data, error } = await sb.rpc('content_manifest', { p_kind: 'guide' });
+    if (error) throw error;
+    const items = Array.isArray(data) ? data : [];
+    cacheSet('guides:list', items);
+    renderGuideList(items, false);
+    showView('guides');
+  } catch (err) {
+    if (cached) {
+      renderGuideList(cached, true);
+      showView('guides');
+    } else {
+      document.getElementById('guidesList').innerHTML = '';
+      document.getElementById('guidesEmpty').classList.add('hidden');
+      errEl.textContent = 'Could not load the guides (' + (err?.message || 'network error') + '). Pull to refresh or try again shortly.';
+      errEl.classList.remove('hidden');
+      showView('guides');
+    }
+  }
+}
+
+function renderGuideList(items, offline) {
+  document.getElementById('guidesOffline').classList.toggle('hidden', !offline);
+  const listEl = document.getElementById('guidesList');
+  const emptyEl = document.getElementById('guidesEmpty');
+  listEl.innerHTML = '';
+  if (!items.length) { emptyEl.classList.remove('hidden'); return; }
+  emptyEl.classList.add('hidden');
+
+  // Group into shelves by `category` (falls back to one shelf for anything
+  // uncategorised), ordered by each shelf's lowest sort_order — mirrors the
+  // Learn tab's collapsible-shelf grouping without hardcoding category names,
+  // so a new shelf added server-side (e.g. the Engine Room guides) just works.
+  const shelves = new Map();
+  for (const it of items) {
+    const cat = (it.category && String(it.category).trim()) || 'Field Guides';
+    if (!shelves.has(cat)) shelves.set(cat, []);
+    shelves.get(cat).push(it);
+  }
+  const ordered = [...shelves.entries()].sort((a, b) => {
+    const minA = Math.min(...a[1].map((i) => i.sort_order ?? 0));
+    const minB = Math.min(...b[1].map((i) => i.sort_order ?? 0));
+    return minA - minB;
+  });
+
+  for (const [cat, guides] of ordered) {
+    guides.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || `${a.title}`.localeCompare(`${b.title}`));
+    const shelf = document.createElement('div');
+    shelf.className = 'shelf';
+    const h = document.createElement('h4');
+    h.textContent = cat;
+    shelf.appendChild(h);
+    for (const g of guides) {
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'guide-row';
+      row.innerHTML = `
+        <div class="ico">${guideIcon(g.icon_name)}</div>
+        <div class="txt">
+          <b>${escapeHtml(g.title)}</b>
+          ${g.blurb ? `<small>${escapeHtml(g.blurb)}</small>` : ''}
+        </div>
+        ${g.min_tier === 'pro' ? '<span class="chip locked">PRO</span>' : ''}
+      `;
+      row.addEventListener('click', () => openGuide(g));
+      shelf.appendChild(row);
+    }
+    listEl.appendChild(shelf);
+  }
+}
+
+async function openGuide(item) {
+  state.currentGuide = item;
+  document.getElementById('guideTitle').textContent = item.title || 'Guide';
+  const body = document.getElementById('guideBody');
+  const offlineEl = document.getElementById('guideOffline');
+  offlineEl.classList.add('hidden');
+
+  const cacheKey = 'guide:' + item.key;
+  const cached = cacheGet(cacheKey);
+  if (cached && cached.md) {
+    body.innerHTML = renderMarkdown(cached.md);
+  } else {
+    body.innerHTML = '<div class="center-text" style="padding:40px 0"><div class="spinner"></div></div>';
+  }
+  showView('guide');
+
+  try {
+    const { data, error } = await sb.rpc('content_download', { p_key: item.key });
+    if (error) throw error;
+    const md = data && data.data && typeof data.data.md === 'string' ? data.data.md : '';
+    cacheSet(cacheKey, { md, title: item.title });
+    body.innerHTML = md
+      ? renderMarkdown(md)
+      : '<p class="loading-line">This guide has no content yet.</p>';
+  } catch (err) {
+    if (cached && cached.md) {
+      offlineEl.classList.remove('hidden');
+      body.innerHTML = renderMarkdown(cached.md);
+    } else {
+      body.innerHTML = `
+        <div class="retry-box">
+          Could not load this guide (${escapeHtml(err?.message || 'network error')}).<br />
+          Connect and try again — once you've opened it, it stays readable offline.<br />
+          <button class="linklike" id="guideRetryBtn">Retry</button>
+        </div>`;
+      const retryBtn = document.getElementById('guideRetryBtn');
+      if (retryBtn) retryBtn.addEventListener('click', () => openGuide(item));
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  COMMUNITY FEED — read-only. Same `post` table + `post_like` votes the
+//  Flutter crew feed reads, filtered to already-published posts
+//  (publish_at <= now, matching lib/features/community/crew_feed_screen.dart)
+//  and scoped by the same RLS (`post_read_visible`) that hides
+//  moderator-removed posts from everyone but their author/moderators.
+// ══════════════════════════════════════════════════════════════════════
+
+const FEED_PAGE_SIZE = 25;
+const FEED_CACHE_KEEP = 20;
+
+async function loadFeed() {
+  const cached = cacheGet('feed:posts');
+  if (cached) { renderFeed(cached, false); showView('community'); }
+  else { showView('loading'); setLoadingLine('Loading the crew feed…'); }
+
+  const errEl = document.getElementById('feedErr');
+  errEl.classList.add('hidden');
+  try {
+    const nowIso = new Date().toISOString();
+    const { data: posts, error } = await sb
+      .from('post')
+      .select('id, membership_id, display_name, author_headline, channel, body, attachment_path, attachment_mime, created_at')
+      .lte('publish_at', nowIso)
+      .order('created_at', { ascending: false })
+      .limit(FEED_PAGE_SIZE);
+    if (error) throw error;
+    const rows = Array.isArray(posts) ? posts : [];
+
+    const ids = rows.map((p) => p.id);
+    const likeCounts = {};
+    if (ids.length) {
+      try {
+        const { data: likes } = await sb.from('post_like').select('post_id, vote').in('post_id', ids);
+        for (const l of (likes || [])) {
+          if ((l.vote ?? 1) > 0) likeCounts[l.post_id] = (likeCounts[l.post_id] || 0) + 1;
+        }
+      } catch (_) { /* likes are a nice-to-have; the feed still renders without them */ }
+    }
+
+    const memberIds = [...new Set(rows.map((p) => p.membership_id).filter(Boolean))];
+    const cardsByMid = {};
+    if (memberIds.length) {
+      try {
+        const { data: cards } = await sb
+          .from('public_card')
+          .select('membership_id, avatar_path, is_navclub, is_pro')
+          .in('membership_id', memberIds);
+        for (const c of (cards || [])) cardsByMid[c.membership_id] = c;
+      } catch (_) { /* badges/avatars are decoration — never block the feed */ }
+    }
+
+    const withExtras = rows.map((p) => ({
+      ...p,
+      _likes: likeCounts[p.id] || 0,
+      _card: cardsByMid[p.membership_id] || null,
+    }));
+    cacheSet('feed:posts', withExtras.slice(0, FEED_CACHE_KEEP));
+    renderFeed(withExtras, false);
+    showView('community');
+  } catch (err) {
+    if (cached) {
+      renderFeed(cached, true);
+      showView('community');
+    } else {
+      document.getElementById('feedList').innerHTML = '';
+      document.getElementById('feedEmpty').classList.add('hidden');
+      errEl.textContent = 'Could not load the crew feed (' + (err?.message || 'network error') + ').';
+      errEl.classList.remove('hidden');
+      showView('community');
+    }
+  }
+}
+
+function renderFeed(posts, offline) {
+  document.getElementById('feedOffline').classList.toggle('hidden', !offline);
+  const listEl = document.getElementById('feedList');
+  const emptyEl = document.getElementById('feedEmpty');
+  listEl.innerHTML = '';
+  if (!posts.length) { emptyEl.classList.remove('hidden'); return; }
+  emptyEl.classList.add('hidden');
+
+  for (const p of posts) {
+    const card = p._card || null;
+    const badge = card && card.is_navclub
+      ? '<span class="badge navclub" title="Navigators Club member">⚓</span>'
+      : (card && card.is_pro ? '<span class="badge pro" title="Seaman Pro">PRO</span>' : '');
+    const name = p.display_name || 'A seafarer';
+    const initials = name.trim().slice(0, 1).toUpperCase() || '?';
+    const headline = p.author_headline ? escapeHtml(prettyRankHeadline(p.author_headline)) : '';
+    const dept = p.channel ? escapeHtml(channelLabel(p.channel)) : '';
+    const sub = [headline, dept].filter(Boolean).join(' · ');
+    const isImage = !p.attachment_mime || String(p.attachment_mime).startsWith('image/');
+
+    const el = document.createElement('div');
+    el.className = 'feed-card';
+    el.innerHTML = `
+      <div class="feed-head">
+        <div class="avatar" data-avatar="${card && card.avatar_path ? escapeHtml(card.avatar_path) : ''}">${escapeHtml(initials)}</div>
+        <div class="who">
+          <div class="name-row"><b>${escapeHtml(name)}</b>${badge}</div>
+          ${sub ? `<small>${sub}</small>` : ''}
+        </div>
+        <span class="time">${timeAgo(p.created_at)}</span>
+      </div>
+      ${p.body ? `<p class="feed-body">${escapeHtml(p.body)}</p>` : ''}
+      ${p.attachment_path && isImage ? `<div class="feed-photo" data-path="${escapeHtml(p.attachment_path)}"><div class="ph-placeholder">📷</div></div>` : ''}
+      ${p.attachment_path && !isImage ? `<div class="feed-foot">📎 attachment</div>` : ''}
+      <div class="feed-foot"><span>👍 ${p._likes || 0}</span></div>
+    `;
+    listEl.appendChild(el);
+
+    const avatarEl = el.querySelector('.avatar[data-avatar]');
+    if (avatarEl && avatarEl.dataset.avatar) resolveAvatarInto(avatarEl, avatarEl.dataset.avatar);
+    const photoEl = el.querySelector('.feed-photo[data-path]');
+    if (photoEl) resolvePhotoInto(photoEl, photoEl.dataset.path);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  LEADERBOARD — approximates lib/features/community/leaderboard_screen.dart:
+//  every crewmate who has posted, ranked by net votes (likes − dislikes)
+//  across their posts this week (Monday reset) or all-time, staff excluded,
+//  a public_card (opt-in) layered on top for the flex fields.
+// ══════════════════════════════════════════════════════════════════════
+
+function seasonStart() {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun..6=Sat
+  const diffToMonday = day === 0 ? 6 : day - 1;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+function seasonResetLabel() {
+  const end = new Date(seasonStart().getTime() + 7 * 86400000);
+  const leftMs = end.getTime() - Date.now();
+  const days = Math.floor(leftMs / 86400000);
+  const hours = Math.floor((leftMs % 86400000) / 3600000);
+  if (days > 0) return `Season resets in ${days}d ${hours}h`;
+  if (hours > 0) return `Season resets in ${hours}h`;
+  return 'Season resets soon';
+}
+
+async function loadLeaderboard(scope) {
+  state.lbScope = scope;
+  document.querySelectorAll('#lbScopeRow .seg').forEach((b) => b.classList.toggle('active', b.dataset.scope === scope));
+  document.getElementById('lbResetLabel').textContent = scope === 'week' ? seasonResetLabel() : 'All-time hall of fame';
+
+  const cacheKey = 'leaderboard:' + scope;
+  const cached = cacheGet(cacheKey);
+  if (cached) { renderLeaderboard(cached, false); showView('leaderboard'); }
+  else { showView('loading'); setLoadingLine('Loading the leaderboard…'); }
+
+  const errEl = document.getElementById('lbErr');
+  errEl.classList.add('hidden');
+  try {
+    let staff = new Set();
+    try {
+      const { data: staffIds } = await sb.rpc('crew_staff_membership_ids');
+      staff = new Set((staffIds || []).map((s) => `${s}`));
+    } catch (_) { /* fail open, same as the app — a lookup blip must never hide the board */ }
+
+    const { data: posts, error: postsErr } = await sb
+      .from('post')
+      .select('id, membership_id, display_name, author_headline, channel, created_at');
+    if (postsErr) throw postsErr;
+    const { data: votes } = await sb.from('post_like').select('post_id, vote');
+    const { data: cards } = await sb.from('public_card').select();
+    const cardsByMid = {};
+    for (const c of (cards || [])) cardsByMid[c.membership_id] = c;
+
+    const since = scope === 'week' ? seasonStart() : null;
+    const postOwner = {};
+    const byAuthor = {};
+    for (const p of (posts || [])) {
+      if (since) {
+        const at = new Date(p.created_at);
+        if (isNaN(at.getTime()) || at < since) continue;
+      }
+      const mid = `${p.membership_id}`;
+      postOwner[p.id] = mid;
+      if (!byAuthor[mid]) {
+        byAuthor[mid] = {
+          membership_id: mid, display_name: p.display_name, headline: p.author_headline,
+          _dept: p.channel, _posts: 0, _points: 0,
+        };
+      }
+      byAuthor[mid]._posts += 1;
+      if (byAuthor[mid].headline == null) byAuthor[mid].headline = p.author_headline;
+      if (byAuthor[mid]._dept == null) byAuthor[mid]._dept = p.channel;
+    }
+    for (const v of (votes || [])) {
+      const owner = postOwner[v.post_id];
+      if (!owner || !byAuthor[owner]) continue;
+      byAuthor[owner]._points += ((v.vote ?? 1) > 0 ? 1 : -1);
+    }
+
+    let ranked = Object.values(byAuthor).map((r) => {
+      const card = cardsByMid[r.membership_id];
+      const merged = { ...r };
+      if (card) {
+        // The public card (opt-in) adds the flex, but a null card field must
+        // never clobber what the posts already told us (e.g. headline).
+        for (const [k, val] of Object.entries(card)) if (val != null) merged[k] = val;
+        merged._onDeck = true;
+      } else {
+        merged._onDeck = false;
+      }
+      return merged;
+    });
+    ranked = ranked.filter((r) => !staff.has(r.membership_id));
+    ranked.sort((a, b) => (b._points - a._points) || (b._posts - a._posts));
+    ranked = ranked.slice(0, 50);
+
+    cacheSet(cacheKey, ranked);
+    renderLeaderboard(ranked, false);
+    showView('leaderboard');
+  } catch (err) {
+    if (cached) {
+      renderLeaderboard(cached, true);
+      showView('leaderboard');
+    } else {
+      document.getElementById('lbList').innerHTML = '';
+      document.getElementById('lbEmpty').classList.add('hidden');
+      errEl.textContent = 'Could not load the leaderboard (' + (err?.message || 'network error') + ').';
+      errEl.classList.remove('hidden');
+      showView('leaderboard');
+    }
+  }
+}
+
+function renderLeaderboard(rows, offline) {
+  document.getElementById('lbOffline').classList.toggle('hidden', !offline);
+  const listEl = document.getElementById('lbList');
+  const emptyEl = document.getElementById('lbEmpty');
+  listEl.innerHTML = '';
+  if (!rows.length) { emptyEl.classList.remove('hidden'); return; }
+  emptyEl.classList.add('hidden');
+
+  rows.forEach((r, i) => {
+    const name = r.display_name || 'A seafarer';
+    const initials = name.trim().slice(0, 1).toUpperCase() || '?';
+    const badge = r.is_navclub
+      ? '<span class="badge navclub" title="Navigators Club member">⚓</span>'
+      : (r.is_pro ? '<span class="badge pro" title="Seaman Pro">PRO</span>' : '');
+    const headline = r.headline ? escapeHtml(prettyRankHeadline(r.headline)) : '';
+    const dept = r._dept ? escapeHtml(channelLabel(r._dept)) : '';
+    const sub = [headline, dept].filter(Boolean).join(' · ');
+
+    const row = document.createElement('div');
+    row.className = 'lb-row' + (i < 3 ? ' top' + (i + 1) : '');
+    row.innerHTML = `
+      <div class="lb-rank">${i + 1}</div>
+      <div class="avatar sm" data-avatar="${r.avatar_path ? escapeHtml(r.avatar_path) : ''}">${escapeHtml(initials)}</div>
+      <div class="lb-who">
+        <div class="name-row"><b>${escapeHtml(name)}</b>${badge}</div>
+        ${sub ? `<small>${sub}</small>` : ''}
+      </div>
+      <div class="lb-stats">
+        <b>${r._points ?? 0}</b>
+        <small>${r._posts ?? 0} post${(r._posts ?? 0) === 1 ? '' : 's'}</small>
+      </div>
+    `;
+    listEl.appendChild(row);
+    const avatarEl = row.querySelector('.avatar[data-avatar]');
+    if (avatarEl && avatarEl.dataset.avatar) resolveAvatarInto(avatarEl, avatarEl.dataset.avatar);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  NAVIGATORS CLUB HOME — a simple landing card (name/tagline/blurb/member
+//  count) plus the entry into Courses that already existed. Reads the `club`
+//  row directly (readable by any signed-in user — `club_read` policy) with a
+//  fallback to just the base name/description columns in case this
+//  environment predates the presentation columns (tagline/blurb/cover_path),
+//  and best-effort layers on `public_clubs()`'s server-computed counts where
+//  that directory RPC is deployed.
+// ══════════════════════════════════════════════════════════════════════
+
+async function loadClubHome() {
+  const cached = cacheGet('club:home');
+  if (cached) { renderClubHome(cached, false); showView('club'); }
+  else { showView('loading'); setLoadingLine('Loading the club…'); }
+
+  try {
+    const info = { name: 'Navigators Club', tagline: '', blurb: '', memberCount: null, courseCount: null, avgRating: null, reviewCount: null };
+    try {
+      const { data, error } = await sb
+        .from('club')
+        .select('name, tagline, blurb, description, cover_path')
+        .eq('id', NAV_CLUB_ID)
+        .maybeSingle();
+      if (error) throw error;
+      if (data) {
+        info.name = data.name || info.name;
+        info.tagline = data.tagline || '';
+        info.blurb = data.blurb || data.description || '';
+      }
+    } catch (_) {
+      // The presentation columns (tagline/blurb/cover_path) may not exist in
+      // every environment yet — fall back to the columns that always do.
+      try {
+        const { data } = await sb.from('club').select('name, description').eq('id', NAV_CLUB_ID).maybeSingle();
+        if (data) { info.name = data.name || info.name; info.blurb = data.description || ''; }
+      } catch (_) { /* keep the static defaults */ }
+    }
+    try {
+      const { data } = await sb.rpc('public_clubs');
+      const row = Array.isArray(data) ? data.find((c) => c.id === NAV_CLUB_ID) : null;
+      if (row) {
+        info.memberCount = row.member_count ?? null;
+        info.courseCount = row.course_count ?? null;
+        info.avgRating = row.avg_rating ?? null;
+        info.reviewCount = row.review_count ?? null;
+      }
+    } catch (_) { /* directory RPC is a newer, best-effort addition */ }
+
+    cacheSet('club:home', info);
+    renderClubHome(info, false);
+    showView('club');
+  } catch (_) {
+    if (cached) {
+      renderClubHome(cached, true);
+    } else {
+      renderClubHome({ name: 'Navigators Club', tagline: '', blurb: '' }, true);
+    }
+    showView('club');
+  }
+}
+
+function renderClubHome(info, offline) {
+  document.getElementById('clubOffline').classList.toggle('hidden', !offline);
+  const stats = [];
+  if (info.memberCount != null) stats.push(`${info.memberCount} member${info.memberCount === 1 ? '' : 's'}`);
+  if (info.courseCount != null) stats.push(`${info.courseCount} course${info.courseCount === 1 ? '' : 's'}`);
+  if (info.avgRating != null) stats.push(`★ ${info.avgRating}${info.reviewCount ? ' · ' + info.reviewCount + ' reviews' : ''}`);
+
+  document.getElementById('clubHero').innerHTML = `
+    <div class="center-text">
+      <div class="anchor-badge" style="margin:0 auto 16px">⚓</div>
+      <span class="eyebrow">Navigators Club</span>
+      <h1 class="h">${escapeHtml(info.name || 'Navigators Club')}</h1>
+      ${info.tagline ? `<p class="lead" style="color:var(--gold2);font-weight:600;margin-top:2px">${escapeHtml(info.tagline)}</p>` : ''}
+      ${info.blurb ? `<p class="lead" style="margin-top:10px">${escapeHtml(info.blurb)}</p>` : ''}
+      ${stats.length ? `<div class="club-stats">${stats.map((s) => `<span>${escapeHtml(s)}</span>`).join('')}</div>` : ''}
+    </div>
+  `;
 }
 
 // ── Go ──────────────────────────────────────────────────────────────────

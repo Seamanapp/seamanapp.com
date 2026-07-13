@@ -131,6 +131,133 @@ needs an actual transcoding step (ffmpeg, run once per video, likely as a
 small pipeline job) and is real, scoped work — deliberately **not** done
 here so it isn't forgotten, but also isn't half-built.
 
+## The bottom tab bar: Courses / Guides / Community / Leaderboard / Club
+
+Once signed in and past the membership gate, the app is a 5-tab shell
+(`#bottomNav`, fixed to the bottom of the viewport). `showView()` still
+drives every screen exactly as before; `updateChrome()` additionally shows
+the tab bar only on the five top-level tab views (`courses`, `guides`,
+`community`, `leaderboard`, `club`) and hides it on every drill-down screen
+(login/gate/course-detail/lesson/guide-reader), which keep their own back
+button — the same pattern the original app already used for course → lesson.
+`openTab(name)` is the single entry point each tab button calls.
+
+- **Courses** — unchanged from the original slice (see above).
+- **Guides** — `content_manifest({p_kind:'guide'})` / `content_download` RPCs,
+  the same cloud-content pipeline `lib/features/pro/cloud_content.dart` and
+  the Learn tab's e-book reader use. Guides are grouped into shelves by their
+  `category` field (whatever shelves exist server-side — nothing hardcoded),
+  each shelf ordered by its lowest `sort_order`. Opening a guide renders its
+  markdown body (`data.md`) through a small escape-first renderer (the
+  original lesson-markdown renderer, extended with blockquotes/`<hr>`/inline
+  `code` — no new vendored library).
+- **Community** — read-only feed: the last 25 published posts
+  (`publish_at <= now`, matching the app's own filter) with per-post like
+  counts (`post_like`, `vote > 0`) and, best-effort, the poster's avatar +
+  Navigators Club / Pro badge from their opt-in `public_card`. No composing,
+  liking, or reporting in this slice — RLS (`post_read_visible`) already
+  keeps moderator-hidden posts out of the read.
+- **Leaderboard** — a client-side re-implementation of
+  `lib/features/community/leaderboard_screen.dart`'s algorithm: every member
+  who has posted, ranked by net votes (likes − dislikes) on their posts, This
+  week (Monday reset) or All-time, staff membership ids excluded
+  (`crew_staff_membership_ids()`, fails open to an empty set exactly like the
+  app), `public_card` layered on top for the avatar/badges without ever
+  letting a null card field clobber a value already known from the post.
+- **Club** — a small landing card for the Navigators Club: reads the `club`
+  row directly (`club_read` policy — any signed-in user), with a fallback to
+  just `name`/`description` if the newer presentation columns
+  (`tagline`/`blurb`/`cover_path`) aren't deployed in a given environment, and
+  best-effort layers on `public_clubs()`'s server-computed member/course
+  counts + rating where that directory RPC exists. "View courses" jumps to
+  the Courses tab; nothing here duplicates data that tab already owns.
+
+All five tabs are still gated behind the same membership check as Courses —
+sign-in → seafarer membership → `is_club_member()` → the tab shell. Field
+Guides / Community / Leaderboard are conceptually open to any signed-in
+seafarer in the Flutter app (not Navigators-Club-specific), but this PWA is
+explicitly the *Navigators Club* web app, so they're offered here as
+additional club perks rather than reworking the entry gate.
+
+## Offline data caching (what actually makes "opening offline" work)
+
+The service worker (`sw.js`) only ever caches the app **shell**
+(html/css/js/vendor/icons — see below); it deliberately never touches a
+Supabase call. That was true before this change and still is. What's new is
+a small **data** cache layered on top, in `app.js`, using `localStorage`
+(namespaced under the `ncw:1:` prefix so a future cache-shape change can bump
+the version without colliding with old entries):
+
+- `cacheGet(key)` / `cacheSet(key, value)` — JSON-serialise to/from
+  `localStorage`, wrapped in `try/catch` so a full or unavailable store
+  (e.g. Safari private browsing) degrades to "no offline copy" rather than
+  crashing the page.
+- Every tab loader (`loadGuides`, `loadFeed`, `loadLeaderboard`,
+  `loadClubHome`) and the guide reader (`openGuide`) follow the same
+  **cache-first, then refresh** shape:
+  1. If a cached copy exists, render it **immediately** (no spinner) and
+     switch to that view.
+  2. Fetch fresh data in the background (RPC/table calls, or bundled
+     into the same call if there was no cache yet — in that case a spinner
+     shows for this first, cold load only).
+  3. On success: overwrite the cache and re-render with the fresh copy
+     (silently — no "updated" flash).
+  4. On failure (offline, or the request throws): if a cached copy exists,
+     keep showing it and surface a small **"📡 Offline — showing your saved
+     copy"** note (`.offline-note`, one per view); if there was never a
+     cached copy, show a plain error/retry state instead of a blank screen.
+- What's cached: the guide **shelf list** (`guides:list`) and every guide's
+  **markdown body** once opened (`guide:<key>`) — deliberately the guides'
+  hero feature, since they're the app's "offline-first" reference material;
+  the last 20 **feed posts** (`feed:posts`, mirroring the Flutter app's own
+  20-post offline cache); the computed **leaderboard** per scope
+  (`leaderboard:week` / `leaderboard:all`); and the **club home** summary
+  (`club:home`). Course lists/lessons were already cache-adjacent via the
+  existing flow and are unchanged in this slice.
+- What's **not** cached, on purpose: signed avatar/photo/video URLs (they
+  expire in ~1 hour, so caching them offline would just show a broken image
+  or a dead video link) and anything from the `lms-media` Edge Function.
+  `resolveStorageImage()` skips the network call entirely when
+  `navigator.onLine` is false, so an offline feed/leaderboard render shows
+  initials instead of silently retrying a call that can't succeed.
+- The data cache is cleared on sign-out (`clearDataCache()`) — guide
+  entitlement and feed/leaderboard contents are tied to whoever is signed
+  in, so a fresh login should never render a flash of the previous account's
+  offline copy before its own first fetch lands.
+
+`sw.js`'s `CACHE_NAME` was bumped `v3` → `v4` purely so every existing
+installed PWA picks up this shell update (new views/markup/script) on next
+launch; its actual caching logic (shell-only, same-origin, exact
+`SHELL_FILES` list) is unchanged — no new files were added to that list
+because everything above lives inside the existing `app.js`/`index.html`/
+`style.css`.
+
+## Install button (Android/Chromium + iOS)
+
+A single header icon (`#installBtn`, next to sign-out) now offers install on
+both platforms, in addition to the existing passive `#installBanner` on the
+Courses tab:
+
+- **Android/Chromium** — `window.addEventListener('beforeinstallprompt', …)`
+  captures and `preventDefault()`s the browser's native prompt, stashes the
+  event, and reveals `#installBtn`. Tapping it calls the saved event's
+  `.prompt()` and awaits `.userChoice`; the button hides itself afterward
+  (installed or dismissed — either way the deferred prompt is spent and a
+  fresh one won't fire again immediately). `appinstalled` also hides the
+  button (and the passive banner) in case the browser's own UI was used
+  instead.
+- **iOS Safari** — there is no `beforeinstallprompt`. `#installBtn` is shown
+  unconditionally (once, on boot, via `maybeShowInstallButton()`) whenever
+  the user agent looks like iOS and the app isn't already running standalone
+  (`navigator.standalone` / `display-mode: standalone`). Tapping it — since
+  there's no `deferredInstallPrompt` to call — opens `#iosInstallModal`, a
+  short bottom-sheet with the "tap Share → Add to Home Screen → Add" steps
+  (the existing `#installBanner` still shows the same hint passively on the
+  Courses tab, unchanged from before).
+- Either way, the button is hidden once the display mode is already
+  `standalone` (checked at boot and on `appinstalled`) — it never shows to
+  someone who already installed.
+
 ## PWA / install setup
 
 - `manifest.webmanifest` — `display: standalone`, `start_url`/`scope`
@@ -205,11 +332,34 @@ against live data**:
   against a course that actually has a cover set.
 - The real "Add to Home Screen" → standalone launch → offline shell load
   → sign back in flow on an actual iPhone.
+- `content_manifest`/`content_download` actually returning guide rows for a
+  real member (RPC contract verified against the migrations + the Flutter
+  Learn tab's identical usage; the RPCs are confirmed live on prod, but a
+  real fetch/render of a real guide's markdown wasn't exercised).
+- The community feed / leaderboard queries against real `post` /
+  `post_like` / `public_card` rows — the queries mirror
+  `crew_feed_screen.dart` / `leaderboard_screen.dart` exactly (same tables,
+  columns, and ranking arithmetic), but weren't run against live data.
+- `crew_staff_membership_ids()` and `public_clubs()` — both are wrapped in
+  `try/catch` with a graceful fallback (empty staff set; a plain club card
+  with no counts) specifically because it wasn't possible to confirm both
+  are deployed to prod at the time of writing (some of the `club`
+  presentation columns and the clubs-directory RPC come from migrations
+  whose own comments say "DEV only" for a *sibling* migration in the same
+  batch) — worth an owner check.
+- The Android `beforeinstallprompt` → `#installBtn` → native install-prompt
+  round trip, and the iOS instructions modal, on real devices/browsers.
+- The `localStorage` offline cache actually surviving a real Airplane Mode
+  test for Guides/Community/Leaderboard/Club (logic + fallbacks verified by
+  inspection and a Node syntax check; not exercised in a real browser).
 
-What **was** verified without a login (see below): the page structure
-loads and initializes the Supabase client without throwing, the service
-worker registers and its precache list matches real files on disk, and
-every view/element id referenced in `app.js` exists in `index.html`.
+What **was** verified without a login: the page structure loads and
+initializes the Supabase client without throwing (by inspection — all
+Supabase calls are guarded), `app.js`/`sw.js` pass `node --check`, the
+service worker's precache list matches real files on disk, every static
+view/element id referenced in `app.js` exists in `index.html` (checked
+programmatically), every `<div>`/`<section>` tag is balanced, and every new
+helper function referenced in `app.js` has exactly one matching declaration.
 
 ## Owner test checklist (needs a real device + a real member account)
 
@@ -229,3 +379,20 @@ every view/element id referenced in `app.js` exists in `index.html`.
    back on and sign in normally.
 7. Sign in with a non-member account: confirm the membership-gate screen
    appears instead of any course data.
+8. Switch through the new bottom tabs (Guides / Community / Leaderboard /
+   Club); confirm each loads real data (or a clear empty/error state, not a
+   blank screen).
+9. Open a field guide, confirm it renders; go back, turn on Airplane Mode,
+   reopen the SAME guide from the shelf list: confirm it still renders (from
+   the local cache) with the "📡 Offline — showing your saved copy" note.
+   Try a guide you've never opened while offline: confirm it shows a clear
+   "connect and try again" message, not a blank page.
+10. With Airplane Mode still on, switch to Community and Leaderboard:
+    confirm each shows its last-loaded copy with the offline note (assuming
+    you visited them at least once while online this session/device).
+11. On Android/Chromium (e.g. desktop Chrome or an Android phone), confirm
+    the header's install icon appears once the browser considers the page
+    installable, and tapping it opens the real install prompt. On iOS,
+    confirm the same icon opens the "Add to Home Screen" instructions.
+12. Confirm the header install icon disappears once the app is actually
+    installed/running standalone.

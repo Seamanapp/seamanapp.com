@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Navigators Club — Seaman App</title>
-<meta name="description" content="Watch your Navigators Club courses on the web — the Seaman App companion for iOS, until the native app ships." />
+<meta name="description" content="Courses, field guides, the crew feed and the leaderboard — the Seaman App companion for the web, until the native app ships everywhere." />
 <meta name="robots" content="noindex" />
 
 <!-- PWA / installability -->
@@ -29,7 +29,10 @@
       <span class="mark">⚓</span>
       <span>Navigators Club<small>Seaman App · web</small></span>
     </div>
-    <button id="signOutBtn" class="iconbtn hidden" title="Sign out" aria-label="Sign out">⎋</button>
+    <div class="row" style="gap:8px">
+      <button id="installBtn" class="iconbtn hidden" title="Install app" aria-label="Install app">⬇️</button>
+      <button id="signOutBtn" class="iconbtn hidden" title="Sign out" aria-label="Sign out">⎋</button>
+    </div>
   </div>
 </header>
 
@@ -105,7 +108,7 @@
         <h1 class="h">This is a Navigators Club perk</h1>
         <p class="lead">Course access is exclusive to Navigators Club members. You're signed in, but this account isn't a member yet.</p>
         <div class="gate-list">
-          <div class="g-item"><span class="tick">✓</span><span>Members get the club's mentored courses on any device, including this web app.</span></div>
+          <div class="g-item"><span class="tick">✓</span><span>Members get the club's mentored courses, field guides, the crew feed and the leaderboard on any device, including this web app.</span></div>
           <div class="g-item"><span class="tick">✓</span><span>Join through the Seaman App on Android, or ask your mentor / agency to add your email to the club roster.</span></div>
         </div>
         <a class="btn gold block" href="https://seamanapp.com/#join">How to join</a>
@@ -155,11 +158,98 @@
     </div>
   </section>
 
+  <!-- ═══ FIELD GUIDES LIST ═══ -->
+  <section id="view-guides" class="screen hidden">
+    <div class="wrap">
+      <span class="eyebrow">Field Guides</span>
+      <h1 class="h">Guides</h1>
+      <p class="lead">Offline-first reference — open one once and it stays readable at sea.</p>
+      <p id="guidesOffline" class="offline-note hidden">📡 Offline — showing your saved guides.</p>
+      <div id="guidesList" class="shelf-list"></div>
+      <p id="guidesEmpty" class="loading-line hidden">No guides are published yet — check back soon.</p>
+      <p id="guidesErr" class="msg err hidden" style="margin-top:14px"></p>
+    </div>
+  </section>
+
+  <!-- ═══ FIELD GUIDE READER ═══ -->
+  <section id="view-guide" class="screen hidden">
+    <div class="wrap">
+      <div class="backrow">
+        <button class="iconbtn" id="guideBackBtn" aria-label="Back">←</button>
+        <h2 class="h" id="guideTitle" style="margin:0"></h2>
+      </div>
+      <p id="guideOffline" class="offline-note hidden">📡 Offline — showing your saved copy.</p>
+      <div id="guideBody" class="markdown-body"></div>
+    </div>
+  </section>
+
+  <!-- ═══ COMMUNITY FEED (read-only) ═══ -->
+  <section id="view-community" class="screen hidden">
+    <div class="wrap">
+      <span class="eyebrow">Crew community</span>
+      <h1 class="h">What's happening</h1>
+      <p class="lead">The latest from the deck. Read-only here for now — reply from the app.</p>
+      <p id="feedOffline" class="offline-note hidden">📡 Offline — showing your saved copy.</p>
+      <div id="feedList" class="feed-list"></div>
+      <p id="feedEmpty" class="loading-line hidden">No posts yet — be the first from the app.</p>
+      <p id="feedErr" class="msg err hidden" style="margin-top:14px"></p>
+    </div>
+  </section>
+
+  <!-- ═══ LEADERBOARD ═══ -->
+  <section id="view-leaderboard" class="screen hidden">
+    <div class="wrap">
+      <span class="eyebrow">Crew leaderboard</span>
+      <h1 class="h">Top contributors</h1>
+      <div class="seg-row" id="lbScopeRow">
+        <button type="button" class="seg active" data-scope="week">This week</button>
+        <button type="button" class="seg" data-scope="all">All-time</button>
+      </div>
+      <p class="lead" id="lbResetLabel" style="margin-top:8px"></p>
+      <p id="lbOffline" class="offline-note hidden">📡 Offline — showing your saved copy.</p>
+      <div id="lbList" class="lb-list"></div>
+      <p id="lbEmpty" class="loading-line hidden">Nobody has posted yet this season.</p>
+      <p id="lbErr" class="msg err hidden" style="margin-top:14px"></p>
+    </div>
+  </section>
+
+  <!-- ═══ NAVIGATORS CLUB HOME ═══ -->
+  <section id="view-club" class="screen hidden">
+    <div class="wrap">
+      <p id="clubOffline" class="offline-note hidden">📡 Offline — showing your saved copy.</p>
+      <div id="clubHero" class="club-hero card"></div>
+      <button type="button" class="btn gold block" id="clubCoursesBtn" style="margin-top:18px">View courses</button>
+      <button type="button" class="btn ghost block" id="clubGuidesBtn" style="margin-top:10px">Browse field guides</button>
+    </div>
+  </section>
+
 </main>
 
 <footer class="app-foot">
   ⚓ Seaman App — <a href="https://seamanapp.com">seamanapp.com</a> · signed-in playback only, links expire automatically
 </footer>
+
+<!-- ═══ BOTTOM TAB BAR ═══ -->
+<nav id="bottomNav" class="bottomnav hidden">
+  <button type="button" class="navbtn" data-tab="courses"><span class="ni">🎓</span><span>Courses</span></button>
+  <button type="button" class="navbtn" data-tab="guides"><span class="ni">📖</span><span>Guides</span></button>
+  <button type="button" class="navbtn" data-tab="community"><span class="ni">💬</span><span>Community</span></button>
+  <button type="button" class="navbtn" data-tab="leaderboard"><span class="ni">🏆</span><span>Leaders</span></button>
+  <button type="button" class="navbtn" data-tab="club"><span class="ni">⚓</span><span>Club</span></button>
+</nav>
+
+<!-- ═══ iOS "Add to Home Screen" instructions ═══ -->
+<div id="iosInstallModal" class="modal-backdrop hidden">
+  <div class="modal-card">
+    <h3 class="h" style="font-size:17px;margin-bottom:12px">Add to Home Screen</h3>
+    <ol class="ios-steps">
+      <li>Tap the <b>Share</b> button <span class="i">⬆️</span> in Safari's toolbar.</li>
+      <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
+      <li>Tap <b>Add</b> — the app opens full-screen next time, and works offline for anything you've already opened.</li>
+    </ol>
+    <button type="button" class="btn gold block" id="iosInstallCloseBtn">Got it</button>
+  </div>
+</div>
 
 <script src="vendor/supabase.js"></script>
 <script src="vendor/hls.min.js"></script>
