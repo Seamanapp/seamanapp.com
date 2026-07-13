@@ -37,7 +37,7 @@ const state = {
 
 // ── View switching ──────────────────────────────────────────────────────
 const VIEWS = [
-  'loading', 'login', 'forgot', 'gate', 'courses', 'course', 'lesson',
+  'loading', 'login', 'forgot', 'newpass', 'gate', 'courses', 'course', 'lesson',
   'guides', 'guide', 'community', 'leaderboard', 'club',
 ];
 // The top-level tabs the bottom nav switches between — everything else
@@ -225,14 +225,29 @@ async function boot() {
   showView('loading');
   setLoadingLine('Checking your session…');
 
+  // Arrived from a password-reset email? The link carries #...type=recovery.
+  // Show the set-new-password screen instead of dropping into the app on the
+  // temporary recovery session. (onAuthStateChange PASSWORD_RECOVERY is the
+  // backup path if the hash is consumed before this runs.)
+  const isRecovery = /type=recovery/.test(location.hash) ||
+    /type=recovery/.test(location.search);
+
   const { data: { session } } = await sb.auth.getSession();
-  if (session?.user) {
+  if (isRecovery) {
+    showView('newpass');
+  } else if (session?.user) {
     await afterLogin(session.user);
   } else {
     showView('login');
   }
 
   sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      // Arrived from the reset-email link — let them set a new password
+      // instead of dropping them into the app on the temporary session.
+      showView('newpass');
+      return;
+    }
     if (event === 'SIGNED_OUT') {
       resetAppState();
       showView('login');
@@ -334,6 +349,7 @@ function wireStaticHandlers() {
   document.getElementById('loginForm').addEventListener('submit', onLoginSubmit);
   document.getElementById('googleBtn').addEventListener('click', onGoogleSignIn);
   document.getElementById('forgotForm').addEventListener('submit', onForgotSubmit);
+  document.getElementById('newpassForm').addEventListener('submit', onNewPassSubmit);
   document.getElementById('forgotBtn').addEventListener('click', () => {
     document.getElementById('forgotMsg').classList.add('hidden');
     showView('forgot');
@@ -412,6 +428,32 @@ async function onForgotSubmit(e) {
     msg.className = 'msg err';
   }
   msg.classList.remove('hidden');
+}
+
+async function onNewPassSubmit(e) {
+  e.preventDefault();
+  const pw = document.getElementById('newPassword').value;
+  const msg = document.getElementById('newpassMsg');
+  const btn = document.getElementById('newpassSubmit');
+  msg.classList.add('hidden');
+  if (!pw || pw.length < 6) {
+    msg.textContent = 'Password must be at least 6 characters.';
+    msg.className = 'msg err'; msg.classList.remove('hidden'); return;
+  }
+  btn.disabled = true; const original = btn.textContent; btn.textContent = 'Saving…';
+  try {
+    const { data, error } = await sb.auth.updateUser({ password: pw });
+    if (error) throw error;
+    // Clean the recovery token out of the URL, then continue into the app.
+    history.replaceState(null, '', location.origin + location.pathname);
+    if (data?.user) { await afterLogin(data.user); }
+    else { showView('login'); }
+  } catch (err) {
+    msg.textContent = err?.message ||
+      'Could not update the password. Open the reset link again — it may have expired.';
+    msg.className = 'msg err'; msg.classList.remove('hidden');
+    btn.disabled = false; btn.textContent = original;
+  }
 }
 
 async function signOut() {

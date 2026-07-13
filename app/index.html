@@ -104,6 +104,27 @@
     </div>
   </section>
 
+  <!-- ═══ SET NEW PASSWORD (after the recovery-email link) ═══ -->
+  <section id="view-newpass" class="screen center-screen hidden">
+    <div class="wrap">
+      <div class="card narrow">
+        <div class="center-text" style="margin-bottom:18px">
+          <span class="eyebrow">Reset password</span>
+          <h1 class="h">Set a new password</h1>
+          <p class="lead">Choose a new password for your account.</p>
+        </div>
+        <form id="newpassForm" class="stack">
+          <div class="field">
+            <label for="newPassword">New password</label>
+            <input id="newPassword" type="password" autocomplete="new-password" minlength="6" required />
+          </div>
+          <p id="newpassMsg" class="msg hidden"></p>
+          <button type="submit" class="btn gold block" id="newpassSubmit">Save new password</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
   <!-- ═══ MEMBERSHIP GATE ═══ -->
   <section id="view-gate" class="screen center-screen hidden">
     <div class="wrap">
