@@ -754,10 +754,28 @@ async function renderVideoLesson(lesson, body) {
   document.addEventListener('visibilitychange', onHide);
   window.addEventListener('blur', onBlur);
   window.addEventListener('focus', onFocus);
+  // Keep the watermark visible in fullscreen: the native control fullscreens the
+  // bare <video> (dropping our overlay), so redirect fullscreen to the wrapper —
+  // the watermark is a child of it and stays on. Works on desktop + Android web;
+  // iPhone uses a native player that can't hold an overlay, so there the
+  // watermark stays on inline playback instead.
+  let fsGuard = false;
+  const onFs = () => {
+    if (fsGuard) return;
+    if (document.fullscreenElement === video && wrap && wrap.requestFullscreen) {
+      fsGuard = true;
+      document.exitFullscreen()
+        .then(() => wrap.requestFullscreen())
+        .catch(() => {})
+        .finally(() => setTimeout(() => { fsGuard = false; }, 300));
+    }
+  };
+  document.addEventListener('fullscreenchange', onFs);
   state.captureGuards = () => {
     document.removeEventListener('visibilitychange', onHide);
     window.removeEventListener('blur', onBlur);
     window.removeEventListener('focus', onFocus);
+    document.removeEventListener('fullscreenchange', onFs);
   };
 
   let kind = src.kind;
@@ -841,7 +859,7 @@ function startWatermark(el) {
   paint();
   reposition();
   state.watermarkTimer = setInterval(paint, 1000);          // live clock
-  state.watermarkMoveTimer = setInterval(reposition, 5000); // relocate
+  state.watermarkMoveTimer = setInterval(reposition, 9000); // relocate slowly
 }
 function stopWatermark() {
   if (state.watermarkTimer) { clearInterval(state.watermarkTimer); state.watermarkTimer = null; }
