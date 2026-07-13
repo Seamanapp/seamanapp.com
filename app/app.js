@@ -172,9 +172,25 @@ function showFatal(message) {
   msg.classList.remove('hidden');
 }
 
+// Google OAuth (redirect flow). Most members sign in with Google. On return,
+// supabase-js `detectSessionInUrl` picks up the session automatically.
+async function onGoogleSignIn() {
+  const msg = document.getElementById('loginMsg');
+  msg.classList.add('hidden');
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + window.location.pathname },
+  });
+  if (error) {
+    msg.textContent = 'Google sign-in failed: ' + error.message;
+    msg.classList.remove('hidden');
+  }
+}
+
 // ── Static (once-per-load) event wiring ────────────────────────────────
 function wireStaticHandlers() {
   document.getElementById('loginForm').addEventListener('submit', onLoginSubmit);
+  document.getElementById('googleBtn').addEventListener('click', onGoogleSignIn);
   document.getElementById('forgotForm').addEventListener('submit', onForgotSubmit);
   document.getElementById('forgotBtn').addEventListener('click', () => {
     document.getElementById('forgotMsg').classList.add('hidden');
