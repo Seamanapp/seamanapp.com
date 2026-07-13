@@ -175,15 +175,30 @@ function showFatal(message) {
 // Google OAuth (redirect flow). Most members sign in with Google. On return,
 // supabase-js `detectSessionInUrl` picks up the session automatically.
 async function onGoogleSignIn() {
+  const btn = document.getElementById('googleBtn');
   const msg = document.getElementById('loginMsg');
   msg.classList.add('hidden');
-  const { error } = await sb.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: window.location.origin + window.location.pathname },
-  });
-  if (error) {
-    msg.textContent = 'Google sign-in failed: ' + error.message;
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = 'Opening Google…';
+  try {
+    // skipBrowserRedirect + manual navigation = explicit control (some
+    // installed-PWA/UMD combos don't auto-redirect), and errors surface.
+    const { data, error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + window.location.pathname,
+        skipBrowserRedirect: true,
+      },
+    });
+    if (error) throw error;
+    if (data && data.url) { window.location.assign(data.url); return; }
+    throw new Error('No sign-in URL was returned.');
+  } catch (e) {
+    msg.textContent = 'Google sign-in failed: ' + (e && e.message ? e.message : e);
     msg.classList.remove('hidden');
+    btn.disabled = false;
+    btn.textContent = original;
   }
 }
 
