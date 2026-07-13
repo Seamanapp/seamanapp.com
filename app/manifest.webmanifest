@@ -1,0 +1,16 @@
+{
+  "name": "Navigators Club — Seaman App",
+  "short_name": "NavClub",
+  "description": "Watch your Navigators Club courses on the web — the Seaman App companion for iOS, until the native app ships.",
+  "start_url": "/app/",
+  "scope": "/app/",
+  "id": "/app/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#04101f",
+  "theme_color": "#04101f",
+  "icons": [
+    { "src": "/app/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/app/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

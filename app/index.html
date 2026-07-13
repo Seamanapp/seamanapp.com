@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Navigators Club — Seaman App</title>
+<meta name="description" content="Watch your Navigators Club courses on the web — the Seaman App companion for iOS, until the native app ships." />
+<meta name="robots" content="noindex" />
+
+<!-- PWA / installability -->
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#04101f" />
+<meta name="mobile-web-app-capable" content="yes" />
+
+<!-- iOS "Add to Home Screen" support (iOS ignores the manifest for these) -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="NavClub" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="icon" href="icons/icon-192.png" />
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap row">
+    <div class="brand">
+      <span class="mark">⚓</span>
+      <span>Navigators Club<small>Seaman App · web</small></span>
+    </div>
+    <button id="signOutBtn" class="iconbtn hidden" title="Sign out" aria-label="Sign out">⎋</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ═══ LOADING ═══ -->
+  <section id="view-loading" class="screen center-screen">
+    <div class="center-text">
+      <div class="spinner"></div>
+      <p class="loading-line" id="loadingLine">Loading…</p>
+    </div>
+  </section>
+
+  <!-- ═══ LOGIN ═══ -->
+  <section id="view-login" class="screen center-screen hidden">
+    <div class="wrap">
+      <div class="card narrow">
+        <div class="center-text" style="margin-bottom:18px">
+          <span class="eyebrow">Members only</span>
+          <h1 class="h">Sign in</h1>
+          <p class="lead">Use the same account you signed up with in the Seaman App.</p>
+        </div>
+        <form id="loginForm" class="stack">
+          <div class="field">
+            <label for="loginEmail">Email</label>
+            <input id="loginEmail" type="email" autocomplete="username" required />
+          </div>
+          <div class="field">
+            <label for="loginPassword">Password</label>
+            <input id="loginPassword" type="password" autocomplete="current-password" required />
+          </div>
+          <p id="loginMsg" class="msg err hidden"></p>
+          <button type="submit" class="btn gold block" id="loginSubmitBtn">Sign in</button>
+          <button type="button" class="linklike" id="forgotBtn">Forgot your password?</button>
+        </form>
+      </div>
+      <p class="loading-line" style="margin-top:18px">
+        Not a member yet? <a href="https://seamanapp.com/#join" style="color:var(--cyan)">Learn about the Navigators Club</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ FORGOT PASSWORD ═══ -->
+  <section id="view-forgot" class="screen center-screen hidden">
+    <div class="wrap">
+      <div class="card narrow">
+        <div class="center-text" style="margin-bottom:18px">
+          <span class="eyebrow">Reset password</span>
+          <h1 class="h">Forgot password</h1>
+          <p class="lead">We'll email you a reset link.</p>
+        </div>
+        <form id="forgotForm" class="stack">
+          <div class="field">
+            <label for="forgotEmail">Email</label>
+            <input id="forgotEmail" type="email" autocomplete="username" required />
+          </div>
+          <p id="forgotMsg" class="msg hidden"></p>
+          <button type="submit" class="btn gold block">Send reset link</button>
+          <button type="button" class="linklike" id="backToLoginBtn">Back to sign in</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ MEMBERSHIP GATE ═══ -->
+  <section id="view-gate" class="screen center-screen hidden">
+    <div class="wrap">
+      <div class="card narrow center-text">
+        <div class="anchor-badge">⚓</div>
+        <span class="eyebrow">Exclusive</span>
+        <h1 class="h">This is a Navigators Club perk</h1>
+        <p class="lead">Course access is exclusive to Navigators Club members. You're signed in, but this account isn't a member yet.</p>
+        <div class="gate-list">
+          <div class="g-item"><span class="tick">✓</span><span>Members get the club's mentored courses on any device, including this web app.</span></div>
+          <div class="g-item"><span class="tick">✓</span><span>Join through the Seaman App on Android, or ask your mentor / agency to add your email to the club roster.</span></div>
+        </div>
+        <a class="btn gold block" href="https://seamanapp.com/#join">How to join</a>
+        <button type="button" class="linklike" id="gateSignOutBtn" style="margin-top:8px">Sign out</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ COURSES LIST ═══ -->
+  <section id="view-courses" class="screen hidden">
+    <div class="wrap">
+      <div id="installBanner" class="install-banner hidden">
+        <span class="i">⬇️</span>
+        <span>Add this to your Home Screen: tap <b>Share</b> → <b>Add to Home Screen</b> for the full-screen app.</span>
+      </div>
+      <span class="eyebrow">Navigators Club</span>
+      <h1 class="h">Your courses</h1>
+      <p class="lead">Download nothing — stream securely, right in the browser.</p>
+      <div id="courseList" class="course-list"></div>
+      <p id="coursesEmpty" class="loading-line hidden">No courses are published yet — check back soon.</p>
+      <p id="coursesErr" class="msg err hidden" style="margin-top:14px"></p>
+    </div>
+  </section>
+
+  <!-- ═══ COURSE DETAIL ═══ -->
+  <section id="view-course" class="screen hidden">
+    <div class="wrap">
+      <div class="backrow">
+        <button class="iconbtn" id="courseBackBtn" aria-label="Back">←</button>
+        <h2 class="h" id="courseTitle" style="margin:0"></h2>
+      </div>
+      <p class="lead" id="courseSubtitle"></p>
+      <p class="lead" id="courseDescription" style="margin-top:6px"></p>
+      <p id="enrollNote" class="msg hidden" style="margin-top:12px"></p>
+      <div id="moduleList"></div>
+    </div>
+  </section>
+
+  <!-- ═══ LESSON PLAYER ═══ -->
+  <section id="view-lesson" class="screen hidden">
+    <div class="wrap">
+      <div class="backrow">
+        <button class="iconbtn" id="lessonBackBtn" aria-label="Back">←</button>
+        <h2 class="h" id="lessonTitle" style="margin:0"></h2>
+      </div>
+      <div id="lessonBody"></div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="app-foot">
+  ⚓ Seaman App — <a href="https://seamanapp.com">seamanapp.com</a> · signed-in playback only, links expire automatically
+</footer>
+
+<script src="vendor/supabase.js"></script>
+<script src="vendor/hls.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
