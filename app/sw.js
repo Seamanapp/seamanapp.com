@@ -7,7 +7,7 @@
 // must always be fetched fresh (a cached signed URL would be stale/expired,
 // and course video must never be persisted to disk by this service worker).
 
-const CACHE_NAME = 'navclub-app-shell-v10';
+const CACHE_NAME = 'navclub-app-shell-v11';
 const SCOPE = self.registration.scope; // e.g. https://seamanapp.com/app/
 
 // Real, individually-addressable files only. The bare scope root ('/app/')
