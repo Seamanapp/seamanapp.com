@@ -116,6 +116,16 @@ header.scrolled{background:rgba(4,14,26,.68);backdrop-filter:blur(18px) saturate
 .hero h1{font-size:clamp(38px,6.3vw,72px);font-weight:700;margin:22px 0 18px;letter-spacing:-.03em}
 .hero .sub{color:var(--muted);font-size:clamp(16.5px,2.3vw,20px);line-height:1.55;max-width:50ch;margin-bottom:30px}
 .ctas{display:flex;gap:14px;flex-wrap:wrap}
+/* two clear access paths — web app (everyone) vs Play (beta testers) */
+.access{align-items:flex-start;gap:16px 18px}
+.access .path{display:flex;flex-direction:column;gap:9px;flex:0 1 auto;max-width:280px}
+.access .path .btn{width:100%}
+.access .path .who{color:var(--muted);font-size:12.5px;line-height:1.45;padding:0 2px}
+.access .path .who b{color:var(--ink);font-weight:600}
+.access .see{flex:0 0 100%;font-size:14px}
+.access .see a{color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:1px}
+.access .see a:hover{color:var(--ink)}
+@media(max-width:520px){.access .path{max-width:none;width:100%}}
 .trust{display:flex;gap:14px 24px;flex-wrap:wrap;margin-top:32px;color:var(--muted);font-size:13px}
 .trust span{display:inline-flex;align-items:center;gap:8px}
 .trust b{color:var(--ink);font-weight:600}
