@@ -12,6 +12,13 @@
     // into the app. Everything else goes home.
     (function () {
       var p = location.pathname || '';
+      // Retired PWA: /app (and any subpath) now lives at app.seamanapp.com.
+      // Forward the part after /app plus the query + hash so deep links survive.
+      if (/^\/app(\/|$)/i.test(p)) {
+        var rest = p.replace(/^\/app\/?/i, '');
+        location.replace('https://app.seamanapp.com/' + rest + location.search + location.hash);
+        return;
+      }
       var m = p.match(/^\/v\/([^\/?#]+)/i);
       if (m) {
         location.replace('/vouch/?v=' + encodeURIComponent(m[1]) + location.hash);
