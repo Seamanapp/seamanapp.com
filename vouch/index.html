@@ -5,6 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vouch a shipmate · Seaman App</title>
   <meta name="robots" content="noindex">
+  <!-- Open Graph so pasting this link into Messenger/WhatsApp/Slack/etc.
+       unfurls a preview card instead of a bare URL. This is a BRANDED
+       GENERIC card (not per-medal) — see the note near the end of this file
+       for why, and the recommended per-medal follow-up. -->
+  <meta property="og:title" content="A shipmate wants you to vouch for their medal">
+  <meta property="og:description" content="Confirm the ship &amp; year you sailed together — it turns their claimed medal gold with a verified blue check. Takes 10 seconds, no install needed.">
+  <meta property="og:image" content="https://seamanapp.com/assets/shots/medals.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://seamanapp.com/vouch/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="A shipmate wants you to vouch for their medal">
+  <meta name="twitter:description" content="Confirm the ship &amp; year you sailed together — it turns their claimed medal gold with a verified check.">
+  <meta name="twitter:image" content="https://seamanapp.com/assets/shots/medals.png">
   <style>
     :root{
       --navy:#04101f; --navy2:#0b2a4a; --gold:#f6b942; --gold2:#ffd071;
@@ -33,6 +46,9 @@
       font-size:15px;font-weight:700;text-decoration:none;margin-bottom:12px}
     .btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#241800}
     .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+    .tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.3px;
+      background:rgba(36,24,0,.16);border-radius:8px;padding:2px 6px;margin-left:6px;
+      vertical-align:1px;text-transform:uppercase}
     .small{font-size:12px;color:var(--muted);margin-top:6px}
     .code{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--cyan);
       word-break:break-all;background:rgba(4,16,31,.6);border:1px solid var(--line);
@@ -43,11 +59,12 @@
   <div class="card">
     <div class="anchor">⚓</div>
     <h1>Vouch for a <span class="grad">shipmate</span></h1>
-    <p id="msg">A crewmate asked you to confirm a medal they earned at sea. Open Seaman App to vouch — just add the ship &amp; year you sailed together.</p>
+    <p id="msg">A crewmate asked you to confirm a medal they earned at sea. Vouch right in your browser — no install needed — or open the app if you already have it. Just add the ship &amp; year you sailed together.</p>
 
-    <a class="btn btn-gold" id="openApp" href="#">Open in Seaman App</a>
+    <a class="btn btn-gold" id="openWeb" href="#">Vouch in your browser <span class="tag">no install</span></a>
+    <a class="btn btn-ghost" id="openApp" href="#">Open in Seaman App</a>
     <a class="btn btn-ghost" id="getApp" href="https://play.google.com/store/apps/details?id=com.seamanapp.seafarer_app">Get Seaman App</a>
-    <div class="small">Already have the app? Tapping “Open in Seaman App” takes you straight to the vouch screen.</div>
+    <div class="small">Already have the app? “Open in Seaman App” takes you straight to the vouch screen.</div>
     <div class="code" id="codeBox"></div>
   </div>
 
@@ -60,12 +77,18 @@
       var params = new URLSearchParams(location.search);
       var code = params.get('code') || '';
       var short = params.get('v') || '';
+      var webBtn = document.getElementById('openWeb');
       var openBtn = document.getElementById('openApp');
       var box = document.getElementById('codeBox');
 
       function setup(finalCode) {
-        var deep = 'seamanapp://open/vouch' +
-          (finalCode ? ('?code=' + encodeURIComponent(finalCode)) : '');
+        var qs = finalCode ? ('?code=' + encodeURIComponent(finalCode)) : '';
+        var deep = 'seamanapp://open/vouch' + qs;
+        // The actual web app (a real browser tab, no install) — this is the
+        // primary path; it's the same PWA/SPA the share card promises
+        // ("Vouch in your browser — no app needed").
+        var webUrl = 'https://app.seamanapp.com/#/vouch' + qs;
+        webBtn.setAttribute('href', webUrl);
         openBtn.setAttribute('href', deep);
         if (finalCode) {
           box.style.display = 'block';
@@ -73,7 +96,9 @@
         }
         function tryOpen() { window.open(deep, '_self'); }
         openBtn.addEventListener('click', function (e) { e.preventDefault(); tryOpen(); });
-        // Auto-attempt once on mobile so it bounces straight into the app.
+        // Auto-attempt the native app once on mobile (silently no-ops if the
+        // app isn't installed); the gold "Vouch in your browser" button above
+        // stays the always-working fallback either way.
         if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
           setTimeout(tryOpen, 350);
         }
@@ -95,5 +120,48 @@
       }
     })();
   </script>
+
+  <!--
+    OG PREVIEW: branded-generic vs. per-medal — the tradeoff, for the next dev.
+
+    This page's og:image/title/description are STATIC (one image, one line of
+    copy for every vouch link), not tailored to the specific medal being
+    vouched for. That's a deliberate scope cut, not an oversight:
+
+      - This site is served as plain static files from GitHub Pages. Pages
+        has no server-side code, so it cannot read the `?v=`/`?code=` query
+        string and serve DIFFERENT <meta> tags per link — every request for
+        this file gets the exact same bytes, query string or not. (The JS in
+        this file runs in the *browser*, not in front of the crawler — link-
+        unfurling bots fetch the HTML and read <head>, they don't execute
+        the <script> block.)
+      - So a real per-medal preview (e.g. "🏅 GOLD — Suez Canal Transit" with
+        that medal's coin art as og:image) needs a genuinely DYNAMIC endpoint
+        that runs code per-request.
+
+    Recommended follow-up (not built here — needs a deploy decision + medal
+    art, both owner-gated):
+      1. A small Supabase Edge Function, e.g. `vouch-og`, that:
+           - takes the short code (or full code) as a query param,
+           - resolves it via the same `resolve_vouch_link` RPC this page uses,
+           - looks up the achievement id + tier from the vouch row,
+           - returns an HTML document with per-medal og:title/description and
+             an og:image pointing at that medal's coin art.
+      2. Medal art needs to exist as web-reachable image FILES (today the
+         medal coins are drawn live in Flutter via MedalIcon — vector paint
+         code, not exported PNGs). Cheapest path: pre-render each medal
+         tier/id combo to a PNG once (a small offline script using the same
+         MedalIcon painter, or a simple design pass) and host them under
+         assets/, then the edge function just point at
+         `assets/medals/<tier>_<id>.png` per row.
+      3. Point the short-link creation (create_vouch_link / this page's own
+         URL) at that function's URL instead of this static page, OR have
+         this static page 302 to it once resolved (adds a hop, but keeps the
+         short link itself unchanged for anyone who already has one shared).
+
+    Until that's built, this generic branded card is a large improvement over
+    a bare URL / an un-openable downloaded image, and needs zero deploy beyond
+    the normal GitHub Pages publish of this repo.
+  -->
 </body>
 </html>

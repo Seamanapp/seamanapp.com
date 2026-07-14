@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex">
   <title>Seaman App</title>
+  <!-- GitHub Pages returns THIS file (with an HTTP 404 status) for
+       seamanapp.com/v/<short> before the redirect script below ever runs —
+       and some link-unfurl crawlers read whatever HTML a URL returns
+       regardless of status code, without executing JS. So the vouch OG tags
+       are duplicated here (same as vouch/index.html) as a defensive belt for
+       whichever of the two pages a crawler actually parses. This is a
+       branded-generic preview, not per-medal — see the comment at the foot
+       of vouch/index.html for the per-medal follow-up. -->
+  <meta property="og:title" content="A shipmate wants you to vouch for their medal">
+  <meta property="og:description" content="Confirm the ship &amp; year you sailed together — it turns their claimed medal gold with a verified blue check. Takes 10 seconds, no install needed.">
+  <meta property="og:image" content="https://seamanapp.com/assets/shots/medals.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="A shipmate wants you to vouch for their medal">
+  <meta name="twitter:description" content="Confirm the ship &amp; year you sailed together — it turns their claimed medal gold with a verified check.">
+  <meta name="twitter:image" content="https://seamanapp.com/assets/shots/medals.png">
   <script>
     // GitHub Pages serves this file for any path it doesn't have a file for.
     // Short vouch links (seamanapp.com/v/<short>) have no static file, so route
