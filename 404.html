@@ -37,7 +37,13 @@
       }
       var m = p.match(/^\/v\/([^\/?#]+)/i);
       if (m) {
-        location.replace('/vouch/?v=' + encodeURIComponent(m[1]) + location.hash);
+        // Forward the referral code (?ref=<code>) if present so the affiliate
+        // who shared the short link still gets credit through the /vouch
+        // landing page → app deep link.
+        var ref = new URLSearchParams(location.search).get('ref');
+        var q = '/vouch/?v=' + encodeURIComponent(m[1]);
+        if (ref) { q += '&ref=' + encodeURIComponent(ref); }
+        location.replace(q + location.hash);
       } else {
         location.replace('/');
       }

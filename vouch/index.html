@@ -77,12 +77,18 @@
       var params = new URLSearchParams(location.search);
       var code = params.get('code') || '';
       var short = params.get('v') || '';
+      // Referral/affiliate code — carried through so the sharer gets credit for
+      // a signup that comes in via this vouch link (the app captures ?ref).
+      var ref = params.get('ref') || '';
       var webBtn = document.getElementById('openWeb');
       var openBtn = document.getElementById('openApp');
       var box = document.getElementById('codeBox');
 
       function setup(finalCode) {
-        var qs = finalCode ? ('?code=' + encodeURIComponent(finalCode)) : '';
+        var parts = [];
+        if (finalCode) { parts.push('code=' + encodeURIComponent(finalCode)); }
+        if (ref) { parts.push('ref=' + encodeURIComponent(ref)); }
+        var qs = parts.length ? ('?' + parts.join('&')) : '';
         var deep = 'seamanapp://open/vouch' + qs;
         // The actual web app (a real browser tab, no install) — this is the
         // primary path; it's the same PWA/SPA the share card promises
