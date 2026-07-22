@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>False Alert Cancellation Card — GMDSS | Seaman App</title>
+  <meta name="description" content="How to cancel a false GMDSS distress alert — the voice cancellation script and step-by-step by equipment (VHF/MF/HF DSC, Inmarsat, 406 MHz EPIRB). A free reference card from Seaman App." />
+  <meta name="theme-color" content="#04101f" />
+  <meta property="og:title" content="GMDSS False Alert Cancellation Card" />
+  <meta property="og:description" content="Sent a distress alert by accident? Cancel it the right way — the script and the steps by equipment. Free card from Seaman App." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://seamanapp.com/gmdss-false-alert" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy: #04101f; --panel: #0a1c31; --panel2: #0e2540;
+      --line: #17324f; --ink: #eaf2fb; --muted: #90a6bf; --gold: #f6c453; --cyan: #4fc3f7;
+      --danger: #ff6b6b; --teal: #34d3b0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--navy); color: var(--ink);
+      font-family: Inter, system-ui, sans-serif; line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--cyan); }
+    .wrap { max-width: 780px; margin: 0 auto; padding: 0 20px; }
+    header {
+      border-bottom: 1px solid var(--line); background: rgba(4,16,31,.9);
+      position: sticky; top: 0; backdrop-filter: blur(8px); z-index: 5;
+    }
+    header .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: var(--ink); text-decoration: none; font-size: 17px; }
+    .logo { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg, #123a63, #0a1c31); display: grid; place-items: center; border: 1px solid #2a5588; }
+    .btn {
+      display: inline-block; padding: 11px 18px; border-radius: 11px; font-weight: 700;
+      text-decoration: none; font-size: 14px; border: 1px solid transparent;
+    }
+    .btn-gold { background: linear-gradient(135deg, #f6c453, #e0a92e); color: #241800; }
+    .btn-ghost { border-color: var(--line); color: var(--ink); background: var(--panel); }
+    main { padding: 34px 0 60px; }
+    .eyebrow { color: var(--gold); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 12.5px; }
+    h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(30px, 6vw, 44px); line-height: 1.1; margin: 8px 0 6px; }
+    h1 .grad { background: linear-gradient(100deg, var(--gold), var(--cyan)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .sub { color: var(--muted); font-size: 15px; margin: 0 0 22px; }
+    .lead { font-size: 16.5px; }
+    .lead b { color: #fff; }
+    .danger-strip {
+      border-left: 4px solid var(--danger); background: rgba(255,107,107,.08);
+      padding: 12px 16px; border-radius: 0 12px 12px 0; margin: 20px 0; font-size: 15.5px;
+    }
+    .script {
+      background: var(--panel2); border: 1px solid #274a70; border-radius: 16px;
+      padding: 20px 22px; margin: 22px 0; font-family: 'JetBrains Mono', monospace;
+      font-size: 15px; line-height: 1.9; box-shadow: 0 6px 26px rgba(0,0,0,.3);
+    }
+    .script .big { color: var(--gold); font-weight: 700; letter-spacing: .04em; }
+    .script .fill { color: var(--cyan); font-style: normal; }
+    .script .label { color: var(--muted); }
+    h2 { font-family: 'Space Grotesk', sans-serif; font-size: 20px; margin: 34px 0 4px; }
+    .eq { display: grid; gap: 12px; margin: 16px 0; }
+    .eq .row {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .eq .row b { color: var(--gold); font-size: 15px; }
+    .eq .row.epirb b { color: var(--danger); }
+    .eq .row p { margin: 5px 0 0; color: var(--ink); font-size: 14.5px; }
+    ul.then { padding-left: 18px; }
+    ul.then li { margin: 7px 0; }
+    .note {
+      margin: 26px 0; padding: 15px 18px; border: 1px solid var(--line);
+      border-radius: 14px; background: var(--panel); color: var(--muted); font-size: 13.5px;
+    }
+    .note b { color: var(--ink); }
+    .cta {
+      margin: 34px 0 0; padding: 22px; border-radius: 18px;
+      background: linear-gradient(135deg, var(--panel2), var(--panel));
+      border: 1px solid #274a70; text-align: center;
+    }
+    .cta h3 { font-family: 'Space Grotesk', sans-serif; margin: 0 0 4px; font-size: 20px; }
+    .cta p { color: var(--muted); margin: 0 0 16px; font-size: 14.5px; }
+    .ctas { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .toolbar { display: flex; gap: 10px; margin: 4px 0 8px; flex-wrap: wrap; }
+    footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; padding: 22px 0; }
+    footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    footer a { color: var(--muted); margin-left: 14px; text-decoration: none; }
+    @media print {
+      header, footer, .cta, .toolbar { display: none !important; }
+      body { background: #fff; color: #111; }
+      .script { background: #f4f7fb; color: #111; border-color: #ccc; box-shadow: none; }
+      .script .big { color: #b8860b; } .script .fill { color: #0b6; }
+      .eq .row, .note { background: #fff; border-color: #ccc; }
+      .eq .row b { color: #96690a; } .eq .row.epirb b { color: #b00; }
+      .danger-strip { background: #fff; }
+      a { color: #111; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <header><div class="wrap">
+    <a class="brand" href="/">
+      <span class="logo"><svg width="20" height="20" viewBox="0 0 120 120" aria-hidden="true"><g fill="#f6c453"><ellipse cx="60" cy="23" rx="8.5" ry="8" fill="none" stroke="#f6c453" stroke-width="4"/><rect x="56" y="28" width="8" height="50" rx="3"/><rect x="34" y="41" width="52" height="7" rx="3.5"/><circle cx="60" cy="84" r="6"/><path d="M57 87 C47 86 33 84 25 73" fill="none" stroke="#f6c453" stroke-width="6.5" stroke-linecap="round"/><path d="M63 87 C73 86 87 84 95 73" fill="none" stroke="#f6c453" stroke-width="6.5" stroke-linecap="round"/></g></svg></span>
+      Seaman App
+    </a>
+    <a class="btn btn-ghost" href="https://play.google.com/store/apps/details?id=com.seamanapp.seafarer_app">Get the app</a>
+  </div></header>
+
+  <main><div class="wrap">
+    <div class="eyebrow">GMDSS · Distress communications</div>
+    <h1>False Alert <span class="grad">Cancellation Card</span></h1>
+    <p class="sub">The card from the GMDSS video — keep it on your phone, print it for the radio console.</p>
+
+    <p class="lead danger-strip">Sent a distress alert by accident? <b>Do NOT just switch the set off</b> — rescue services would keep searching for a ship in danger. <b>Cancel it at once</b>, by voice, on the right frequency. If the alert actually went out, <b>also tell the RCC / MRCC</b> that it was false.</p>
+
+    <div class="toolbar">
+      <a class="btn btn-gold" href="javascript:window.print()">🖨 Print / Save as PDF</a>
+    </div>
+
+    <h2>Say this — slowly, and again if needed</h2>
+    <div class="script">
+      <div class="big">ALL STATIONS, ALL STATIONS, ALL STATIONS</div>
+      <span class="label">THIS IS —</span> <span class="fill">[ship's name], [call sign], MMSI (9 digits)</span><br />
+      <span class="label">POSITION —</span> <span class="fill">[latitude and longitude]</span><br />
+      <span class="big">CANCEL MY DISTRESS ALERT OF</span> <span class="fill">[time UTC], [date]</span><br />
+      <span class="label">MASTER —</span> <span class="fill">[ship's name], [call sign], MMSI]</span> — <span class="fill">[time UTC]</span>
+    </div>
+
+    <h2>Cancel on the frequency that matches the alert you sent</h2>
+    <div class="eq">
+      <div class="row"><b>VHF DSC — Channel 70</b><p>Reset the DSC controller, then broadcast the cancellation by voice on <b>VHF Channel 16</b>.</p></div>
+      <div class="row"><b>MF DSC — 2187.5 kHz</b><p>Reset the controller, then cancel by voice on <b>2182 kHz</b>.</p></div>
+      <div class="row"><b>HF DSC</b><p>Reset the controller, then cancel by voice on the <b>radiotelephone distress frequency of the SAME HF band</b> you alerted on — and say which band (e.g. 8 MHz → 8291 kHz).</p></div>
+      <div class="row"><b>Inmarsat-C / Fleet (satellite)</b><p>There is no on-air cancel — <b>contact the LES / RCC you alerted, by any means</b>, and tell them the alert was false and no assistance is required.</p></div>
+      <div class="row epirb"><b>406 MHz EPIRB</b><p><b>Switch the EPIRB OFF</b>, then <b>contact the nearest RCC / MRCC</b> by any working means and give the beacon's <b>hex ID</b>, the ship's name and position, and <i>"no assistance required."</i></p></div>
+    </div>
+
+    <h2>Then, every time</h2>
+    <ul class="then">
+      <li><b>Report</b> the false alert as your flag State and company SMS require, and <b>log</b> it.</li>
+      <li><b>Guard the distress button</b> and brief the crew so it can't happen again.</li>
+    </ul>
+
+    <p class="note"><b>GUIDANCE only — a memory aid, not the rulebook.</b> It does not replace your <b>GMDSS operator's certificate (GOC / ROC)</b>, the equipment's own manuals, or the <b>Admiralty List of Radio Signals (ALRS)</b>. Follow <b>IMO MSC.1/Circ.1210</b> and your company SMS: the certificated radio operator transmits, the Master decides.</p>
+
+    <div class="cta">
+      <h3>Get every field guide in your pocket</h3>
+      <p>This card lives inside the Seaman App's GMDSS field guide — with rest-hours, certificates, nav tools and more, all working offline at sea.</p>
+      <div class="ctas">
+        <a class="btn btn-gold" href="https://play.google.com/store/apps/details?id=com.seamanapp.seafarer_app">Download on Google Play</a>
+        <a class="btn btn-ghost" href="https://app.seamanapp.com">Open the web app</a>
+      </div>
+    </div>
+  </div></main>
+
+  <footer><div class="wrap">
+    <div>© 2026 Seaman App · seamanapp.com</div>
+    <div><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="mailto:admin@seamanapp.com">Contact</a></div>
+  </div></footer>
+</body>
+</html>
