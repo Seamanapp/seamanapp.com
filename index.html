@@ -1,490 +1,565 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Seaman App — your companion for the day, the career, and the next contract</title>
-  <meta name="description" content="One app for life at sea: plan your watch-day, stay compliant on rest hours, keep your certificates and voyages, get a verified blue check, get discovered by manning agencies on your terms, and learn together. Offline-first, private by default." />
-  <meta property="og:title" content="Seaman App — your companion for the day, the career, and the next contract" />
-  <meta property="og:description" content="Plan the day, track the career, get verified, get hired, sail with the crew. Offline-first and private by default." />
-  <meta property="og:url" content="https://seamanapp.com" />
-  <meta property="og:type" content="website" />
-  <meta name="theme-color" content="#04101f" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/style.css" />
-  <link rel="icon" href="assets/shots/app-icon.png" />
-  <link rel="apple-touch-icon" href="assets/shots/app-icon.png" />
-  <meta property="og:image" content="https://seamanapp.com/assets/shots/achievements.png" />
-  <script>document.documentElement.classList.add('js')</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Seaman App — the operating system for a seafarer's career</title>
+<meta name="description" content="One professional app for life at sea: plan the watch-day, stay compliant on rest hours, keep every certificate and voyage on record, earn a verified identity, and get discovered by manning agencies on your terms. Offline-first. Private by default." />
+<meta property="og:title" content="Seaman App — the operating system for a seafarer's career" />
+<meta property="og:description" content="Plan the day. Protect the certificates. Prove the career. Get verified and get hired — offline-first and private by default." />
+<meta property="og:url" content="https://seamanapp.com" />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="https://seamanapp.com/assets/shots/achievements.png" />
+<meta name="theme-color" content="#070f1a" />
+<link rel="icon" href="assets/shots/app-icon.png" />
+<link rel="apple-touch-icon" href="assets/shots/app-icon.png" />
+<link rel="canonical" href="https://seamanapp.com/" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#070f1a; --bg2:#0a1930; --panel:rgba(18,38,62,.55); --panel-solid:#0e2338;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.15);
+    --ink:#eef4fc; --sub:#b3c4dc; --muted:#7f93ad;
+    --gold:#d7b45a; --gold2:#f4d78c; --teal:#42c1aa; --blue:#63aef0; --violet:#9b8cff;
+    --maxw:1180px; --r:18px;
+    --shadow:0 30px 70px -30px rgba(0,0,0,.75);
+    --glow:0 0 0 1px rgba(255,255,255,.05), 0 20px 50px -24px rgba(99,174,240,.35);
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --disp:'Space Grotesk',var(--sans);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;
+    line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  img{max-width:100%;display:block}
+  .wrap{width:100%;max-width:var(--maxw);margin:0 auto;padding:0 24px;position:relative}
+  h1,h2,h3{font-family:var(--disp);font-weight:700;letter-spacing:-.022em;line-height:1.07;margin:0}
+  .eyebrow{font-family:var(--disp);font-weight:600;font-size:12.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--gold);display:inline-block}
+  .muted{color:var(--muted)}
+
+  /* animated gradient mesh background */
+  .mesh{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none}
+  .mesh b{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;will-change:transform}
+  .mesh .b1{width:52vw;height:52vw;left:-12vw;top:-14vw;background:radial-gradient(circle,#1c5fa8,transparent 68%);animation:drift1 24s ease-in-out infinite}
+  .mesh .b2{width:46vw;height:46vw;right:-10vw;top:6vw;background:radial-gradient(circle,#b6852e,transparent 66%);opacity:.34;animation:drift2 30s ease-in-out infinite}
+  .mesh .b3{width:44vw;height:44vw;left:22vw;bottom:-18vw;background:radial-gradient(circle,#3f7d8f,transparent 68%);opacity:.32;animation:drift3 28s ease-in-out infinite}
+  .mesh::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,var(--bg) 82%)}
+  @keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vw,4vw) scale(1.12)}}
+  @keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-5vw,5vw) scale(1.15)}}
+  @keyframes drift3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(4vw,-4vw) scale(1.1)}}
+  .grid-fade{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+    background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+    background-size:64px 64px;mask:radial-gradient(80% 60% at 50% 0%,#000,transparent 75%)}
+
+  /* scroll progress */
+  #bar{position:fixed;top:0;left:0;height:2.5px;width:0;z-index:100;
+    background:linear-gradient(90deg,var(--gold2),var(--gold));box-shadow:0 0 12px rgba(215,180,90,.6)}
+
+  /* buttons */
+  .btn{position:relative;display:inline-flex;align-items:center;gap:9px;font-family:var(--disp);
+    font-weight:600;font-size:15px;padding:13px 22px;border-radius:12px;border:1px solid transparent;
+    cursor:pointer;transition:transform .18s cubic-bezier(.2,.7,.2,1),box-shadow .25s,background .25s,border-color .25s;
+    white-space:nowrap;overflow:hidden}
+  .btn .i{width:18px;height:18px;flex:none}
+  .btn.gold{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#241800;
+    box-shadow:0 12px 30px -12px rgba(215,180,90,.7)}
+  .btn.gold::after{content:"";position:absolute;top:0;left:-120%;width:60%;height:100%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);
+    transition:left .6s ease}
+  .btn.gold:hover{transform:translateY(-2px);box-shadow:0 18px 40px -12px rgba(215,180,90,.8)}
+  .btn.gold:hover::after{left:130%}
+  .btn.ghost{background:rgba(255,255,255,.05);border-color:var(--line2);color:var(--ink);backdrop-filter:blur(8px)}
+  .btn.ghost:hover{background:rgba(255,255,255,.1);transform:translateY(-2px)}
+  .btn.lg{padding:15px 27px;font-size:16px}
+
+  /* header */
+  header{position:sticky;top:0;z-index:60;border-bottom:1px solid transparent;transition:.35s}
+  header.scrolled{background:rgba(7,15,26,.72);backdrop-filter:blur(16px) saturate(1.4);border-bottom-color:var(--line)}
+  .nav{display:flex;align-items:center;height:72px;gap:14px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--disp);font-weight:700;font-size:18px}
+  .logo{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:none;
+    background:linear-gradient(180deg,var(--gold2),var(--gold))}
+  .nav .spacer{flex:1}
+  .nav .links{display:flex;gap:28px;align-items:center}
+  .nav .links a{font-size:15px;color:var(--sub);font-weight:450;transition:color .2s}
+  .nav .links a:hover{color:var(--ink)}
+  .menu-btn{display:none;background:none;border:1px solid var(--line2);color:var(--ink);width:42px;height:40px;
+    border-radius:10px;font-size:20px;cursor:pointer}
+
+  /* hero */
+  .hero{padding:88px 0 44px}
+  .hero-grid{display:grid;grid-template-columns:1.06fr .94fr;gap:56px;align-items:center}
+  .badge{display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,.05);
+    border:1px solid var(--line);border-radius:999px;padding:7px 15px;font-size:13px;color:var(--sub);
+    font-weight:500;margin-bottom:26px;backdrop-filter:blur(8px)}
+  .badge .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(66,193,170,.5);animation:pulse 2.4s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(66,193,170,.5)}70%{box-shadow:0 0 0 9px rgba(66,193,170,0)}100%{box-shadow:0 0 0 0 rgba(66,193,170,0)}}
+  h1{font-size:clamp(40px,5.6vw,68px)}
+  .grad{position:relative;background:linear-gradient(100deg,var(--gold2) 10%,var(--gold) 40%,var(--gold2) 90%);
+    background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:sheen 6s linear infinite}
+  @keyframes sheen{to{background-position:200% center}}
+  .hero p.lead{font-size:19px;color:var(--sub);max-width:566px;margin:24px 0 0}
+  .hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:34px}
+  .trust{display:flex;flex-wrap:wrap;gap:22px 30px;margin-top:34px;padding-top:26px;border-top:1px solid var(--line)}
+  .trust span{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--muted)}
+  .trust b{color:var(--ink);font-weight:600}
+  .trust .i{width:19px;height:19px;color:var(--gold);flex:none}
+
+  /* hero device */
+  .stage{position:relative;justify-self:center}
+  .device{position:relative;width:min(300px,80vw);aspect-ratio:1080/2160;border-radius:40px;padding:11px;
+    background:linear-gradient(160deg,#2a3d55,#0a1826);border:1px solid var(--line2);box-shadow:var(--shadow);
+    animation:floaty 7s ease-in-out infinite}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+  .device .screen{width:100%;height:100%;border-radius:29px;overflow:hidden;background:#04101f}
+  .device .screen img{width:100%;height:100%;object-fit:cover;object-position:top}
+  .float{position:absolute;background:rgba(10,25,44,.9);border:1px solid var(--line2);border-radius:13px;
+    padding:11px 14px;display:flex;align-items:center;gap:11px;box-shadow:var(--shadow);backdrop-filter:blur(10px);
+    font-size:13px;animation:floaty 7s ease-in-out infinite}
+  .float.f1{top:7%;left:-42px;animation-delay:.6s}
+  .float.f2{bottom:13%;right:-46px;animation-delay:1.2s}
+  .float .ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:none}
+  .float b{display:block;font-family:var(--disp);font-size:13.5px;font-weight:600}
+  .float small{color:var(--muted);font-size:11.5px}
+  @media(max-width:560px){.float{display:none}}
+
+  /* marquee */
+  .marquee{border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    padding:16px 0;margin-top:36px;overflow:hidden;mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+  .marquee .track{display:flex;gap:44px;width:max-content;animation:scroll 34s linear infinite}
+  .marquee span{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--muted);
+    display:flex;align-items:center;gap:44px;white-space:nowrap}
+  .marquee span::after{content:"◆";color:var(--gold);font-size:9px}
+  @keyframes scroll{to{transform:translateX(-50%)}}
+
+  /* sections */
+  section.band{padding:92px 0}
+  .sec-head{max-width:700px;margin:0 auto 58px;text-align:center}
+  .sec-head h2{font-size:clamp(29px,3.8vw,44px);margin:14px 0 0}
+  .sec-head p{color:var(--sub);font-size:18px;margin:16px 0 0}
+
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:26px;
+    backdrop-filter:blur(10px)}
+  .stat .n{font-family:var(--disp);font-weight:700;font-size:clamp(24px,3vw,32px);color:var(--gold2)}
+  .stat .l{color:var(--muted);font-size:14px;margin-top:5px}
+
+  /* feature rows */
+  .feat{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin:0 auto 100px;max-width:1050px}
+  .feat:last-child{margin-bottom:0}
+  .feat.flip .txt{order:2}
+  .feat .tag{font-family:var(--disp);font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--teal)}
+  .feat h3{font-size:clamp(25px,2.9vw,33px);margin:12px 0 0}
+  .feat p{color:var(--sub);margin:16px 0 0;font-size:16.5px}
+  .chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}
+  .chips span{font-size:13px;color:var(--sub);background:rgba(255,255,255,.04);border:1px solid var(--line);
+    border-radius:999px;padding:6px 13px}
+  .shotwrap{position:relative}
+  .shotwrap::before{content:"";position:absolute;inset:-10%;z-index:-1;border-radius:50%;filter:blur(70px);opacity:.5;
+    background:radial-gradient(circle,rgba(99,174,240,.4),transparent 65%)}
+  .shot{border-radius:20px;overflow:hidden;border:1px solid var(--line2);background:var(--panel-solid);box-shadow:var(--shadow)}
+  .shot.phone{width:min(282px,74%);margin:0 auto;aspect-ratio:1080/2160}
+  .shot.phone img{width:100%;height:100%;object-fit:cover;object-position:top}
+
+  /* glass cards + spotlight */
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:28px;
+    backdrop-filter:blur(10px);transition:transform .2s,border-color .25s;overflow:hidden}
+  .card::before{content:"";position:absolute;inset:0;opacity:0;transition:opacity .3s;pointer-events:none;
+    background:radial-gradient(340px circle at var(--mx,50%) var(--my,0),rgba(99,174,240,.14),transparent 60%)}
+  .card:hover{transform:translateY(-5px);border-color:var(--line2)}
+  .card:hover::before{opacity:1}
+  .card .ic{width:47px;height:47px;border-radius:13px;display:grid;place-items:center;margin-bottom:18px;
+    background:rgba(215,180,90,.13);color:var(--gold2)}
+  .card .ic svg{width:24px;height:24px}
+  .card h3{font-size:19px}
+  .card p{color:var(--sub);font-size:15px;margin:10px 0 0}
+
+  /* reviews */
+  .reviews{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .rev{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:26px;backdrop-filter:blur(10px)}
+  .rev .stars{color:var(--gold);letter-spacing:2px;font-size:15px}
+  .rev p{font-size:16px;margin:14px 0 20px}
+  .rev .who{display:flex;align-items:center;gap:12px}
+  .rev .av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-family:var(--disp);
+    font-weight:700;font-size:15px;color:#241800;background:linear-gradient(180deg,var(--gold2),var(--gold));flex:none}
+  .rev .who b{display:block;font-size:14.5px}
+  .rev .who small{color:var(--muted);font-size:12.5px}
+
+  /* learn */
+  .learn{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .lc{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:34px;display:flex;
+    flex-direction:column;backdrop-filter:blur(10px)}
+  .lc.gold{background:linear-gradient(165deg,rgba(215,180,90,.12),var(--panel));border-color:rgba(215,180,90,.3)}
+  .lc h3{font-size:24px}
+  .lc p{color:var(--sub);margin:14px 0 0;flex:1}
+  .lc .price{font-family:var(--disp);font-weight:700;font-size:27px;margin:18px 0 4px}
+  .lc .price s{color:var(--muted);font-weight:500;font-size:18px;margin-left:8px}
+
+  /* principle */
+  .principle{text-align:center;padding:104px 0}
+  .principle blockquote{max-width:860px;margin:0 auto;font-family:var(--disp);font-weight:600;
+    font-size:clamp(25px,3.6vw,38px);line-height:1.3;letter-spacing:-.01em}
+  .principle blockquote b{color:var(--gold2)}
+  .principle .line{width:64px;height:3px;border-radius:2px;margin:34px auto 0;background:linear-gradient(90deg,var(--gold2),var(--gold))}
+
+  /* CTA */
+  .cta-band{padding:20px 0 100px}
+  .cta-box{position:relative;background:linear-gradient(165deg,rgba(20,44,72,.85),rgba(12,28,46,.8));
+    border:1px solid var(--line2);border-radius:28px;padding:60px 40px;text-align:center;max-width:780px;margin:0 auto;
+    box-shadow:var(--shadow);overflow:hidden;backdrop-filter:blur(12px)}
+  .cta-box::before{content:"";position:absolute;width:60%;height:120%;left:-10%;top:-40%;filter:blur(70px);opacity:.4;
+    background:radial-gradient(circle,rgba(215,180,90,.5),transparent 60%)}
+  .cta-box h2{font-size:clamp(29px,3.8vw,42px)}
+  .cta-box p{color:var(--sub);font-size:17px;margin:16px auto 0;max-width:520px}
+  .waitlist{display:flex;gap:12px;max-width:480px;margin:30px auto 0;position:relative}
+  .waitlist input[type=email]{flex:1;background:rgba(0,0,0,.32);border:1px solid var(--line2);color:var(--ink);
+    border-radius:12px;padding:14px 16px;font-size:16px;font-family:var(--sans)}
+  .waitlist input[type=email]:focus{outline:none;border-color:var(--gold)}
+  .waitlist .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+  .wl-msg{min-height:22px;margin:16px 0 0;font-size:14.5px;opacity:0;transition:opacity .3s}
+  .wl-msg.show{opacity:1}.wl-msg.ok{color:var(--teal)}.wl-msg.err{color:#ff9b8a}
+  .scarcity{color:var(--muted);font-size:13.5px;margin-top:14px}
+  .cta-box.done .waitlist{display:none}
+  form.busy{opacity:.6;pointer-events:none}
+
+  footer{border-top:1px solid var(--line);padding:42px 0;color:var(--muted);font-size:14px}
+  footer .fwrap{display:flex;flex-wrap:wrap;gap:16px 26px;align-items:center;justify-content:space-between}
+  footer nav{display:flex;flex-wrap:wrap;gap:20px}
+  footer nav a{color:var(--sub)}footer nav a:hover{color:var(--ink)}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  @media(max-width:900px){
+    .hero-grid,.feat,.learn{grid-template-columns:1fr;gap:42px}
+    .feat.flip .txt{order:0}
+    .stats,.grid3,.reviews{grid-template-columns:1fr 1fr}
+    .nav .links{display:none;position:absolute;top:72px;left:0;right:0;flex-direction:column;gap:0;
+      background:rgba(7,15,26,.98);border-bottom:1px solid var(--line);padding:8px 24px 18px;backdrop-filter:blur(14px)}
+    .nav .links.open{display:flex}
+    .nav .links a{padding:13px 0;border-bottom:1px solid var(--line);font-size:16px}
+    .nav .links .btn{margin-top:12px;justify-content:center}
+    .menu-btn{display:block}.nav .spacer{display:none}.nav{justify-content:space-between}
+  }
+  @media(max-width:560px){
+    body{font-size:16px}.stats,.grid3,.reviews{grid-template-columns:1fr}section.band{padding:66px 0}
+    .cta-box{padding:42px 22px}.waitlist{flex-direction:column}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *{animation:none!important}.reveal{opacity:1;transform:none;transition:none}
+  }
+</style>
 </head>
 <body>
-  <div id="bar"></div>
-  <div class="aurora"><span class="a"></span><span class="b"></span><span class="c"></span></div>
-  <canvas id="stars"></canvas>
-  <div class="grain"></div>
+<div id="bar"></div>
+<div class="mesh"><b class="b1"></b><b class="b2"></b><b class="b3"></b></div>
+<div class="grid-fade"></div>
 
-  <header id="top"><div class="wrap nav">
-    <a class="brand" href="/"><span class="logo"><svg width="22" height="22" viewBox="0 0 120 120" aria-hidden="true"><g fill="#241800" stroke="#241800"><ellipse cx="60" cy="23" rx="8.5" ry="8" fill="none" stroke-width="4"/><path d="M50 15 L51 10.5 L53.25 14 L55.5 8 L57.75 14 L60 5.8 L62.25 14 L64.5 8 L66.75 14 L69 10.5 L70 15 Q60 17.5 50 15 Z" stroke="none"/><rect x="56" y="28" width="8" height="50" rx="3" stroke="none"/><rect x="34" y="41" width="52" height="7" rx="3.5" stroke="none"/><circle cx="60" cy="84" r="6" stroke="none"/><path d="M57 87 C47 86 33 84 25 73" fill="none" stroke-width="6.5" stroke-linecap="round"/><path d="M63 87 C73 86 87 84 95 73" fill="none" stroke-width="6.5" stroke-linecap="round"/><circle cx="25" cy="73" r="3.4" stroke="none"/><circle cx="95" cy="73" r="3.4" stroke="none"/></g></svg></span>Seaman App</a>
-    <button class="menu-btn" aria-label="Menu">☰</button>
-    <nav>
-      <a class="link" href="#day">Your day</a>
-      <a class="link" href="#career">Your career</a>
-      <a class="link" href="#hired">Get hired</a>
-      <a class="link" href="#crew">Your crew</a>
-      <a class="btn gold" href="#join">Join the beta</a>
-    </nav>
-  </div></header>
+<header id="top"><div class="wrap nav">
+  <a class="brand" href="/">
+    <span class="logo"><svg width="20" height="20" viewBox="0 0 120 120" aria-hidden="true"><g fill="#241800" stroke="#241800"><ellipse cx="60" cy="23" rx="8.5" ry="8" fill="none" stroke-width="5"/><rect x="56" y="28" width="8" height="52" rx="3" stroke="none"/><rect x="34" y="41" width="52" height="7" rx="3.5" stroke="none"/><circle cx="60" cy="86" r="6" stroke="none"/><path d="M57 89 C47 88 33 86 25 74" fill="none" stroke-width="7" stroke-linecap="round"/><path d="M63 89 C73 88 87 86 95 74" fill="none" stroke-width="7" stroke-linecap="round"/><circle cx="25" cy="74" r="3.6" stroke="none"/><circle cx="95" cy="74" r="3.6" stroke="none"/></g></svg></span>
+    Seaman&nbsp;App
+  </a>
+  <span class="spacer"></span>
+  <nav class="links">
+    <a href="#features">Features</a>
+    <a href="#career">Career</a>
+    <a href="#hired">Get hired</a>
+    <a href="#learn">Learn</a>
+    <a class="btn gold" href="#join">Request early access</a>
+  </nav>
+  <button class="menu-btn" aria-label="Menu">☰</button>
+</div></header>
 
-  <!-- ═══ HERO ═══ -->
-  <section class="hero"><div class="wrap hero-grid">
-    <div>
-      <span class="badge reveal"><span class="pulse"></span> Coming to Google Play · founding crew boarding</span>
-      <h1 class="reveal">Plan the watch.<br />Guard your <span class="grad">certificates</span>.<br />Prove your <span class="grad">career</span>.</h1>
-      <p class="sub reveal">The all-in-one app for seafarers — deck or engine, cadet to master. Everything you carry at sea, in one place and fully offline. A companion for the day, and for the whole career.</p>
-      <div class="ctas access reveal">
-        <div class="path">
-          <a class="btn gold big" href="https://app.seamanapp.com" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/></svg> Open the web app</a>
-          <span class="who"><b>For everyone</b> — use it in your browser, no install.</span>
-        </div>
-        <div class="path">
-          <a class="btn ghost big" href="https://play.google.com/apps/testing/com.seamanapp.seafarer_app" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.6 2.3 13 12 3.6 21.7A1.6 1.6 0 0 1 3 20.5v-17c0-.5.2-.9.6-1.2zM14.4 13.4l2.6 2.6-9 5.2 6.4-7.8zM18.3 11.3l2.8 1.6c.9.5.9 1.7 0 2.2l-2.8 1.6-3-2.7 3-2.7zM5 2.7l9.4 5.5-2.6 2.5L5 2.7z"/></svg> Get it on Google Play</a>
-          <span class="who"><b>Android beta</b> — for invited beta testers.</span>
-        </div>
-        <span class="see"><a href="#day">See it in action ↓</a></span>
-      </div>
-      <div class="trust reveal">
-        <span><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 7c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 13c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 19c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/></svg> <b>Works offline</b>, for months at sea</span>
-        <span><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4.5" y="10" width="15" height="10.5" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> <b>Private</b> by default</span>
-        <span><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 3 7l9 4 9-4-9-4z"/><path d="M3 12l9 4 9-4M3 17l9 4 9-4"/></svg> <b>One app</b>, not six</span>
-      </div>
+<!-- HERO -->
+<section class="hero"><div class="wrap hero-grid">
+  <div>
+    <span class="badge reveal"><span class="dot"></span> On Google Play · web app live now</span>
+    <h1 class="reveal">The operating system for a <span class="grad">seafarer's career</span>.</h1>
+    <p class="lead reveal">Plan the watch-day, stay compliant on rest hours, keep every certificate and voyage on record, earn a verified identity, and get discovered by manning agencies — on your terms. Built for deck and engine, cadet to master. Fully offline. Private by default.</p>
+    <div class="hero-cta reveal">
+      <a class="btn gold lg" href="https://app.seamanapp.com" target="_blank" rel="noopener">
+        <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/></svg>
+        Open the web app
+      </a>
+      <a class="btn ghost lg" href="https://play.google.com/store/apps/details?id=com.seamanapp.seafarer_app" target="_blank" rel="noopener">
+        <svg class="i" viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 2.3 13 12 3.6 21.7A1.6 1.6 0 0 1 3 20.5v-17c0-.5.2-.9.6-1.2zM14.4 13.4l2.6 2.6-9 5.2 6.4-7.8zM18.3 11.3l2.8 1.6c.9.5.9 1.7 0 2.2l-2.8 1.6-3-2.7 3-2.7zM5 2.7l9.4 5.5-2.6 2.5L5 2.7z"/></svg>
+        Get it on Android
+      </a>
     </div>
+    <div class="trust reveal">
+      <span><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 7c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 13c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 19c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/></svg> <b>Works offline</b> for months at sea</span>
+      <span><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4.5" y="10" width="15" height="10.5" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> <b>Private</b> by default</span>
+      <span><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 3 7l9 4 9-4-9-4z"/><path d="M3 12l9 4 9-4"/></svg> <b>One app</b>, not six</span>
+    </div>
+  </div>
 
-    <div class="stage reveal"><div class="tilt">
-      <div class="toast t1"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 9 5.5 3M15.5 9l3-6" stroke-linecap="round"/><circle cx="12" cy="15" r="6"/><path d="m12 12.4 1 2.1 2.2.3-1.6 1.5.4 2.2-2-1.1-2 1.1.4-2.2L8.8 14.8l2.2-.3z" fill="currentColor" stroke="none"/></svg> Medal vouched<small>by 3 shipmates who were there</small></div>
-      <div class="toast t2"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg> Medical in 42 days<small>we'll remind you</small></div>
-      <div class="toast t3"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 .6-8A6 6 0 0 0 6 11.5 3.5 3.5 0 0 0 7 18z"/></svg> Synced at port<small>nothing lost at sea</small></div>
-      <div class="phone"><div class="notch"></div><div class="screen">
-        <div class="s-head"><b><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="2"/><path d="M12 6.5V20"/><path d="M5 12H3.5c0 4 3.8 6.5 8.5 6.5s8.5-2.5 8.5-6.5H19"/><path d="M8.5 10.5 12 7.5l3.5 3"/></svg> My Bridge</b><span class="lvl">2/O TRACK</span></div>
-        <div class="s-card"><div class="s-row"><div><div class="s-title">GMDSS Operator</div><div class="s-sub">exp 2027-03</div></div><span class="chip ok">VALID</span></div></div>
-        <div class="s-card"><div class="s-row"><div><div class="s-title">Medical Certificate</div><div class="s-sub">expires in 42 days</div></div><span class="chip warn">SOON</span></div></div>
-        <div class="s-card"><div class="s-row"><div><div class="s-title">Second Officer quest</div><div class="s-sub">9 of 13 held</div></div></div><div class="bar"><i data-w="69"></i></div></div>
-        <div class="s-card"><div class="s-title" style="margin-bottom:8px">Medals · crew-vouched</div><div class="medals"><span class="m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 8c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 14c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/></svg></span><span class="m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5 13 13l-4.5 2.5L11 11z" fill="currentColor" stroke="none"/></svg></span><span class="m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="14" r="6.5"/><path d="M8.5 8 6 3M15.5 8 18 3" stroke-linecap="round"/></svg></span><span class="m"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 3 2.6 5.5 6 .7-4.4 4.1 1.2 5.9L12 16.9 6.6 19.2l1.2-5.9L3.4 9.2l6-.7z"/></svg></span></div></div>
-        <div class="s-sync"><span class="dot"></span> working from your local copy</div>
-      </div></div>
+  <div class="stage reveal">
+    <div class="device" id="device">
+      <div class="screen"><img src="assets/shots/achievements.png" alt="Seaman App — achievements screen with a world map of countries visited, career level and medals" width="1080" height="2160" loading="eager" /></div>
+    </div>
+    <div class="float f1">
+      <span class="ic" style="background:rgba(99,174,240,.16);color:var(--blue)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <span><b>Identity verified</b><small>a blue check the crew trusts</small></span>
+    </div>
+    <div class="float f2">
+      <span class="ic" style="background:rgba(215,180,90,.16);color:var(--gold2)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"/><path d="M12 10v3l2 2"/><path d="M9 3h6"/></svg></span>
+      <span><b>Medical in 42 days</b><small>reminded before it lapses</small></span>
+    </div>
+  </div>
+</div>
+<div class="wrap"><div class="marquee reveal"><div class="track">
+  <span>Watch-day planner</span><span>Rest-hours compliance</span><span>Certificate vault</span><span>Voyages &amp; ports</span><span>Bridge tools</span><span>Verified identity</span><span>Get hired</span><span>Medals &amp; vouching</span><span>Ask the crew</span><span>Learn</span>
+  <span>Watch-day planner</span><span>Rest-hours compliance</span><span>Certificate vault</span><span>Voyages &amp; ports</span><span>Bridge tools</span><span>Verified identity</span><span>Get hired</span><span>Medals &amp; vouching</span><span>Ask the crew</span><span>Learn</span>
+</div></div></div>
+</section>
+
+<!-- STATS -->
+<section class="band" style="padding:30px 0"><div class="wrap"><div class="stats">
+  <div class="stat reveal"><div class="n" data-count="13900" data-suffix="+">13,900+</div><div class="l">Ports, fully offline</div></div>
+  <div class="stat reveal"><div class="n" data-count="35" data-suffix="+">35+</div><div class="l">Crew-vouched medals</div></div>
+  <div class="stat reveal"><div class="n">MLC / STCW</div><div class="l">Rest-hours compliance</div></div>
+  <div class="stat reveal"><div class="n">One record</div><div class="l">Certs · sea time · CV</div></div>
+</div></div></section>
+
+<!-- FEATURES -->
+<section class="band" id="features"><div class="wrap">
+  <div class="sec-head reveal"><div class="eyebrow">Your day at sea</div><h2>Run a tighter watch</h2>
+    <p>Everything you carry at sea in one place — the day's work, the bridge tools, and the record that follows you ship to ship.</p></div>
+
+  <div class="feat reveal">
+    <div class="txt">
+      <div class="tag">The watch-day planner</div>
+      <h3>A day built around your watch</h3>
+      <p>Tasks that ramp before a port, personal and overtime blocks, and reminders that fire even offline. Rest hours are checked against MLC / STCW limits in the background — so if an inspector asks, the official record is one tap away.</p>
+      <div class="chips"><span>Auto-priority tasks</span><span>Rest-hours compliance</span><span>One-tap official form</span><span>Shared crew routines</span></div>
+    </div>
+    <div class="shotwrap"><div class="shot phone"><img src="assets/shots/plan.png" alt="Plan board — Do now, Plan it, Quick hits and Later task columns" width="1080" height="2160" loading="lazy" /></div></div>
+  </div>
+
+  <div class="feat flip reveal">
+    <div class="txt">
+      <div class="tag">Voyages &amp; the navigation toolkit</div>
+      <h3>A bridge's worth of tools, in your pocket</h3>
+      <p>Plan a route and convert it between ECDIS formats, work an ETA across time zones, take a celestial sight, check gyro and compass error, compute an anchoring scope or true wind — and watch your world map light up as you sail. Thousands of ports, all offline.</p>
+      <div class="chips"><span>Route planner &amp; converter</span><span>Celestial &amp; gyro error</span><span>Anchoring &amp; true wind</span><span>ETA &amp; time zones</span></div>
+    </div>
+    <div class="shotwrap"><div class="shot phone"><img src="assets/shots/nav-apps.png" alt="Navigation tools — route planner, ETA, celestial, gyro error, anchoring and true wind" width="1080" height="2160" loading="lazy" /></div></div>
+  </div>
+</div></section>
+
+<!-- CAREER -->
+<section class="band" id="career"><div class="wrap">
+  <div class="sec-head reveal"><div class="eyebrow">Your career, on the record</div>
+    <h2>Never miss a renewal. Never miss a promotion.</h2>
+    <p>Your documents and sea time, structured the way promotions are actually judged.</p></div>
+  <div class="grid3">
+    <div class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h6M7 13h10"/></svg></div>
+      <h3>Certificate vault &amp; expiry radar</h3>
+      <p>Every COC, GMDSS and medical with its scan attached — and a nudge 60, 30 and 7 days out, even with the app closed, even offline. Nothing lapses on your watch.</p></div>
+    <div class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v5h-5"/></svg></div>
+      <h3>Rank readiness</h3>
+      <p>Pick your target rank and the checklist lights up — what you hold, what's expiring, what's missing, your sea time, and which flags recognise your ticket. Then export a recruiter-ready CV.</p></div>
+    <div class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 3 7l9 4 9-4-9-4z"/><path d="M3 12l9 4 9-4M3 17l9 4 9-4"/></svg></div>
+      <h3>Sea service, structured</h3>
+      <p>Vessels, ranks, GT and kW, sign-on and sign-off — recorded to the fields STCW promotion is measured against, with a running sea-time counter.</p></div>
+  </div>
+</div></section>
+
+<!-- HIRED -->
+<section class="band" id="hired"><div class="wrap">
+  <div class="sec-head reveal"><div class="eyebrow">Trusted, and discoverable</div>
+    <h2>Get verified. Get hired.</h2>
+    <p>A verified identity that means something, and a way to be found by manning agencies — entirely on your terms.</p></div>
+
+  <div class="feat reveal">
+    <div class="txt">
+      <div class="tag">Identity verification</div>
+      <h3>The blue check, earned</h3>
+      <p>Submit a photo of your SIRB, SRB or SID and a selfie — checked automatically, with human review when needed. Once verified, your profile carries a blue check the crew and agencies can trust. Fully optional, and your ID photo is never shown to anyone.</p>
+      <div class="chips"><span>Optional</span><span>Auto-checked</span><span>ID never public</span></div>
+    </div>
+    <div class="shotwrap"><div class="shot" style="padding:26px;background:var(--panel-solid)">
+      <div style="border:1px solid var(--line);border-radius:14px;padding:22px;background:var(--bg2)">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:46px;height:46px;border-radius:50%;background:#274b7a;display:grid;place-items:center;font-family:var(--disp);font-weight:700">CE</div>
+          <div><div style="display:flex;align-items:center;gap:7px;font-family:var(--disp);font-weight:600">Conrad Edwin
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="#63aef0"><path d="M12 2l2.4 1.8 3-.2 1 2.8 2.6 1.5-.9 2.9.9 2.9-2.6 1.5-1 2.8-3-.2L12 22l-2.4-1.8-3 .2-1-2.8L3 16.3l.9-2.9L3 10.5l2.6-1.5 1-2.8 3 .2z"/><path d="M8.5 12l2.3 2.3 4.7-4.8" stroke="#04101f" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div style="color:var(--muted);font-size:13px">Third Officer · verified</div></div></div>
+        <div style="height:1px;background:var(--line);margin:18px 0"></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--sub);margin:10px 0"><span>ID document</span><span style="color:var(--teal)">checked ✓</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--sub);margin:10px 0"><span>Selfie match</span><span style="color:var(--teal)">checked ✓</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--sub);margin:10px 0"><span>Shown publicly</span><span style="color:var(--gold2)">blue check only</span></div>
+        <div style="margin-top:16px;text-align:center;background:rgba(99,174,240,.12);border-radius:10px;padding:9px;color:var(--blue);font-size:11.5px;font-weight:600;letter-spacing:.05em">YOUR ID PHOTO IS NEVER SHOWN TO ANYONE</div>
+      </div>
     </div></div>
-  </div></section>
+  </div>
 
-  <!-- marquee -->
-  <div class="marquee"><div class="track" aria-hidden="true">
-    <span>Watch-day planner</span><span>Rest hours</span><span>Certificates</span><span>Voyages &amp; ports</span><span>Bridge tools</span><span>Verified identity</span><span>Get hired</span><span>Medals &amp; vouching</span><span>Ask the crew</span><span>Learn</span><span>Rank readiness</span>
-    <span>Watch-day planner</span><span>Rest hours</span><span>Certificates</span><span>Voyages &amp; ports</span><span>Bridge tools</span><span>Verified identity</span><span>Get hired</span><span>Medals &amp; vouching</span><span>Ask the crew</span><span>Learn</span><span>Rank readiness</span>
-  </div></div>
-
-  <!-- ═══ APP SCREEN MOCKUPS ═══ -->
-  <section class="screens"><div class="wrap">
-    <div class="chapter reveal">
-      <div class="kicker">Peek inside</div>
-      <div class="big">Real screens, <em class="grad">real work</em></div>
-      <p>Your world, your bridge tools, your day — straight from the app.</p>
+  <div class="feat flip reveal">
+    <div class="txt">
+      <div class="tag">The recruitment side</div>
+      <h3>Set your terms. Get discovered.</h3>
+      <p>Set your rank, availability and preferences, and approved manning agencies can find you. Apply to real openings, or let them come to you — you decide exactly what a company sees, and your medical and ID records are never shared automatically.</p>
+      <div class="chips"><span>Job preferences &amp; matching</span><span>You control what's shared</span><span>Approved agencies only</span></div>
     </div>
-
-    <div class="gallery">
-
-      <div class="mock reveal">
-        <div class="frame device"><div class="shot"><img src="assets/shots/achievements.png" alt="Achievements screen — a world map with 16 countries visited lit gold across all six continents, plus level and medals" loading="lazy" width="1080" height="2400" /></div></div>
-        <div class="cap2"><b><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 2.6 2.6 15.4 0 18M12 3c-2.6 2.6-2.6 15.4 0 18"/></svg> Your world, earned</b><span>Every port lights a country — 6 continents, medals your crew can vouch for.</span></div>
+    <div class="shotwrap"><div class="shot" style="padding:26px;background:var(--panel-solid)">
+      <div style="border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--bg2);margin-bottom:14px">
+        <div style="font-family:var(--disp);font-weight:600">2nd Officer · Bulk carrier</div>
+        <div style="color:var(--muted);font-size:13.5px;margin-top:4px">4,200–4,800 USD · 6 months · joining Aug</div>
+        <div style="display:inline-block;margin-top:12px;background:rgba(66,193,170,.16);color:var(--teal);font-weight:700;font-size:12px;padding:5px 12px;border-radius:999px">92% match</div>
       </div>
-
-      <div class="mock reveal">
-        <div class="frame device"><div class="shot"><img src="assets/shots/nav-apps.png" alt="Nav Apps screen — route planner, ETA calculator, celestial sight, gyro error, anchoring and true wind" loading="lazy" width="1080" height="2400" /></div></div>
-        <div class="cap2"><b><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5 13 13l-4.5 2.5L11 11z" fill="currentColor" stroke="none"/></svg> A bridge in your pocket</b><span>Route, ETA, celestial, anchoring, true wind — all offline.</span></div>
+      <div style="border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--bg2)">
+        <div style="font-family:var(--disp);font-weight:600">Chief Engineer · Tanker</div>
+        <div style="color:var(--muted);font-size:13.5px;margin-top:4px">Verified agency · consent required to view</div>
+        <div style="display:inline-block;margin-top:12px;background:rgba(215,180,90,.16);color:var(--gold2);font-weight:700;font-size:12px;padding:5px 12px;border-radius:999px">78% match</div>
       </div>
+    </div></div>
+  </div>
+</div></section>
 
-      <div class="mock reveal">
-        <div class="frame device"><div class="shot"><img src="assets/shots/plan.png" alt="Plan board screen — Do now, Plan it, Quick hits and Later priority columns of tasks" loading="lazy" width="1080" height="2400" /></div></div>
-        <div class="cap2"><b><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg> A day that runs itself</b><span>Auto-prioritised tasks, repeats and MLC rest — one board.</span></div>
-      </div>
+<!-- CREW -->
+<section class="band"><div class="wrap">
+  <div class="sec-head reveal"><div class="eyebrow">Your crew</div><h2>You're never sailing alone</h2>
+    <p>A community of working seafarers who've stood the same watches — ask, share, help, and be recognised by people who understand the job.</p></div>
+  <div class="grid3">
+    <div class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <h3>Ask the crew</h3><p>Stuck on a real problem mid-watch? Ask, and get answers from experienced seafarers who've faced the same thing — tagged to the equipment or port it's about.</p></div>
+    <div class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div>
+      <h3>Checklists &amp; routines you own</h3><p>Turn your hard-won routine or pre-arrival checklist into something you keep — share it to the crew, see who runs it, and save the best ones others post.</p></div>
+    <div class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.5 13.5 7 22l5-3 5 3-1.5-8.5"/></svg></div>
+      <h3>Achievements the crew can trust</h3><p>Earn medals for real milestones — every continent, every canal transit — then the shipmates who sailed with you vouch for them. Prestige that's witnessed, not just tapped.</p></div>
+  </div>
+</div></section>
 
-    </div>
-  </div></section>
+<!-- LEARN -->
+<section class="band" id="learn"><div class="wrap">
+  <div class="sec-head reveal"><div class="eyebrow">Learn</div><h2>Grow from cadet to master</h2>
+    <p>Courses taught by working mentors, plus field guides you can read at sea.</p></div>
+  <div class="learn">
+    <div class="lc reveal"><h3>Navigators Club</h3>
+      <p>Mentor-led courses and a community of working seafarers, built to bridge the gap between the book and the bridge — plus offline field guides, no connection needed.</p>
+      <a class="btn ghost" style="margin-top:20px;align-self:flex-start" href="https://app.seamanapp.com" target="_blank" rel="noopener">Explore the club →</a></div>
+    <div class="lc gold reveal"><h3>Port to Port</h3>
+      <p>The complete watchkeeping mentorship — 19 chapters from the ground you stand on to arrival alongside, released a chapter a week. Browse every lesson free; enrol to watch.</p>
+      <div class="price">$50 <s>$300</s></div>
+      <a class="btn gold" style="margin-top:12px;align-self:flex-start" href="https://course.seamanapp.com" target="_blank" rel="noopener">View the course →</a></div>
+  </div>
+</div></section>
 
-  <!-- ═══ CHAPTER 1 — YOUR DAY ═══ -->
-  <section id="day" class="tint-day"><div class="wrap">
-    <div class="chapter reveal">
-      <div class="kicker">Your day at sea</div>
-      <div class="big">Run a <em class="grad">tighter watch</em></div>
-      <p>Wake, watch, meals, gym, rest — laid out around your schedule, so nothing important slips.</p>
-    </div>
-    <div class="rows">
+<!-- REVIEWS -->
+<section class="band"><div class="wrap">
+  <div class="sec-head reveal"><div class="eyebrow">From our seafarers</div><h2>Built with a real crew</h2>
+    <p>The app grows out of a working community — here's what a few of them say about leveling up with us.</p></div>
+  <div class="reviews">
+    <div class="rev reveal"><div class="stars">★★★★★</div><p>“The knowledge here removed my self-doubt as I moved from cadet to 3rd Officer.”</p><div class="who"><span class="av">RJ</span><div><b>Rick Mark Javier</b><small>Deck Officer</small></div></div></div>
+    <div class="rev reveal"><div class="stars">★★★★★</div><p>“More than webinars — the mentors actually share their real experience.”</p><div class="who"><span class="av">PC</span><div><b>Patrick Crisosto</b><small>Navigators Club member</small></div></div></div>
+    <div class="rev reveal"><div class="stars">★★★★★</div><p>“A game-changer that bridges theory and real-life practice.”</p><div class="who"><span class="av">AT</span><div><b>Agustin Tamonan</b><small>Navigators Club member</small></div></div></div>
+  </div>
+</div></section>
 
-      <div class="row2 reveal">
-        <div class="art"><svg viewBox="0 0 440 250" role="img" aria-label="Watch-day timeline">
-          <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f6b942"/><stop offset="1" stop-color="#ffd071"/></linearGradient></defs>
-          <text x="24" y="30" fill="#93a7c2" font-family="Space Grotesk" font-size="13" letter-spacing="1.5">TODAY · 12–4 WATCH</text>
-          <g font-family="Inter" font-size="13">
-            <rect x="24" y="46" width="392" height="34" rx="10" fill="#274b7a" opacity=".35"/><circle cx="42" cy="63" r="5" fill="#4fc3f7"/><text x="58" y="68" fill="#eaf2ff">00:00 · Rest</text><text x="392" y="68" fill="#93a7c2" text-anchor="end">6h</text>
-            <rect x="24" y="88" width="392" height="34" rx="10" fill="url(#g1)" opacity=".9"/><circle cx="42" cy="105" r="5" fill="#241800"/><text x="58" y="110" fill="#241800" font-weight="700">08:00 · On watch</text><text x="392" y="110" fill="#241800" text-anchor="end">4h</text>
-            <rect x="24" y="130" width="392" height="34" rx="10" fill="#28d3b6" opacity=".25"/><circle cx="42" cy="147" r="5" fill="#28d3b6"/><text x="58" y="152" fill="#eaf2ff">12:00 · Lunch &amp; rest</text>
-            <rect x="24" y="172" width="392" height="34" rx="10" fill="#9b8cff" opacity=".22"/><circle cx="42" cy="189" r="5" fill="#9b8cff"/><text x="58" y="194" fill="#eaf2ff">17:00 · Gym</text><text x="392" y="194" fill="#93a7c2" text-anchor="end">OT +1h</text>
-          </g>
-        </svg></div>
-        <div class="cap">
-          <div class="tagline">The watch-day planner</div>
-          <h3>Your day, built around your watch</h3>
-          <p>Tasks that ramp up before a port. Personal and overtime blocks. Reminders that fire even offline.</p>
-          <div class="mini"><span>Auto-priority tasks</span><span>OT &amp; personal blocks</span><span>Shared crew routines</span></div>
-        </div>
-      </div>
+<!-- PRINCIPLE -->
+<section class="principle band"><div class="wrap reveal">
+  <blockquote>The seafarer <b>owns</b> their data. Everyone else borrows a view of it — <b>with consent</b>, for a purpose.</blockquote>
+  <div class="line"></div>
+</div></section>
 
-      <div class="row2 flip reveal">
-        <div class="art"><svg viewBox="0 0 440 250" role="img" aria-label="Your rest hours this week — enough sleep to stand a safe watch">
-          <text x="24" y="28" fill="#93a7c2" font-family="Space Grotesk" font-size="13" letter-spacing="1.5">YOUR REST · THIS WEEK</text>
-          <rect x="24" y="46" width="392" height="30" rx="8" fill="#0a2036" stroke="#ffffff22"/>
-          <g>
-            <!-- rest (teal) vs work (faint) across the day -->
-            <g fill="#28d3b6">
-              <rect x="30" y="52" width="26" height="18" rx="4" opacity=".85"/><rect x="60" y="52" width="26" height="18" rx="4" opacity=".85"/><rect x="90" y="52" width="26" height="18" rx="4" opacity=".85"/>
-              <rect x="120" y="52" width="26" height="18" rx="4" opacity=".2"/><rect x="150" y="52" width="26" height="18" rx="4" opacity=".2"/><rect x="180" y="52" width="26" height="18" rx="4" opacity=".2"/><rect x="210" y="52" width="26" height="18" rx="4" opacity=".2"/>
-              <rect x="240" y="52" width="26" height="18" rx="4" opacity=".85"/><rect x="270" y="52" width="26" height="18" rx="4" opacity=".85"/>
-              <rect x="300" y="52" width="26" height="18" rx="4" opacity=".2"/><rect x="330" y="52" width="26" height="18" rx="4" opacity=".2"/><rect x="360" y="52" width="26" height="18" rx="4" opacity=".85"/>
-            </g>
-          </g>
-          <text x="24" y="112" fill="#93a7c2" font-family="Inter" font-size="12.5">Enough sleep to stand a safe watch · limits checked in the background</text>
-          <g transform="translate(24,132)">
-            <rect x="0" y="0" width="392" height="86" rx="14" fill="#28d3b6" opacity=".12" stroke="#28d3b622"/>
-            <circle cx="46" cy="43" r="26" fill="none" stroke="#28d3b6" stroke-width="4"/>
-            <path d="M35 43 l8 9 l16 -19" fill="none" stroke="#28d3b6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-            <text x="92" y="38" fill="#eaf2ff" font-family="Space Grotesk" font-size="20" font-weight="700">Well rested</text>
-            <text x="92" y="62" fill="#93a7c2" font-family="Inter" font-size="13">79h rest this week · you're protected, not just on paper</text>
-          </g>
-        </svg></div>
-        <div class="cap">
-          <div class="tagline">Rest hours, on your side</div>
-          <h3>Guard your rest. Fatigue is the real risk.</h3>
-          <p>See at a glance when you're being run short of sleep, and have the record to push back when the schedule pushes you. It quietly checks MLC / STCW limits too — so if an inspector asks, the official form is one tap away.</p>
-          <div class="mini"><span>Fatigue at a glance</span><span>Proof when you need it</span><span>One-tap official form</span></div>
-        </div>
-      </div>
+<!-- CTA -->
+<section class="cta-band" id="join"><div class="wrap"><div class="cta-box reveal">
+  <h2>Get early access</h2>
+  <p>The app is live on the web and rolling out on Google Play. Leave your email and we'll send an invite and product updates as new features ship.</p>
+  <form class="waitlist" id="waitlist" novalidate>
+    <input type="email" name="email" inputmode="email" autocomplete="email" required placeholder="you@example.com" aria-label="Your email" />
+    <input type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" class="hp" />
+    <button class="btn gold" type="submit"><span class="lbl">Request access</span></button>
+  </form>
+  <p class="wl-msg" id="wlMsg" role="status" aria-live="polite"></p>
+  <p class="scarcity" id="scarcity">Your email stays private — no spam, unsubscribe anytime.</p>
+</div></div></section>
 
-      <div class="row2 reveal">
-        <div class="art"><svg viewBox="0 0 440 250" role="img" aria-label="Voyages and bridge tools">
-          <defs><radialGradient id="globe" cx="38%" cy="34%" r="72%"><stop offset="0" stop-color="#1b436e"/><stop offset="1" stop-color="#08182b"/></radialGradient></defs>
-          <circle cx="150" cy="125" r="96" fill="url(#globe)" stroke="#ffffff18"/>
-          <g stroke="#4fc3f7" stroke-opacity=".28" fill="none">
-            <ellipse cx="150" cy="125" rx="40" ry="96"/><ellipse cx="150" cy="125" rx="72" ry="96"/>
-            <line x1="54" y1="125" x2="246" y2="125"/><ellipse cx="150" cy="125" rx="96" ry="42"/><ellipse cx="150" cy="125" rx="96" ry="76"/>
-          </g>
-          <path d="M96 168 Q150 60 214 96" fill="none" stroke="#f6b942" stroke-width="2.6" stroke-dasharray="5 6" stroke-linecap="round"/>
-          <g><circle cx="96" cy="168" r="6" fill="#f6b942"/><circle cx="214" cy="96" r="6" fill="#28d3b6"/></g>
-          <g font-family="Inter" font-size="13" fill="#eaf2ff">
-            <rect x="288" y="60" width="128" height="52" rx="12" fill="#0a2036" stroke="#ffffff18"/>
-            <text x="304" y="84" fill="#93a7c2" font-size="11">NEXT PORT · ETA</text><text x="304" y="102" font-family="Space Grotesk" font-weight="700">Rotterdam</text>
-            <rect x="288" y="124" width="128" height="52" rx="12" fill="#0a2036" stroke="#ffffff18"/>
-            <text x="304" y="148" fill="#93a7c2" font-size="11">COUNTRIES</text><text x="304" y="166" font-family="Space Grotesk" font-weight="700" fill="#f6b942">43 visited</text>
-          </g>
-        </svg></div>
-        <div class="cap">
-          <div class="tagline">Voyages &amp; the navigation toolkit</div>
-          <h3>A bridge's worth of tools in your pocket</h3>
-          <p>Plan a route and convert it between formats, work out an ETA and time zones, take a celestial sight on the Sun, Moon, planets or stars, check gyro/compass error, work an anchoring scope, or find true wind — and watch your world map light up as you sail. Thousands of ports, all offline.</p>
-          <div class="mini"><span>Route planner &amp; converter</span><span>Celestial &amp; gyro error</span><span>Anchoring &amp; true wind</span><span>ETA &amp; time zones</span><span>13,900+ ports</span></div>
-        </div>
-      </div>
+<footer><div class="wrap fwrap">
+  <div>© 2026 Seaman App · made for the people who move the world</div>
+  <nav aria-label="Footer">
+    <a href="https://app.seamanapp.com" target="_blank" rel="noopener">Web app</a>
+    <a href="https://course.seamanapp.com" target="_blank" rel="noopener">Port to Port</a>
+    <a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a>
+    <a href="/guidelines.html">Guidelines</a><a href="/delete-account.html">Delete account</a>
+    <a href="mailto:admin@seamanapp.com">Contact</a>
+  </nav>
+</div></footer>
 
-    </div>
-  </div></section>
+<script>
+  document.documentElement.classList.add('js');
+  const hdr=document.getElementById('top'), bar=document.getElementById('bar');
+  const onScroll=()=>{ hdr.classList.toggle('scrolled',scrollY>12);
+    const h=document.documentElement.scrollHeight-innerHeight;
+    bar.style.width=(h>0?(scrollY/h*100):0)+'%'; };
+  addEventListener('scroll',onScroll,{passive:true}); onScroll();
 
-  <!-- ═══ CHAPTER 2 — YOUR CAREER ═══ -->
-  <section id="career" class="tint-career"><div class="wrap">
-    <div class="chapter reveal">
-      <div class="kicker">Your career, on the record</div>
-      <div class="big">Never miss a <em class="grad">renewal</em>, never miss a <em class="grad">promotion</em></div>
-      <p>Your documents and your sea time, structured the way promotions are actually judged.</p>
-    </div>
-    <div class="rows">
+  const mb=document.querySelector('.menu-btn'), links=document.querySelector('.nav .links');
+  mb?.addEventListener('click',()=>links.classList.toggle('open'));
+  links?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>links.classList.remove('open')));
 
-      <div class="row2 reveal">
-        <div class="art"><svg viewBox="0 0 440 250" role="img" aria-label="Certificate vault and expiry radar">
-          <g transform="translate(24,40)">
-            <rect x="0" y="0" width="230" height="170" rx="16" fill="#0a2036" stroke="#ffffff18"/>
-            <rect x="18" y="20" width="120" height="12" rx="6" fill="#eaf2ff" opacity=".8"/>
-            <rect x="18" y="42" width="180" height="9" rx="4.5" fill="#93a7c2" opacity=".5"/>
-            <rect x="18" y="58" width="150" height="9" rx="4.5" fill="#93a7c2" opacity=".5"/>
-            <circle cx="178" cy="118" r="34" fill="none" stroke="#f6b942" stroke-width="3"/>
-            <path d="M178 90 l7 20 l21 1 l-17 13 l6 21 l-17 -12 l-17 12 l6 -21 l-17 -13 l21 -1 Z" fill="#f6b942" transform="scale(.55) translate(146,72)"/>
-            <rect x="18" y="98" width="90" height="10" rx="5" fill="#28d3b6" opacity=".8"/>
-            <text x="18" y="140" fill="#93a7c2" font-family="Inter" font-size="12">GMDSS · verified</text>
-          </g>
-          <g transform="translate(288,40)">
-            <rect x="0" y="0" width="128" height="170" rx="16" fill="#f6b942" opacity=".1" stroke="#f6b94233"/>
-            <g transform="translate(64,72)">
-              <circle r="46" fill="none" stroke="#f6b942" stroke-opacity=".22"/><circle r="30" fill="none" stroke="#f6b942" stroke-opacity=".22"/><circle r="14" fill="none" stroke="#f6b942" stroke-opacity=".22"/>
-              <path d="M0 0 L40 -22 A46 46 0 0 1 44 12 Z" fill="#f6b942" opacity=".25"/>
-              <circle cx="34" cy="-18" r="5" fill="#f6b942"/>
-            </g>
-            <text x="64" y="140" text-anchor="middle" fill="#eaf2ff" font-family="Space Grotesk" font-size="15" font-weight="700">42 days</text>
-            <text x="64" y="158" text-anchor="middle" fill="#93a7c2" font-family="Inter" font-size="11">to renew</text>
-          </g>
-        </svg></div>
-        <div class="cap">
-          <div class="tagline">Certificate vault &amp; expiry radar</div>
-          <h3>Nothing lapses on your watch</h3>
-          <p>Every COC, GMDSS and medical with its scan attached — and a nudge 60, 30 and 7 days out, even with the app closed, even offline.</p>
-          <div class="mini"><span>Scans attached</span><span>Smart reminders</span></div>
-        </div>
-      </div>
+  // staggered reveal + count-up
+  const countUp=(el)=>{ const to=+el.dataset.count, suf=el.dataset.suffix||''; let s=null;
+    const step=(t)=>{ s=s||t; const p=Math.min((t-s)/1100,1); const e=1-Math.pow(1-p,3);
+      el.textContent=Math.round(to*e).toLocaleString()+(p===1?suf:''); if(p<1) requestAnimationFrame(step); };
+    requestAnimationFrame(step); };
+  const io=new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting){
+    e.target.classList.add('in');
+    e.target.querySelectorAll?.('[data-count]').forEach(countUp);
+    if(e.target.dataset&&e.target.dataset.count) countUp(e.target);
+    io.unobserve(e.target); }}),{threshold:.14,rootMargin:'0px 0px -8% 0px'});
+  const items=[...document.querySelectorAll('.reveal')];
+  items.forEach((el)=>io.observe(el));
+  // gentle stagger for siblings in a grid
+  document.querySelectorAll('.grid3,.reviews,.stats,.learn').forEach(g=>{
+    [...g.children].forEach((c,i)=>{ if(c.classList.contains('reveal')) c.style.transitionDelay=(i*80)+'ms'; }); });
 
-      <div class="row2 flip reveal">
-        <div class="art"><svg viewBox="0 0 440 250" role="img" aria-label="Rank readiness ladder">
-          <g font-family="Inter" font-size="13">
-            <rect x="24" y="176" width="120" height="46" rx="12" fill="#28d3b6" opacity=".2"/><path d="M40 199 l7 8 l14 -16" fill="none" stroke="#28d3b6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><text x="72" y="203" fill="#eaf2ff">Deck Cadet</text>
-            <rect x="90" y="128" width="130" height="46" rx="12" fill="#28d3b6" opacity=".2"/><path d="M106 151 l7 8 l14 -16" fill="none" stroke="#28d3b6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><text x="138" y="155" fill="#eaf2ff">Third Officer</text>
-            <rect x="160" y="80" width="150" height="46" rx="12" fill="#f6b942" opacity=".18" stroke="#f6b94255"/><circle cx="182" cy="103" r="10" fill="none" stroke="#f6b942" stroke-width="3"/><text x="182" y="107" text-anchor="middle" fill="#f6b942" font-size="12" font-weight="700">9/13</text><text x="204" y="107" fill="#ffd071" font-weight="700">Second Officer</text>
-            <rect x="234" y="32" width="150" height="46" rx="12" fill="#ffffff" opacity=".05" stroke="#ffffff18"/><text x="256" y="60" fill="#93a7c2">Chief Officer</text><g transform="translate(360,53)"><path d="M0 -8 l2.4 5 5.4 .6 -4 3.8 1.1 5.4 -4.9 -2.8 -4.9 2.8 1.1 -5.4 -4 -3.8 5.4 -.6z" fill="#f6b942"/></g>
-          </g>
-        </svg></div>
-        <div class="cap">
-          <div class="tagline">Rank readiness</div>
-          <h3>See exactly what's between you and the next stripe</h3>
-          <p>Pick your target rank and the checklist lights up — what you hold, what's expiring, what's missing, your sea-time, and which flags recognise your ticket. Then export a recruiter-ready CV.</p>
-          <div class="mini"><span>Country &amp; CoC rules</span><span>Sea-time counter</span><span>Branded CV export</span></div>
-        </div>
-      </div>
+  // card spotlight
+  document.querySelectorAll('.card').forEach(c=>{
+    c.addEventListener('pointermove',e=>{ const r=c.getBoundingClientRect();
+      c.style.setProperty('--mx',(e.clientX-r.left)+'px'); c.style.setProperty('--my',(e.clientY-r.top)+'px'); });
+  });
 
-    </div>
-  </div></section>
+  // subtle device parallax
+  const dev=document.getElementById('device');
+  if(dev && matchMedia('(pointer:fine)').matches){
+    addEventListener('pointermove',e=>{ const x=(e.clientX/innerWidth-.5), y=(e.clientY/innerHeight-.5);
+      dev.style.transform=`rotateY(${x*6}deg) rotateX(${-y*6}deg)`; },{passive:true});
+  }
 
-  <!-- ═══ CHAPTER 2.5 — VERIFIED &amp; HIRED ═══ -->
-  <section id="hired" class="tint-hired"><div class="wrap">
-    <div class="chapter reveal">
-      <div class="kicker">Trusted, and discoverable</div>
-      <div class="big">Get <em class="grad">verified</em>. Get <em class="grad">hired</em>.</div>
-      <p>A blue check that actually means something, and a way to be found by manning agencies — entirely on your terms.</p>
-    </div>
-    <div class="rows">
-
-      <div class="row2 reveal">
-        <div class="art"><svg viewBox="0 0 440 250" role="img" aria-label="Verified profile with a blue check">
-          <g transform="translate(24,34)">
-            <rect x="0" y="0" width="230" height="182" rx="16" fill="#0a2036" stroke="#ffffff18"/>
-            <circle cx="34" cy="34" r="18" fill="#274b7a"/><text x="34" y="39" text-anchor="middle" fill="#eaf2ff" font-family="Space Grotesk" font-weight="700" font-size="14">CE</text>
-            <text x="62" y="30" fill="#eaf2ff" font-family="Space Grotesk" font-weight="700" font-size="14">Conrad Edwin</text>
-            <g transform="translate(148,20)"><circle r="9" fill="#4fc3f7"/><path d="M-3.6 0 -1 2.6 4 -3" stroke="#04101f" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
-            <text x="62" y="47" fill="#93a7c2" font-family="Inter" font-size="11.5">Third Officer · verified</text>
-            <rect x="18" y="66" width="194" height="1" fill="#ffffff18"/>
-            <g font-family="Inter" font-size="12" fill="#93a7c2">
-              <text x="18" y="90">ID document</text><text x="212" y="90" text-anchor="end" fill="#28d3b6">checked ✓</text>
-              <text x="18" y="112">Selfie match</text><text x="212" y="112" text-anchor="end" fill="#28d3b6">checked ✓</text>
-              <text x="18" y="134">Shown publicly</text><text x="212" y="134" text-anchor="end" fill="#f6b942">blue check only</text>
-            </g>
-            <rect x="18" y="150" width="194" height="16" rx="8" fill="#4fc3f7" opacity=".14"/>
-            <text x="115" y="162" text-anchor="middle" fill="#4fc3f7" font-family="Inter" font-size="10.5" font-weight="700">ID PHOTO NEVER SHOWN TO ANYONE</text>
-          </g>
-        </svg></div>
-        <div class="cap">
-          <div class="tagline">Identity verification</div>
-          <h3>The blue check, earned</h3>
-          <p>Submit a photo of your SIRB, SRB or SID and a selfie — checked automatically, with a human review when needed. Once verified, your profile carries a blue check the crew and agencies can trust. Fully optional, and your ID photo is never shown to anyone.</p>
-          <div class="mini"><span>Optional</span><span>Auto-checked</span><span>ID never public</span></div>
-        </div>
-      </div>
-
-      <div class="row2 flip reveal">
-        <div class="art"><svg viewBox="0 0 440 250" role="img" aria-label="Job matches from manning agencies, with your consent">
-          <g font-family="Inter" font-size="12.5">
-            <rect x="24" y="30" width="392" height="60" rx="14" fill="#0a2036" stroke="#ffffff18"/>
-            <text x="42" y="54" fill="#eaf2ff" font-family="Space Grotesk" font-weight="700" font-size="14.5">2nd Officer · Bulk carrier</text>
-            <text x="42" y="74" fill="#93a7c2">4,200–4,800 USD · 6 months · joining Aug</text>
-            <rect x="330" y="46" width="66" height="24" rx="12" fill="#28d3b6" opacity=".18"/><text x="363" y="62" text-anchor="middle" fill="#28d3b6" font-weight="700" font-size="11">92% match</text>
-            <rect x="24" y="100" width="392" height="60" rx="14" fill="#0a2036" stroke="#ffffff18"/>
-            <text x="42" y="124" fill="#eaf2ff" font-family="Space Grotesk" font-weight="700" font-size="14.5">Chief Engineer · Tanker</text>
-            <text x="42" y="144" fill="#93a7c2">Verified agency · consent required to view</text>
-            <rect x="330" y="116" width="66" height="24" rx="12" fill="#f6b942" opacity=".18"/><text x="363" y="132" text-anchor="middle" fill="#ffd071" font-weight="700" font-size="11">78% match</text>
-          </g>
-          <g transform="translate(24,178)">
-            <rect x="0" y="0" width="392" height="44" rx="12" fill="#9b8cff" opacity=".14" stroke="#9b8cff33"/>
-            <g transform="translate(22,22)"><circle r="9" fill="none" stroke="#9b8cff" stroke-width="2.4"/><path d="M-3 0 -0.5 2.6 3.4 -3" stroke="#9b8cff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
-            <text x="42" y="19" fill="#eaf2ff" font-size="12.5">You choose what a company sees</text>
-            <text x="42" y="35" fill="#93a7c2" font-size="11">medical &amp; ID are never shared automatically</text>
-          </g>
-        </svg></div>
-        <div class="cap">
-          <div class="tagline">The recruitment side</div>
-          <h3>Set your terms. Get discovered.</h3>
-          <p>Set your rank, availability and preferences, and approved manning agencies can find you. Apply to real openings, or let them come to you — you decide exactly what a company sees, and your medical and ID records are never shared automatically.</p>
-          <div class="mini"><span>Job preferences &amp; matching</span><span>You control what's shared</span><span>Approved agencies only</span></div>
-        </div>
-      </div>
-
-    </div>
-  </div></section>
-
-  <!-- ═══ CHAPTER 3 — YOUR CREW ═══ -->
-  <section id="crew" class="tint-crew"><div class="wrap">
-    <div class="chapter reveal">
-      <div class="kicker">Your crew</div>
-      <div class="big">You're <em class="grad">never sailing alone</em></div>
-      <p>Months from home, in a job nobody ashore quite understands. Here's a crew that does — ask, share, help, and be recognised by the people who've stood the same watches.</p>
-    </div>
-    <div class="rows">
-
-      <div class="row2 reveal">
-        <div class="art"><svg viewBox="0 0 440 250" role="img" aria-label="Crew community chat">
-          <g font-family="Inter" font-size="13">
-            <g><circle cx="46" cy="50" r="18" fill="#4fc3f7" opacity=".85"/><text x="46" y="55" text-anchor="middle" fill="#04101f" font-weight="700">R</text>
-              <rect x="74" y="34" width="300" height="52" rx="14" fill="#0a2036" stroke="#ffffff14"/>
-              <text x="90" y="56" fill="#eaf2ff">Agent wants last 10 ports' GMDSS logs</text><text x="90" y="74" fill="#93a7c2" font-size="12">tagged</text><g transform="translate(129,69)" fill="none" stroke="#4fc3f7" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="0" cy="-4" r="1.5"/><path d="M0 -2.5V5.5"/><path d="M-3.2 1.6c0 2.1 1.4 3.3 3.2 3.3s3.2-1.2 3.2-3.3"/><path d="M-2 .2 0 -1.6 2 .2"/></g><text x="140" y="74" fill="#93a7c2" font-size="12">SGSIN · 12 crew found this useful</text></g>
-            <g><rect x="66" y="102" width="308" height="52" rx="14" fill="#f6b942" opacity=".14" stroke="#f6b94233"/>
-              <text x="82" y="124" fill="#eaf2ff">Check the painter line before the weekly run</text><g transform="translate(90,138)" fill="none" stroke="#ffd071" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 -4.2a2.6 2.6 0 0 0 -3.4 3.4l-4.4 4.4 1.8 1.8 4.4 -4.4a2.6 2.6 0 0 0 3.4 -3.4l-2 2 -1.8 -1.8z"/></g><text x="104" y="142" fill="#ffd071" font-size="12">rescue boat · 34 helpful</text>
-              <circle cx="404" cy="128" r="18" fill="#f6b942"/><text x="404" y="133" text-anchor="middle" fill="#241800" font-weight="700">J</text></g>
-            <g><circle cx="46" cy="196" r="18" fill="#9b8cff" opacity=".85"/><text x="46" y="201" text-anchor="middle" fill="#04101f" font-weight="700">M</text>
-              <rect x="74" y="180" width="300" height="46" rx="14" fill="#0a2036" stroke="#ffffff14"/>
-              <text x="90" y="208" fill="#eaf2ff">Sharing my sea-day routine — load it to yours</text><g transform="translate(356,203)" stroke="#4fc3f7" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M-1 6 6 -1"/><path d="M1.5 -1H6V3.5"/></g></g>
-          </g>
-        </svg></div>
-        <div class="cap">
-          <div class="tagline">The community, the fun, the help</div>
-          <h3>The mess-deck, wherever you are</h3>
-          <p>Tips that show up right where you need them — inside a task, a port, a piece of kit. Follow crewmates, share your checklists, routines and routes, climb the leaderboards. Run by working mentors and kept a good place to be.</p>
-          <div class="mini"><span>Crew tips</span><span>Leaderboards</span><span>Shared checklists &amp; routes</span></div>
-        </div>
-      </div>
-
-      <div class="row2 flip reveal">
-        <div class="art"><svg viewBox="0 0 440 250" role="img" aria-label="A shared checklist with items ticked and the crewmates who have used it">
-          <g transform="translate(24,30)">
-            <rect x="0" y="0" width="392" height="190" rx="16" fill="#0a2036" stroke="#ffffff18"/>
-            <text x="20" y="34" fill="#eaf2ff" font-family="Space Grotesk" font-size="15" font-weight="700">Pre-arrival checklist</text>
-            <g font-family="Inter" font-size="13" fill="#eaf2ff">
-              <g transform="translate(20,50)"><circle cx="10" cy="10" r="10" fill="#28d3b6" opacity=".9"/><path d="M5 10 l3 3 l6 -7" fill="none" stroke="#04101f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><text x="30" y="15">Test the gangway &amp; lighting</text></g>
-              <g transform="translate(20,80)"><circle cx="10" cy="10" r="10" fill="#28d3b6" opacity=".9"/><path d="M5 10 l3 3 l6 -7" fill="none" stroke="#04101f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><text x="30" y="15">Pilot card &amp; passage plan ready</text></g>
-              <g transform="translate(20,110)"><circle cx="10" cy="10" r="10" fill="none" stroke="#4a6690" stroke-width="2"/><text x="30" y="15" fill="#93a7c2">Mooring gear checked</text></g>
-            </g>
-            <g transform="translate(20,150)">
-              <circle cx="12" cy="12" r="13" fill="#4fc3f7"/><text x="12" y="17" text-anchor="middle" fill="#04101f" font-weight="700" font-family="Inter" font-size="12">R</text>
-              <circle cx="34" cy="12" r="13" fill="#f6b942"/><text x="34" y="17" text-anchor="middle" fill="#241800" font-weight="700" font-family="Inter" font-size="12">J</text>
-              <circle cx="56" cy="12" r="13" fill="#9b8cff"/><text x="56" y="17" text-anchor="middle" fill="#04101f" font-weight="700" font-family="Inter" font-size="12">M</text>
-              <text x="82" y="17" fill="#93a7c2" font-family="Inter" font-size="12.5">+18 crew used this checklist</text>
-            </g>
-          </g>
-        </svg></div>
-        <div class="cap">
-          <div class="tagline">Checklists &amp; routines, yours to keep</div>
-          <h3>Build it once. Share it. Watch the crew run it.</h3>
-          <p>Turn your hard-won routine or pre-arrival checklist into something you own — share it to the crew, and it stays in your folder to edit anytime. See how many shipmates use it and who, and save the best ones other crew post to your own list.</p>
-          <div class="mini"><span>Your own checklist folder</span><span>See who's using it</span><span>Save crewmates' checklists</span></div>
-        </div>
-      </div>
-
-      <div class="row2 reveal">
-        <div class="art"><div class="shot-land"><img src="assets/shots/medals.png" alt="The in-app medal wall — hexagonal metal coins for visiting each continent and transiting the Suez and Panama canals" loading="lazy" width="1080" height="2400" /></div></div>
-        <div class="cap">
-          <div class="tagline">Achievements the crew can trust</div>
-          <h3>Prestige that's witnessed, not just tapped</h3>
-          <p>Earn medals for real milestones — every continent you reach, every canal you transit — then the shipmates who sailed with you vouch for them. Each one carries its story, and how rare it really is.</p>
-          <div class="mini"><span>35+ medals</span><span>Crew vouching</span><span>World map</span></div>
-        </div>
-      </div>
-
-      <div class="row2 flip reveal">
-        <div class="art"><svg viewBox="0 0 440 250" role="img" aria-label="Ask the crew — a question with real answers from other seafarers">
-          <g font-family="Inter" font-size="13">
-            <rect x="24" y="28" width="392" height="58" rx="14" fill="#0a2036" stroke="#ffffff18"/>
-            <text x="42" y="52" fill="#93a7c2" font-size="11">QUESTION</text>
-            <text x="42" y="72" fill="#eaf2ff">Best way to descale an evaporator without shutting it down?</text>
-            <g transform="translate(24,100)">
-              <circle cx="18" cy="18" r="16" fill="#28d3b6" opacity=".85"/><text x="18" y="23" text-anchor="middle" fill="#04101f" font-weight="700">E</text>
-              <rect x="46" y="2" width="346" height="66" rx="14" fill="#28d3b6" opacity=".12" stroke="#28d3b633"/>
-              <text x="62" y="26" fill="#eaf2ff">Citric acid flush at half load, twice the interval —</text>
-              <text x="62" y="44" fill="#eaf2ff">works every time on ours.</text>
-              <text x="62" y="60" fill="#93a7c2" font-size="11">2nd Engineer · 19 found this helpful</text>
-            </g>
-            <g transform="translate(24,178)">
-              <circle cx="18" cy="18" r="16" fill="#9b8cff" opacity=".85"/><text x="18" y="23" text-anchor="middle" fill="#04101f" font-weight="700">M</text>
-              <rect x="46" y="2" width="346" height="46" rx="14" fill="#0a2036" stroke="#ffffff14"/>
-              <text x="62" y="26" fill="#eaf2ff">Also check your OEM manual's dosing rate first</text>
-              <text x="62" y="42" fill="#93a7c2" font-size="11">Chief Engineer</text>
-            </g>
-          </g>
-        </svg></div>
-        <div class="cap">
-          <div class="tagline">Ask the crew</div>
-          <h3>Answers from people who've actually done it</h3>
-          <p>Stuck on a real problem at 2am on watch? Ask, and get answers from experienced seafarers who've faced the same thing — not a forum full of strangers, your own crew.</p>
-          <div class="mini"><span>Real seafarer answers</span><span>Tagged to equipment &amp; ports</span></div>
-        </div>
-      </div>
-
-      <div class="row2 reveal">
-        <div class="art"><svg viewBox="0 0 440 250" role="img" aria-label="Learn — Navigators Club courses and offline field guides">
-          <g transform="translate(24,34)">
-            <rect x="0" y="0" width="196" height="182" rx="16" fill="#0a2036" stroke="#ffffff18"/>
-            <rect x="16" y="18" width="164" height="86" rx="10" fill="#f6b942" opacity=".16"/>
-            <path d="M60 76 66 62 76 84 86 54 96 76" fill="none" stroke="#f6b942" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" transform="translate(30,-8)"/>
-            <text x="16" y="126" fill="#eaf2ff" font-family="Space Grotesk" font-weight="700" font-size="14">Navigators Club</text>
-            <text x="16" y="146" fill="#93a7c2" font-family="Inter" font-size="11.5">Courses &amp; mentorship</text>
-            <rect x="16" y="158" width="120" height="9" rx="4.5" fill="#28d3b6" opacity=".8"/>
-          </g>
-          <g transform="translate(236,34)">
-            <rect x="0" y="0" width="180" height="182" rx="16" fill="#28d3b6" opacity=".08" stroke="#28d3b633"/>
-            <path d="M20 24h64v134l-32-16-32 16z" fill="#28d3b6" opacity=".22" stroke="#28d3b6"/>
-            <rect x="98" y="30" width="62" height="8" rx="4" fill="#eaf2ff" opacity=".7"/>
-            <rect x="98" y="48" width="62" height="8" rx="4" fill="#93a7c2" opacity=".5"/>
-            <rect x="98" y="66" width="44" height="8" rx="4" fill="#93a7c2" opacity=".5"/>
-            <text x="20" y="176" fill="#93a7c2" font-family="Inter" font-size="11.5">8 offline field guides</text>
-          </g>
-        </svg></div>
-        <div class="cap">
-          <div class="tagline">Learn</div>
-          <h3>Grow from cadet to master, with people who've been there</h3>
-          <p>Navigators Club courses, taught by working mentors — plus offline field guides you can read at sea, no connection needed.</p>
-          <div class="mini"><span>Mentor-led courses</span><span>Offline field guides</span></div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- real reviews -->
-    <div class="reviews-head reveal">
-      <span class="kicker">Built with our Navigators Club</span>
-      <p>The app grows out of a real community of working seafarers — here's what a few of them say about learning and leveling up with us.</p>
-    </div>
-    <div class="reviews">
-      <div class="rev reveal"><div class="stars">★★★★★</div><p>“The knowledge here removed my self-doubt as I moved from cadet to 3rd Officer.”</p><div class="who"><span class="av">RJ</span><div><b>Rick Mark Javier</b><small>Deck Officer · Navigators Club</small></div></div></div>
-      <div class="rev reveal"><div class="stars">★★★★★</div><p>“More than webinars — the mentors actually share their real experience.”</p><div class="who"><span class="av">PC</span><div><b>Patrick Crisosto</b><small>Navigators Club member</small></div></div></div>
-      <div class="rev reveal"><div class="stars">★★★★★</div><p>“A game-changer that bridges theory and real-life practice.”</p><div class="who"><span class="av">AT</span><div><b>Agustin Tamonan</b><small>Navigators Club member</small></div></div></div>
-    </div>
-  </div></section>
-
-  <!-- ═══ PRINCIPLE ═══ -->
-  <section class="principle"><div class="wrap reveal">
-    <blockquote>“The seafarer <b>owns</b> their data. Everyone else borrows a view of it — <b>with consent</b>, for a purpose.”</blockquote>
-    <div class="rule"></div>
-  </div></section>
-
-  <!-- ═══ CTA / waitlist ═══ -->
-  <section class="cta-sec" id="join"><div class="wrap"><div class="cta-box reveal">
-    <h2>Join the <span class="grad">first crew</span></h2>
-    <p>We're hand-picking the founding testers. Leave your email and we'll send your boarding pass the moment the beta opens.</p>
-    <form class="waitlist" id="waitlist" novalidate>
-      <input type="email" name="email" inputmode="email" autocomplete="email" required placeholder="you@example.com" aria-label="Your email" />
-      <input type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" class="hp" />
-      <button class="btn gold big" type="submit">
-        <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="2"/><path d="M12 6.5V20"/><path d="M5 12H3.5c0 4 3.8 6.5 8.5 6.5s8.5-2.5 8.5-6.5H19"/><path d="M8.5 10.5 12 7.5l3.5 3"/></svg>
-        <span class="lbl">Claim your bunk</span>
-      </button>
-    </form>
-    <p class="wl-msg" id="wlMsg" role="status" aria-live="polite"></p>
-    <p class="scarcity" id="scarcity">Limited to the first 100 founding testers · your email stays private, no spam.</p>
-  </div></div></section>
-
-  <footer><div class="wrap">
-    <div>© 2026 Seaman App · made for the people who move the world</div>
-    <nav aria-label="Footer"><a href="/app/">Navigators Club (web)</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/guidelines.html">Guidelines</a><a href="/delete-account.html">Delete account</a><a href="mailto:admin@seamanapp.com">Contact</a></nav>
-  </div></footer>
-
-  <script src="assets/site.js"></script>
+  // waitlist → Supabase (publishable key, insert-only RLS) + mailto fallback
+  (()=>{ const SB_URL='https://iegxzjflqqoxxarfomnv.supabase.co',
+    SB_KEY='sb_publishable_we44OUTEJHf3kacz0Opi4w_TBWkj0Q2';
+    const form=document.getElementById('waitlist'); if(!form) return;
+    const msg=document.getElementById('wlMsg'), sc=document.getElementById('scarcity'), box=form.closest('.cta-box');
+    const H={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};
+    const setMsg=(t,c)=>{msg.textContent=t;msg.className='wl-msg show '+c;};
+    fetch(SB_URL+'/rest/v1/rpc/waitlist_count',{method:'POST',headers:H,body:'{}'}).then(r=>r.ok?r.json():null)
+      .then(n=>{ if(typeof n==='number'&&n>=12&&sc){ sc.innerHTML='<b>'+n.toLocaleString()+'</b> seafarers already on board · your email stays private — no spam.'; }}).catch(()=>{});
+    const mailFallback=(email)=>{ location.href='mailto:admin@seamanapp.com?subject='+encodeURIComponent('Early access request')+'&body='+encodeURIComponent('Please add me to the beta: '+email); };
+    form.addEventListener('submit',async(e)=>{ e.preventDefault();
+      if(form.company&&form.company.value) return;
+      const email=(form.email.value||'').trim();
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ setMsg('Please enter a valid email so we can reach you.','err'); form.email.focus(); return; }
+      form.classList.add('busy');
+      try{ const r=await fetch(SB_URL+'/rest/v1/waitlist',{method:'POST',headers:Object.assign({Prefer:'return=minimal'},H),body:JSON.stringify({email,source:'website'})});
+        if(r.ok||r.status===201||r.status===204){ box.classList.add('done'); setMsg("You're on the list — we'll be in touch. Watch your inbox.",'ok'); }
+        else if(r.status===409){ box.classList.add('done'); setMsg("You're already on the list — we've got you.",'ok'); }
+        else throw new Error('http '+r.status);
+      }catch(err){ setMsg('Opening your mail app to finish your request…','ok'); mailFallback(email); }
+      finally{ form.classList.remove('busy'); }
+    });
+  })();
+</script>
 </body>
 </html>
