@@ -10,218 +10,226 @@
 <meta property="og:url" content="https://seamanapp.com" />
 <meta property="og:type" content="website" />
 <meta property="og:image" content="https://seamanapp.com/assets/shots/achievements.png" />
-<meta name="theme-color" content="#070f1a" />
+<meta name="theme-color" content="#05090f" />
 <link rel="icon" href="assets/shots/app-icon.png" />
 <link rel="apple-touch-icon" href="assets/shots/app-icon.png" />
 <link rel="canonical" href="https://seamanapp.com/" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;450;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --bg:#070f1a; --bg2:#0a1930; --panel:rgba(18,38,62,.55); --panel-solid:#0e2338;
-    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.15);
-    --ink:#eef4fc; --sub:#b3c4dc; --muted:#7f93ad;
-    --gold:#d7b45a; --gold2:#f4d78c; --teal:#42c1aa; --blue:#63aef0; --violet:#9b8cff;
-    --maxw:1180px; --r:18px;
-    --shadow:0 30px 70px -30px rgba(0,0,0,.75);
-    --glow:0 0 0 1px rgba(255,255,255,.05), 0 20px 50px -24px rgba(99,174,240,.35);
+    --bg:#05090f; --bg2:#081426; --panel:rgba(16,32,54,.5); --panel-solid:#0c1e34;
+    --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.16);
+    --ink:#f0f5fc; --sub:#b6c6dd; --muted:#7a8ea9;
+    --gold:#d9b65e; --gold2:#f6dc96; --teal:#43c8ae; --blue:#66b0f2; --violet:#a394ff;
+    --maxw:1200px; --r:20px;
+    --shadow:0 40px 90px -34px rgba(0,0,0,.85);
     --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
     --disp:'Space Grotesk',var(--sans);
+    --serif:'Instrument Serif',Georgia,serif;
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;
-    line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.62;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
   a{color:inherit;text-decoration:none}
   img{max-width:100%;display:block}
   .wrap{width:100%;max-width:var(--maxw);margin:0 auto;padding:0 24px;position:relative}
-  h1,h2,h3{font-family:var(--disp);font-weight:700;letter-spacing:-.022em;line-height:1.07;margin:0}
-  .eyebrow{font-family:var(--disp);font-weight:600;font-size:12.5px;letter-spacing:.2em;
-    text-transform:uppercase;color:var(--gold);display:inline-block}
-  .muted{color:var(--muted)}
+  h1,h2,h3{font-family:var(--disp);font-weight:700;letter-spacing:-.024em;line-height:1.06;margin:0}
+  .eyebrow{font-family:var(--disp);font-weight:600;font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+  .grad{background:linear-gradient(100deg,var(--gold2) 8%,var(--gold) 42%,var(--gold2) 92%);background-size:200% auto;
+    -webkit-background-clip:text;background-clip:text;color:transparent;animation:sheen 7s linear infinite}
+  @keyframes sheen{to{background-position:200% center}}
 
-  /* animated gradient mesh background */
+  /* layered animated background */
+  #hero-canvas{position:fixed;inset:0;z-index:-3;opacity:.5;pointer-events:none}
   .mesh{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none}
-  .mesh b{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;will-change:transform}
-  .mesh .b1{width:52vw;height:52vw;left:-12vw;top:-14vw;background:radial-gradient(circle,#1c5fa8,transparent 68%);animation:drift1 24s ease-in-out infinite}
-  .mesh .b2{width:46vw;height:46vw;right:-10vw;top:6vw;background:radial-gradient(circle,#b6852e,transparent 66%);opacity:.34;animation:drift2 30s ease-in-out infinite}
-  .mesh .b3{width:44vw;height:44vw;left:22vw;bottom:-18vw;background:radial-gradient(circle,#3f7d8f,transparent 68%);opacity:.32;animation:drift3 28s ease-in-out infinite}
-  .mesh::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,var(--bg) 82%)}
-  @keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vw,4vw) scale(1.12)}}
-  @keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-5vw,5vw) scale(1.15)}}
-  @keyframes drift3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(4vw,-4vw) scale(1.1)}}
-  .grid-fade{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;
-    background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
-    background-size:64px 64px;mask:radial-gradient(80% 60% at 50% 0%,#000,transparent 75%)}
-
-  /* scroll progress */
-  #bar{position:fixed;top:0;left:0;height:2.5px;width:0;z-index:100;
-    background:linear-gradient(90deg,var(--gold2),var(--gold));box-shadow:0 0 12px rgba(215,180,90,.6)}
+  .mesh b{position:absolute;border-radius:50%;filter:blur(100px);will-change:transform}
+  .mesh .b1{width:52vw;height:52vw;left:-12vw;top:-16vw;background:radial-gradient(circle,#1e63b0,transparent 68%);opacity:.5;animation:d1 26s ease-in-out infinite}
+  .mesh .b2{width:46vw;height:46vw;right:-10vw;top:4vw;background:radial-gradient(circle,#c08f31,transparent 66%);opacity:.32;animation:d2 32s ease-in-out infinite}
+  .mesh .b3{width:44vw;height:44vw;left:20vw;bottom:-20vw;background:radial-gradient(circle,#2f8f7f,transparent 68%);opacity:.3;animation:d3 30s ease-in-out infinite}
+  .mesh::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,var(--bg) 84%)}
+  @keyframes d1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vw,4vw) scale(1.12)}}
+  @keyframes d2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-5vw,5vw) scale(1.16)}}
+  @keyframes d3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(4vw,-4vw) scale(1.1)}}
+  .grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  #glow{position:fixed;width:520px;height:520px;left:0;top:0;z-index:0;pointer-events:none;border-radius:50%;
+    transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(102,176,242,.10),transparent 60%);
+    transition:opacity .4s;opacity:0}
+  body:hover #glow{opacity:1}
+  #bar{position:fixed;top:0;left:0;height:2.5px;width:0;z-index:100;background:linear-gradient(90deg,var(--gold2),var(--gold));box-shadow:0 0 14px rgba(217,182,94,.6)}
 
   /* buttons */
-  .btn{position:relative;display:inline-flex;align-items:center;gap:9px;font-family:var(--disp);
-    font-weight:600;font-size:15px;padding:13px 22px;border-radius:12px;border:1px solid transparent;
-    cursor:pointer;transition:transform .18s cubic-bezier(.2,.7,.2,1),box-shadow .25s,background .25s,border-color .25s;
-    white-space:nowrap;overflow:hidden}
+  .btn{position:relative;display:inline-flex;align-items:center;gap:9px;font-family:var(--disp);font-weight:600;
+    font-size:15px;padding:13px 22px;border-radius:12px;border:1px solid transparent;cursor:pointer;overflow:hidden;
+    transition:transform .18s cubic-bezier(.2,.7,.2,1),box-shadow .25s,background .25s,border-color .25s}
   .btn .i{width:18px;height:18px;flex:none}
-  .btn.gold{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#241800;
-    box-shadow:0 12px 30px -12px rgba(215,180,90,.7)}
-  .btn.gold::after{content:"";position:absolute;top:0;left:-120%;width:60%;height:100%;
-    background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);
-    transition:left .6s ease}
-  .btn.gold:hover{transform:translateY(-2px);box-shadow:0 18px 40px -12px rgba(215,180,90,.8)}
-  .btn.gold:hover::after{left:130%}
+  .btn.gold{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#231800;box-shadow:0 14px 34px -14px rgba(217,182,94,.75)}
+  .btn.gold::after{content:"";position:absolute;top:0;left:-120%;width:55%;height:100%;transform:skewX(-20deg);
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);transition:left .6s ease}
+  .btn.gold:hover{transform:translateY(-2px);box-shadow:0 20px 44px -14px rgba(217,182,94,.85)}
+  .btn.gold:hover::after{left:135%}
   .btn.ghost{background:rgba(255,255,255,.05);border-color:var(--line2);color:var(--ink);backdrop-filter:blur(8px)}
   .btn.ghost:hover{background:rgba(255,255,255,.1);transform:translateY(-2px)}
   .btn.lg{padding:15px 27px;font-size:16px}
 
   /* header */
   header{position:sticky;top:0;z-index:60;border-bottom:1px solid transparent;transition:.35s}
-  header.scrolled{background:rgba(7,15,26,.72);backdrop-filter:blur(16px) saturate(1.4);border-bottom-color:var(--line)}
-  .nav{display:flex;align-items:center;height:72px;gap:14px}
+  header.scrolled{background:rgba(5,9,15,.72);backdrop-filter:blur(18px) saturate(1.4);border-bottom-color:var(--line)}
+  .nav{display:flex;align-items:center;height:74px;gap:14px}
   .brand{display:flex;align-items:center;gap:11px;font-family:var(--disp);font-weight:700;font-size:18px}
-  .logo{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:none;
-    background:linear-gradient(180deg,var(--gold2),var(--gold))}
+  .logo{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:none;background:linear-gradient(180deg,var(--gold2),var(--gold))}
   .nav .spacer{flex:1}
   .nav .links{display:flex;gap:28px;align-items:center}
   .nav .links a{font-size:15px;color:var(--sub);font-weight:450;transition:color .2s}
   .nav .links a:hover{color:var(--ink)}
-  .menu-btn{display:none;background:none;border:1px solid var(--line2);color:var(--ink);width:42px;height:40px;
-    border-radius:10px;font-size:20px;cursor:pointer}
+  .menu-btn{display:none;background:none;border:1px solid var(--line2);color:var(--ink);width:42px;height:40px;border-radius:10px;font-size:20px;cursor:pointer}
 
   /* hero */
-  .hero{padding:88px 0 44px}
-  .hero-grid{display:grid;grid-template-columns:1.06fr .94fr;gap:56px;align-items:center}
-  .badge{display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,.05);
-    border:1px solid var(--line);border-radius:999px;padding:7px 15px;font-size:13px;color:var(--sub);
-    font-weight:500;margin-bottom:26px;backdrop-filter:blur(8px)}
-  .badge .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);
-    box-shadow:0 0 0 0 rgba(66,193,170,.5);animation:pulse 2.4s infinite}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(66,193,170,.5)}70%{box-shadow:0 0 0 9px rgba(66,193,170,0)}100%{box-shadow:0 0 0 0 rgba(66,193,170,0)}}
-  h1{font-size:clamp(40px,5.6vw,68px)}
-  .grad{position:relative;background:linear-gradient(100deg,var(--gold2) 10%,var(--gold) 40%,var(--gold2) 90%);
-    background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
-    animation:sheen 6s linear infinite}
-  @keyframes sheen{to{background-position:200% center}}
-  .hero p.lead{font-size:19px;color:var(--sub);max-width:566px;margin:24px 0 0}
+  .hero{padding:92px 0 46px;position:relative;z-index:1}
+  .hero-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:56px;align-items:center}
+  .badge{display:inline-flex;align-items:center;gap:9px;background:rgba(255,255,255,.05);border:1px solid var(--line);
+    border-radius:999px;padding:7px 15px;font-size:13px;color:var(--sub);font-weight:500;margin-bottom:26px;backdrop-filter:blur(8px)}
+  .badge .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);animation:pulse 2.4s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(67,200,174,.5)}70%{box-shadow:0 0 0 9px rgba(67,200,174,0)}100%{box-shadow:0 0 0 0 rgba(67,200,174,0)}}
+  h1{font-size:clamp(42px,6vw,74px);letter-spacing:-.03em}
+  .hero p.lead{font-size:19px;color:var(--sub);max-width:572px;margin:24px 0 0}
   .hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:34px}
   .trust{display:flex;flex-wrap:wrap;gap:22px 30px;margin-top:34px;padding-top:26px;border-top:1px solid var(--line)}
   .trust span{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--muted)}
   .trust b{color:var(--ink);font-weight:600}
   .trust .i{width:19px;height:19px;color:var(--gold);flex:none}
 
-  /* hero device */
-  .stage{position:relative;justify-self:center}
-  .device{position:relative;width:min(300px,80vw);aspect-ratio:1080/2160;border-radius:40px;padding:11px;
-    background:linear-gradient(160deg,#2a3d55,#0a1826);border:1px solid var(--line2);box-shadow:var(--shadow);
-    animation:floaty 7s ease-in-out infinite}
+  .stage{position:relative;justify-self:center;perspective:1200px}
+  .device{position:relative;width:min(300px,80vw);aspect-ratio:1080/2160;border-radius:42px;padding:11px;
+    background:linear-gradient(160deg,#2c4160,#0a1826);border:1px solid var(--line2);box-shadow:var(--shadow);
+    animation:floaty 7s ease-in-out infinite;transform-style:preserve-3d;transition:transform .2s ease-out}
   @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-  .device .screen{width:100%;height:100%;border-radius:29px;overflow:hidden;background:#04101f}
+  .device::before{content:"";position:absolute;inset:-2px;border-radius:44px;padding:2px;pointer-events:none;
+    background:linear-gradient(140deg,rgba(246,220,150,.6),transparent 40%,rgba(102,176,242,.5));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.6}
+  .device .screen{width:100%;height:100%;border-radius:30px;overflow:hidden;background:#04101f}
   .device .screen img{width:100%;height:100%;object-fit:cover;object-position:top}
-  .float{position:absolute;background:rgba(10,25,44,.9);border:1px solid var(--line2);border-radius:13px;
-    padding:11px 14px;display:flex;align-items:center;gap:11px;box-shadow:var(--shadow);backdrop-filter:blur(10px);
-    font-size:13px;animation:floaty 7s ease-in-out infinite}
-  .float.f1{top:7%;left:-42px;animation-delay:.6s}
-  .float.f2{bottom:13%;right:-46px;animation-delay:1.2s}
+  .float{position:absolute;background:rgba(9,20,38,.82);border:1px solid var(--line2);border-radius:14px;padding:11px 14px;
+    display:flex;align-items:center;gap:11px;box-shadow:var(--shadow);backdrop-filter:blur(12px);font-size:13px;animation:floaty 7s ease-in-out infinite}
+  .float.f1{top:6%;left:-46px;animation-delay:.6s}
+  .float.f2{bottom:12%;right:-50px;animation-delay:1.2s}
   .float .ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:none}
   .float b{display:block;font-family:var(--disp);font-size:13.5px;font-weight:600}
   .float small{color:var(--muted);font-size:11.5px}
   @media(max-width:560px){.float{display:none}}
 
   /* marquee */
-  .marquee{border-top:1px solid var(--line);border-bottom:1px solid var(--line);
-    padding:16px 0;margin-top:36px;overflow:hidden;mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
-  .marquee .track{display:flex;gap:44px;width:max-content;animation:scroll 34s linear infinite}
-  .marquee span{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--muted);
-    display:flex;align-items:center;gap:44px;white-space:nowrap}
+  .marquee{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0;margin-top:38px;overflow:hidden;
+    mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+  .marquee .track{display:flex;gap:44px;width:max-content;animation:scroll 36s linear infinite}
+  .marquee span{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--muted);display:flex;align-items:center;gap:44px;white-space:nowrap}
   .marquee span::after{content:"◆";color:var(--gold);font-size:9px}
   @keyframes scroll{to{transform:translateX(-50%)}}
 
+  /* scroll-scrubbed showcase (pinned) */
+  .scrolly{position:relative;z-index:1}
+  .scrolly-track{height:360vh}
+  .scrolly-stage{position:sticky;top:0;height:100vh;display:grid;grid-template-columns:1fr 1fr;
+    align-items:center;gap:40px;max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .s-copy .num{font-family:var(--disp);font-size:13px;color:var(--muted);letter-spacing:.25em}
+  .s-copy h2{font-size:clamp(28px,3.6vw,42px);margin:14px 0 24px;letter-spacing:-.03em}
+  .s-steps{display:flex;flex-direction:column;gap:14px}
+  .s-step{display:flex;gap:14px;align-items:flex-start;padding:16px 18px;border-radius:14px;
+    border:1px solid var(--line);background:rgba(255,255,255,.02);opacity:.42;transition:.4s cubic-bezier(.2,.7,.2,1)}
+  .s-step.on{opacity:1;background:var(--panel);border-color:var(--line2);transform:translateX(4px)}
+  .s-step .k{width:30px;height:30px;border-radius:9px;flex:none;display:grid;place-items:center;font-family:var(--disp);
+    font-weight:700;font-size:13px;color:var(--muted);background:rgba(255,255,255,.05);transition:.4s}
+  .s-step.on .k{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#231800}
+  .s-step b{font-family:var(--disp);font-size:16px;font-weight:600}
+  .s-step p{margin:3px 0 0;font-size:14px;color:var(--sub)}
+  .s-phone{position:relative;justify-self:center;width:min(300px,78vw);aspect-ratio:1080/2160;border-radius:42px;
+    padding:11px;background:linear-gradient(160deg,#2c4160,#0a1826);border:1px solid var(--line2);box-shadow:var(--shadow)}
+  .s-phone .frames{position:relative;width:100%;height:100%;border-radius:30px;overflow:hidden;background:#04101f}
+  .s-phone .frames img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;
+    opacity:0;transform:scale(1.04);transition:opacity .6s ease,transform .8s ease}
+  .s-phone .frames img.on{opacity:1;transform:none}
+  .s-dots{position:absolute;right:-30px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:9px}
+  .s-dots i{width:7px;height:7px;border-radius:50%;background:var(--line2);transition:.3s}
+  .s-dots i.on{background:var(--gold);height:22px}
+  @media(max-width:900px){.scrolly-track{height:300vh}.scrolly-stage{grid-template-columns:1fr;gap:26px;text-align:center}
+    .s-steps{text-align:left;max-width:440px;margin:0 auto}.s-dots{display:none}.s-phone{order:-1;width:min(240px,60vw)}}
+
   /* sections */
-  section.band{padding:92px 0}
-  .sec-head{max-width:700px;margin:0 auto 58px;text-align:center}
-  .sec-head h2{font-size:clamp(29px,3.8vw,44px);margin:14px 0 0}
-  .sec-head p{color:var(--sub);font-size:18px;margin:16px 0 0}
+  section.band{padding:96px 0;position:relative;z-index:1}
+  .sec-head{max-width:720px;margin:0 auto 60px;text-align:center}
+  .sec-head .num{font-family:var(--disp);font-size:13px;color:var(--muted);letter-spacing:.25em}
+  .sec-head h2{font-size:clamp(30px,4vw,46px);margin:16px 0 0;letter-spacing:-.03em}
+  .sec-head p{color:var(--sub);font-size:18px;margin:16px auto 0;max-width:620px}
 
-  /* stats */
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
-  .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:26px;
-    backdrop-filter:blur(10px)}
-  .stat .n{font-family:var(--disp);font-weight:700;font-size:clamp(24px,3vw,32px);color:var(--gold2)}
-  .stat .l{color:var(--muted);font-size:14px;margin-top:5px}
+  /* BENTO grid */
+  .bento{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(150px,auto);gap:18px}
+  .cell{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:26px;
+    overflow:hidden;backdrop-filter:blur(12px);transition:transform .22s,border-color .25s}
+  .cell::before{content:"";position:absolute;inset:0;opacity:0;transition:opacity .35s;pointer-events:none;
+    background:radial-gradient(420px circle at var(--mx,50%) var(--my,0),rgba(102,176,242,.16),transparent 60%)}
+  .cell:hover{transform:translateY(-4px);border-color:var(--line2)}
+  .cell:hover::before{opacity:1}
+  .cell .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;margin-bottom:16px;background:rgba(217,182,94,.13);color:var(--gold2)}
+  .cell .ic svg{width:23px;height:23px}
+  .cell h3{font-size:19px}
+  .cell p{color:var(--sub);font-size:14.5px;margin:9px 0 0}
+  .cell .tag{font-family:var(--disp);font-size:11.5px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--teal);margin-bottom:6px}
+  .c-6{grid-column:span 6}.c-4{grid-column:span 4}.c-3{grid-column:span 3}.c-2{grid-column:span 2}
+  .r-2{grid-row:span 2}
+  .cell.feature{display:flex;flex-direction:column;justify-content:space-between}
+  .cell.shot{padding:0;border:1px solid var(--line2)}
+  .cell.shot img{width:100%;height:100%;object-fit:cover;object-position:top center}
+  .cell.dark{background:linear-gradient(165deg,var(--panel-solid),rgba(8,20,38,.6))}
+  .cell .big-n{font-family:var(--disp);font-weight:700;font-size:clamp(30px,4vw,44px);color:var(--gold2);line-height:1}
+  @media(max-width:820px){.bento{grid-template-columns:repeat(2,1fr)}.c-6,.c-4,.c-3,.c-2{grid-column:span 2}.r-2{grid-row:auto}.cell.shot{min-height:280px}}
 
-  /* feature rows */
-  .feat{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin:0 auto 100px;max-width:1050px}
-  .feat:last-child{margin-bottom:0}
+  /* feature spotlight rows */
+  .feat{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin:0 auto;max-width:1060px}
   .feat.flip .txt{order:2}
   .feat .tag{font-family:var(--disp);font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--teal)}
   .feat h3{font-size:clamp(25px,2.9vw,33px);margin:12px 0 0}
   .feat p{color:var(--sub);margin:16px 0 0;font-size:16.5px}
   .chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}
-  .chips span{font-size:13px;color:var(--sub);background:rgba(255,255,255,.04);border:1px solid var(--line);
-    border-radius:999px;padding:6px 13px}
-  .shotwrap{position:relative}
-  .shotwrap::before{content:"";position:absolute;inset:-10%;z-index:-1;border-radius:50%;filter:blur(70px);opacity:.5;
-    background:radial-gradient(circle,rgba(99,174,240,.4),transparent 65%)}
-  .shot{border-radius:20px;overflow:hidden;border:1px solid var(--line2);background:var(--panel-solid);box-shadow:var(--shadow)}
-  .shot.phone{width:min(282px,74%);margin:0 auto;aspect-ratio:1080/2160}
-  .shot.phone img{width:100%;height:100%;object-fit:cover;object-position:top}
-
-  /* glass cards + spotlight */
-  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
-  .card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:28px;
-    backdrop-filter:blur(10px);transition:transform .2s,border-color .25s;overflow:hidden}
-  .card::before{content:"";position:absolute;inset:0;opacity:0;transition:opacity .3s;pointer-events:none;
-    background:radial-gradient(340px circle at var(--mx,50%) var(--my,0),rgba(99,174,240,.14),transparent 60%)}
-  .card:hover{transform:translateY(-5px);border-color:var(--line2)}
-  .card:hover::before{opacity:1}
-  .card .ic{width:47px;height:47px;border-radius:13px;display:grid;place-items:center;margin-bottom:18px;
-    background:rgba(215,180,90,.13);color:var(--gold2)}
-  .card .ic svg{width:24px;height:24px}
-  .card h3{font-size:19px}
-  .card p{color:var(--sub);font-size:15px;margin:10px 0 0}
+  .chips span{font-size:13px;color:var(--sub);background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:999px;padding:6px 13px}
+  .glass{background:var(--panel);border:1px solid var(--line2);border-radius:var(--r);padding:26px;backdrop-filter:blur(12px);box-shadow:var(--shadow)}
 
   /* reviews */
-  .reviews{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .reviews{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
   .rev{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:26px;backdrop-filter:blur(10px)}
   .rev .stars{color:var(--gold);letter-spacing:2px;font-size:15px}
   .rev p{font-size:16px;margin:14px 0 20px}
   .rev .who{display:flex;align-items:center;gap:12px}
-  .rev .av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-family:var(--disp);
-    font-weight:700;font-size:15px;color:#241800;background:linear-gradient(180deg,var(--gold2),var(--gold));flex:none}
+  .rev .av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-family:var(--disp);font-weight:700;font-size:15px;color:#231800;background:linear-gradient(180deg,var(--gold2),var(--gold));flex:none}
   .rev .who b{display:block;font-size:14.5px}
   .rev .who small{color:var(--muted);font-size:12.5px}
 
   /* learn */
-  .learn{display:grid;grid-template-columns:1fr 1fr;gap:22px}
-  .lc{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:34px;display:flex;
-    flex-direction:column;backdrop-filter:blur(10px)}
-  .lc.gold{background:linear-gradient(165deg,rgba(215,180,90,.12),var(--panel));border-color:rgba(215,180,90,.3)}
-  .lc h3{font-size:24px}
-  .lc p{color:var(--sub);margin:14px 0 0;flex:1}
+  .learn{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .lc{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:34px;display:flex;flex-direction:column;backdrop-filter:blur(10px)}
+  .lc.gold{background:linear-gradient(165deg,rgba(217,182,94,.12),var(--panel));border-color:rgba(217,182,94,.3)}
+  .lc h3{font-size:24px}.lc p{color:var(--sub);margin:14px 0 0;flex:1}
   .lc .price{font-family:var(--disp);font-weight:700;font-size:27px;margin:18px 0 4px}
   .lc .price s{color:var(--muted);font-weight:500;font-size:18px;margin-left:8px}
 
-  /* principle */
-  .principle{text-align:center;padding:104px 0}
-  .principle blockquote{max-width:860px;margin:0 auto;font-family:var(--disp);font-weight:600;
-    font-size:clamp(25px,3.6vw,38px);line-height:1.3;letter-spacing:-.01em}
-  .principle blockquote b{color:var(--gold2)}
-  .principle .line{width:64px;height:3px;border-radius:2px;margin:34px auto 0;background:linear-gradient(90deg,var(--gold2),var(--gold))}
+  /* principle (editorial serif) */
+  .principle{text-align:center;padding:112px 0}
+  .principle blockquote{max-width:900px;margin:0 auto;font-family:var(--serif);font-weight:400;
+    font-size:clamp(30px,4.6vw,50px);line-height:1.24;letter-spacing:-.01em;color:var(--ink)}
+  .principle blockquote em{font-style:italic;color:var(--gold2)}
+  .principle .line{width:64px;height:3px;border-radius:2px;margin:36px auto 0;background:linear-gradient(90deg,var(--gold2),var(--gold))}
 
   /* CTA */
-  .cta-band{padding:20px 0 100px}
-  .cta-box{position:relative;background:linear-gradient(165deg,rgba(20,44,72,.85),rgba(12,28,46,.8));
-    border:1px solid var(--line2);border-radius:28px;padding:60px 40px;text-align:center;max-width:780px;margin:0 auto;
-    box-shadow:var(--shadow);overflow:hidden;backdrop-filter:blur(12px)}
-  .cta-box::before{content:"";position:absolute;width:60%;height:120%;left:-10%;top:-40%;filter:blur(70px);opacity:.4;
-    background:radial-gradient(circle,rgba(215,180,90,.5),transparent 60%)}
-  .cta-box h2{font-size:clamp(29px,3.8vw,42px)}
-  .cta-box p{color:var(--sub);font-size:17px;margin:16px auto 0;max-width:520px}
+  .cta-band{padding:22px 0 104px}
+  .cta-box{position:relative;border-radius:28px;padding:2px;background:linear-gradient(140deg,rgba(246,220,150,.5),transparent 45%,rgba(102,176,242,.45));max-width:800px;margin:0 auto;box-shadow:var(--shadow)}
+  .cta-inner{position:relative;background:linear-gradient(165deg,rgba(16,36,60,.94),rgba(8,20,38,.94));border-radius:26px;padding:58px 40px;text-align:center;overflow:hidden;backdrop-filter:blur(12px)}
+  .cta-inner::before{content:"";position:absolute;width:60%;height:120%;left:-10%;top:-40%;filter:blur(80px);opacity:.4;background:radial-gradient(circle,rgba(217,182,94,.5),transparent 60%)}
+  .cta-inner h2{font-size:clamp(30px,4vw,44px)}
+  .cta-inner p{color:var(--sub);font-size:17px;margin:16px auto 0;max-width:520px}
   .waitlist{display:flex;gap:12px;max-width:480px;margin:30px auto 0;position:relative}
-  .waitlist input[type=email]{flex:1;background:rgba(0,0,0,.32);border:1px solid var(--line2);color:var(--ink);
-    border-radius:12px;padding:14px 16px;font-size:16px;font-family:var(--sans)}
+  .waitlist input[type=email]{flex:1;background:rgba(0,0,0,.34);border:1px solid var(--line2);color:var(--ink);border-radius:12px;padding:14px 16px;font-size:16px;font-family:var(--sans)}
   .waitlist input[type=email]:focus{outline:none;border-color:var(--gold)}
   .waitlist .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
   .wl-msg{min-height:22px;margin:16px 0 0;font-size:14.5px;opacity:0;transition:opacity .3s}
@@ -230,51 +238,40 @@
   .cta-box.done .waitlist{display:none}
   form.busy{opacity:.6;pointer-events:none}
 
-  footer{border-top:1px solid var(--line);padding:42px 0;color:var(--muted);font-size:14px}
+  footer{border-top:1px solid var(--line);padding:44px 0;color:var(--muted);font-size:14px;position:relative;z-index:1}
   footer .fwrap{display:flex;flex-wrap:wrap;gap:16px 26px;align-items:center;justify-content:space-between}
   footer nav{display:flex;flex-wrap:wrap;gap:20px}
   footer nav a{color:var(--sub)}footer nav a:hover{color:var(--ink)}
 
-  /* reveal */
   .reveal{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
   .reveal.in{opacity:1;transform:none}
 
   @media(max-width:900px){
     .hero-grid,.feat,.learn{grid-template-columns:1fr;gap:42px}
     .feat.flip .txt{order:0}
-    .stats,.grid3,.reviews{grid-template-columns:1fr 1fr}
-    .nav .links{display:none;position:absolute;top:72px;left:0;right:0;flex-direction:column;gap:0;
-      background:rgba(7,15,26,.98);border-bottom:1px solid var(--line);padding:8px 24px 18px;backdrop-filter:blur(14px)}
+    .reviews{grid-template-columns:1fr 1fr}
+    .nav .links{display:none;position:absolute;top:74px;left:0;right:0;flex-direction:column;gap:0;background:rgba(5,9,15,.98);border-bottom:1px solid var(--line);padding:8px 24px 18px;backdrop-filter:blur(14px)}
     .nav .links.open{display:flex}
     .nav .links a{padding:13px 0;border-bottom:1px solid var(--line);font-size:16px}
     .nav .links .btn{margin-top:12px;justify-content:center}
     .menu-btn{display:block}.nav .spacer{display:none}.nav{justify-content:space-between}
   }
-  @media(max-width:560px){
-    body{font-size:16px}.stats,.grid3,.reviews{grid-template-columns:1fr}section.band{padding:66px 0}
-    .cta-box{padding:42px 22px}.waitlist{flex-direction:column}
-  }
-  @media(prefers-reduced-motion:reduce){
-    *{animation:none!important}.reveal{opacity:1;transform:none;transition:none}
-  }
+  @media(max-width:560px){body{font-size:16px}.reviews{grid-template-columns:1fr}section.band{padding:68px 0}.cta-inner{padding:42px 22px}.waitlist{flex-direction:column}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important}.reveal{opacity:1;transform:none;transition:none}#hero-canvas{display:none}}
 </style>
 </head>
 <body>
 <div id="bar"></div>
+<canvas id="hero-canvas"></canvas>
 <div class="mesh"><b class="b1"></b><b class="b2"></b><b class="b3"></b></div>
-<div class="grid-fade"></div>
+<div class="grain"></div>
+<div id="glow"></div>
 
 <header id="top"><div class="wrap nav">
-  <a class="brand" href="/">
-    <span class="logo"><svg width="20" height="20" viewBox="0 0 120 120" aria-hidden="true"><g fill="#241800" stroke="#241800"><ellipse cx="60" cy="23" rx="8.5" ry="8" fill="none" stroke-width="5"/><rect x="56" y="28" width="8" height="52" rx="3" stroke="none"/><rect x="34" y="41" width="52" height="7" rx="3.5" stroke="none"/><circle cx="60" cy="86" r="6" stroke="none"/><path d="M57 89 C47 88 33 86 25 74" fill="none" stroke-width="7" stroke-linecap="round"/><path d="M63 89 C73 88 87 86 95 74" fill="none" stroke-width="7" stroke-linecap="round"/><circle cx="25" cy="74" r="3.6" stroke="none"/><circle cx="95" cy="74" r="3.6" stroke="none"/></g></svg></span>
-    Seaman&nbsp;App
-  </a>
+  <a class="brand" href="/"><span class="logo"><svg width="20" height="20" viewBox="0 0 120 120" aria-hidden="true"><g fill="#231800" stroke="#231800"><ellipse cx="60" cy="23" rx="8.5" ry="8" fill="none" stroke-width="5"/><rect x="56" y="28" width="8" height="52" rx="3" stroke="none"/><rect x="34" y="41" width="52" height="7" rx="3.5" stroke="none"/><circle cx="60" cy="86" r="6" stroke="none"/><path d="M57 89 C47 88 33 86 25 74" fill="none" stroke-width="7" stroke-linecap="round"/><path d="M63 89 C73 88 87 86 95 74" fill="none" stroke-width="7" stroke-linecap="round"/><circle cx="25" cy="74" r="3.6" stroke="none"/><circle cx="95" cy="74" r="3.6" stroke="none"/></g></svg></span>Seaman&nbsp;App</a>
   <span class="spacer"></span>
   <nav class="links">
-    <a href="#features">Features</a>
-    <a href="#career">Career</a>
-    <a href="#hired">Get hired</a>
-    <a href="#learn">Learn</a>
+    <a href="#features">Features</a><a href="#career">Career</a><a href="#hired">Get hired</a><a href="#learn">Learn</a>
     <a class="btn gold" href="#join">Request early access</a>
   </nav>
   <button class="menu-btn" aria-label="Menu">☰</button>
@@ -287,14 +284,8 @@
     <h1 class="reveal">The operating system for a <span class="grad">seafarer's career</span>.</h1>
     <p class="lead reveal">Plan the watch-day, stay compliant on rest hours, keep every certificate and voyage on record, earn a verified identity, and get discovered by manning agencies — on your terms. Built for deck and engine, cadet to master. Fully offline. Private by default.</p>
     <div class="hero-cta reveal">
-      <a class="btn gold lg" href="https://app.seamanapp.com" target="_blank" rel="noopener">
-        <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/></svg>
-        Open the web app
-      </a>
-      <a class="btn ghost lg" href="https://play.google.com/store/apps/details?id=com.seamanapp.seafarer_app" target="_blank" rel="noopener">
-        <svg class="i" viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 2.3 13 12 3.6 21.7A1.6 1.6 0 0 1 3 20.5v-17c0-.5.2-.9.6-1.2zM14.4 13.4l2.6 2.6-9 5.2 6.4-7.8zM18.3 11.3l2.8 1.6c.9.5.9 1.7 0 2.2l-2.8 1.6-3-2.7 3-2.7zM5 2.7l9.4 5.5-2.6 2.5L5 2.7z"/></svg>
-        Get it on Android
-      </a>
+      <a class="btn gold lg" href="https://app.seamanapp.com" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/></svg> Open the web app</a>
+      <a class="btn ghost lg" href="https://play.google.com/store/apps/details?id=com.seamanapp.seafarer_app" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 2.3 13 12 3.6 21.7A1.6 1.6 0 0 1 3 20.5v-17c0-.5.2-.9.6-1.2zM14.4 13.4l2.6 2.6-9 5.2 6.4-7.8zM18.3 11.3l2.8 1.6c.9.5.9 1.7 0 2.2l-2.8 1.6-3-2.7 3-2.7zM5 2.7l9.4 5.5-2.6 2.5L5 2.7z"/></svg> Get it on Android</a>
     </div>
     <div class="trust reveal">
       <span><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 7c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 13c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 19c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/></svg> <b>Works offline</b> for months at sea</span>
@@ -307,14 +298,8 @@
     <div class="device" id="device">
       <div class="screen"><img src="assets/shots/achievements.png" alt="Seaman App — achievements screen with a world map of countries visited, career level and medals" width="1080" height="2160" loading="eager" /></div>
     </div>
-    <div class="float f1">
-      <span class="ic" style="background:rgba(99,174,240,.16);color:var(--blue)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-      <span><b>Identity verified</b><small>a blue check the crew trusts</small></span>
-    </div>
-    <div class="float f2">
-      <span class="ic" style="background:rgba(215,180,90,.16);color:var(--gold2)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"/><path d="M12 10v3l2 2"/><path d="M9 3h6"/></svg></span>
-      <span><b>Medical in 42 days</b><small>reminded before it lapses</small></span>
-    </div>
+    <div class="float f1"><span class="ic" style="background:rgba(102,176,242,.16);color:var(--blue)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span><b>Identity verified</b><small>a blue check the crew trusts</small></span></div>
+    <div class="float f2"><span class="ic" style="background:rgba(217,182,94,.16);color:var(--gold2)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"/><path d="M12 10v3l2 2"/><path d="M9 3h6"/></svg></span><span><b>Medical in 42 days</b><small>reminded before it lapses</small></span></div>
   </div>
 </div>
 <div class="wrap"><div class="marquee reveal"><div class="track">
@@ -323,126 +308,129 @@
 </div></div></div>
 </section>
 
-<!-- STATS -->
-<section class="band" style="padding:30px 0"><div class="wrap"><div class="stats">
-  <div class="stat reveal"><div class="n" data-count="13900" data-suffix="+">13,900+</div><div class="l">Ports, fully offline</div></div>
-  <div class="stat reveal"><div class="n" data-count="35" data-suffix="+">35+</div><div class="l">Crew-vouched medals</div></div>
-  <div class="stat reveal"><div class="n">MLC / STCW</div><div class="l">Rest-hours compliance</div></div>
-  <div class="stat reveal"><div class="n">One record</div><div class="l">Certs · sea time · CV</div></div>
+<!-- SCROLL-SCRUBBED SHOWCASE -->
+<section class="scrolly" id="tour"><div class="scrolly-track"><div class="scrolly-stage">
+  <div class="s-copy">
+    <div class="num">A DAY IN THE APP</div>
+    <h2>Scroll through a life at sea</h2>
+    <div class="s-steps">
+      <div class="s-step" data-i="0"><span class="k">1</span><div><b>Your world, earned</b><p>Every port lights a country — six continents, medals your crew can vouch for.</p></div></div>
+      <div class="s-step" data-i="1"><span class="k">2</span><div><b>A day that runs itself</b><p>Auto-prioritised tasks, repeats and MLC rest — on one board.</p></div></div>
+      <div class="s-step" data-i="2"><span class="k">3</span><div><b>A bridge in your pocket</b><p>Route, ETA, celestial, anchoring, true wind — all offline.</p></div></div>
+      <div class="s-step" data-i="3"><span class="k">4</span><div><b>Prestige, witnessed</b><p>Medals for real milestones, vouched for by the crew who were there.</p></div></div>
+    </div>
+  </div>
+  <div class="s-phone">
+    <div class="frames">
+      <img class="on" data-i="0" src="assets/shots/achievements.png" alt="Achievements — world map of countries visited" width="1080" height="2160" />
+      <img data-i="1" src="assets/shots/plan.png" alt="Plan board — prioritised tasks" width="1080" height="2160" loading="lazy" />
+      <img data-i="2" src="assets/shots/nav-apps.png" alt="Navigation tools" width="1080" height="2160" loading="lazy" />
+      <img data-i="3" src="assets/shots/medals.png" alt="Medal wall" width="1080" height="2160" loading="lazy" />
+    </div>
+    <div class="s-dots"><i class="on"></i><i></i><i></i><i></i></div>
+  </div>
 </div></div></section>
 
-<!-- FEATURES -->
+<!-- BENTO: everything in one app -->
 <section class="band" id="features"><div class="wrap">
-  <div class="sec-head reveal"><div class="eyebrow">Your day at sea</div><h2>Run a tighter watch</h2>
-    <p>Everything you carry at sea in one place — the day's work, the bridge tools, and the record that follows you ship to ship.</p></div>
+  <div class="sec-head reveal"><div class="num">01 — THE APP</div><h2>Everything you carry at sea, in one place</h2>
+    <p>The day's work, the bridge tools, and the record that follows you from ship to ship — offline-first, private by default.</p></div>
+  <div class="bento">
+    <div class="cell shot c-2 r-2 reveal"><img src="assets/shots/plan.png" alt="Plan board — auto-prioritised tasks with rest-hours compliance" width="1080" height="2160" loading="lazy" /></div>
 
-  <div class="feat reveal">
-    <div class="txt">
-      <div class="tag">The watch-day planner</div>
-      <h3>A day built around your watch</h3>
-      <p>Tasks that ramp before a port, personal and overtime blocks, and reminders that fire even offline. Rest hours are checked against MLC / STCW limits in the background — so if an inspector asks, the official record is one tap away.</p>
-      <div class="chips"><span>Auto-priority tasks</span><span>Rest-hours compliance</span><span>One-tap official form</span><span>Shared crew routines</span></div>
+    <div class="cell feature c-4 dark reveal">
+      <div><div class="tag">The watch-day planner</div><h3>A day built around your watch</h3>
+      <p>Tasks that ramp before a port, personal and overtime blocks, and reminders that fire even offline. Rest hours are checked against MLC / STCW limits in the background — the official record one tap away.</p></div>
+      <div class="chips"><span>Auto-priority tasks</span><span>MLC / STCW rest hours</span><span>Offline reminders</span><span>Shared routines</span></div>
     </div>
-    <div class="shotwrap"><div class="shot phone"><img src="assets/shots/plan.png" alt="Plan board — Do now, Plan it, Quick hits and Later task columns" width="1080" height="2160" loading="lazy" /></div></div>
-  </div>
 
-  <div class="feat flip reveal">
-    <div class="txt">
-      <div class="tag">Voyages &amp; the navigation toolkit</div>
-      <h3>A bridge's worth of tools, in your pocket</h3>
-      <p>Plan a route and convert it between ECDIS formats, work an ETA across time zones, take a celestial sight, check gyro and compass error, compute an anchoring scope or true wind — and watch your world map light up as you sail. Thousands of ports, all offline.</p>
-      <div class="chips"><span>Route planner &amp; converter</span><span>Celestial &amp; gyro error</span><span>Anchoring &amp; true wind</span><span>ETA &amp; time zones</span></div>
-    </div>
-    <div class="shotwrap"><div class="shot phone"><img src="assets/shots/nav-apps.png" alt="Navigation tools — route planner, ETA, celestial, gyro error, anchoring and true wind" width="1080" height="2160" loading="lazy" /></div></div>
+    <div class="cell c-2 reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5 13 13l-4.5 2.5L11 11z" fill="currentColor" stroke="none"/></svg></div>
+      <h3>Bridge tools</h3><p>Route planner &amp; converter, celestial sight, gyro error, anchoring &amp; true wind — all offline.</p></div>
+
+    <div class="cell c-2 reveal"><div class="big-n" data-count="13900" data-suffix="+">13,900+</div><p style="margin-top:8px">Ports &amp; terminals, searchable and fully offline.</p></div>
+
+    <div class="cell c-2 reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 3 7l9 4 9-4-9-4z"/><path d="M3 12l9 4 9-4M3 17l9 4 9-4"/></svg></div>
+      <h3>Voyages &amp; world map</h3><p>Log ports and watch your map light up across six continents as you sail.</p></div>
   </div>
 </div></section>
 
-<!-- CAREER -->
+<!-- CAREER bento -->
 <section class="band" id="career"><div class="wrap">
-  <div class="sec-head reveal"><div class="eyebrow">Your career, on the record</div>
-    <h2>Never miss a renewal. Never miss a promotion.</h2>
+  <div class="sec-head reveal"><div class="num">02 — YOUR CAREER</div><h2>Never miss a renewal. Never miss a promotion.</h2>
     <p>Your documents and sea time, structured the way promotions are actually judged.</p></div>
-  <div class="grid3">
-    <div class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h6M7 13h10"/></svg></div>
-      <h3>Certificate vault &amp; expiry radar</h3>
-      <p>Every COC, GMDSS and medical with its scan attached — and a nudge 60, 30 and 7 days out, even with the app closed, even offline. Nothing lapses on your watch.</p></div>
-    <div class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v5h-5"/></svg></div>
-      <h3>Rank readiness</h3>
-      <p>Pick your target rank and the checklist lights up — what you hold, what's expiring, what's missing, your sea time, and which flags recognise your ticket. Then export a recruiter-ready CV.</p></div>
-    <div class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 3 7l9 4 9-4-9-4z"/><path d="M3 12l9 4 9-4M3 17l9 4 9-4"/></svg></div>
-      <h3>Sea service, structured</h3>
-      <p>Vessels, ranks, GT and kW, sign-on and sign-off — recorded to the fields STCW promotion is measured against, with a running sea-time counter.</p></div>
+  <div class="bento">
+    <div class="cell feature c-3 reveal"><div><div class="tag">Certificate vault</div><h3>Nothing lapses on your watch</h3>
+      <p>Every COC, GMDSS and medical with its scan attached — and a nudge 60, 30 and 7 days out, even with the app closed, even offline.</p></div>
+      <div class="chips"><span>Scans attached</span><span>Smart reminders</span></div></div>
+    <div class="cell feature c-3 reveal"><div><div class="tag">Rank readiness</div><h3>See what's between you and the next stripe</h3>
+      <p>Pick your target rank and the checklist lights up — held, expiring, missing, your sea time, and which flags recognise your ticket. Then export a recruiter-ready CV.</p></div>
+      <div class="chips"><span>Country &amp; CoC rules</span><span>Sea-time counter</span><span>Branded CV</span></div></div>
+    <div class="cell c-2 reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h6M7 13h10"/></svg></div><h3>Sea service, structured</h3><p>Vessels, ranks, GT/kW, sign-on and sign-off — to the fields STCW is measured against.</p></div>
+    <div class="cell c-2 reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-6"/></svg></div><h3>Export &amp; portfolio</h3><p>A polished CV and portfolio, generated from your own record in a tap.</p></div>
+    <div class="cell c-2 reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4 12H2M22 12h-2"/><circle cx="12" cy="12" r="5"/></svg></div><h3>Yours, forever</h3><p>You own the record — it moves with you, ship to ship, company to company.</p></div>
   </div>
 </div></section>
 
-<!-- HIRED -->
+<!-- HIRED spotlight -->
 <section class="band" id="hired"><div class="wrap">
-  <div class="sec-head reveal"><div class="eyebrow">Trusted, and discoverable</div>
-    <h2>Get verified. Get hired.</h2>
+  <div class="sec-head reveal"><div class="num">03 — GET HIRED</div><h2>Get verified. Get discovered.</h2>
     <p>A verified identity that means something, and a way to be found by manning agencies — entirely on your terms.</p></div>
 
-  <div class="feat reveal">
-    <div class="txt">
-      <div class="tag">Identity verification</div>
-      <h3>The blue check, earned</h3>
+  <div class="feat reveal" style="margin-bottom:64px">
+    <div class="txt"><div class="tag">Identity verification</div><h3>The blue check, earned</h3>
       <p>Submit a photo of your SIRB, SRB or SID and a selfie — checked automatically, with human review when needed. Once verified, your profile carries a blue check the crew and agencies can trust. Fully optional, and your ID photo is never shown to anyone.</p>
-      <div class="chips"><span>Optional</span><span>Auto-checked</span><span>ID never public</span></div>
+      <div class="chips"><span>Optional</span><span>Auto-checked</span><span>ID never public</span></div></div>
+    <div class="glass">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:46px;height:46px;border-radius:50%;background:#274b7a;display:grid;place-items:center;font-family:var(--disp);font-weight:700">CE</div>
+        <div><div style="display:flex;align-items:center;gap:7px;font-family:var(--disp);font-weight:600">Conrad Edwin
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="#66b0f2"><path d="M12 2l2.4 1.8 3-.2 1 2.8 2.6 1.5-.9 2.9.9 2.9-2.6 1.5-1 2.8-3-.2L12 22l-2.4-1.8-3 .2-1-2.8L3 16.3l.9-2.9L3 10.5l2.6-1.5 1-2.8 3 .2z"/><path d="M8.5 12l2.3 2.3 4.7-4.8" stroke="#04101f" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div style="color:var(--muted);font-size:13px">Third Officer · verified</div></div></div>
+      <div style="height:1px;background:var(--line);margin:18px 0"></div>
+      <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--sub);margin:10px 0"><span>ID document</span><span style="color:var(--teal)">checked ✓</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--sub);margin:10px 0"><span>Selfie match</span><span style="color:var(--teal)">checked ✓</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--sub);margin:10px 0"><span>Shown publicly</span><span style="color:var(--gold2)">blue check only</span></div>
+      <div style="margin-top:16px;text-align:center;background:rgba(102,176,242,.12);border-radius:10px;padding:9px;color:var(--blue);font-size:11.5px;font-weight:600;letter-spacing:.05em">YOUR ID PHOTO IS NEVER SHOWN TO ANYONE</div>
     </div>
-    <div class="shotwrap"><div class="shot" style="padding:26px;background:var(--panel-solid)">
-      <div style="border:1px solid var(--line);border-radius:14px;padding:22px;background:var(--bg2)">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="width:46px;height:46px;border-radius:50%;background:#274b7a;display:grid;place-items:center;font-family:var(--disp);font-weight:700">CE</div>
-          <div><div style="display:flex;align-items:center;gap:7px;font-family:var(--disp);font-weight:600">Conrad Edwin
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="#63aef0"><path d="M12 2l2.4 1.8 3-.2 1 2.8 2.6 1.5-.9 2.9.9 2.9-2.6 1.5-1 2.8-3-.2L12 22l-2.4-1.8-3 .2-1-2.8L3 16.3l.9-2.9L3 10.5l2.6-1.5 1-2.8 3 .2z"/><path d="M8.5 12l2.3 2.3 4.7-4.8" stroke="#04101f" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <div style="color:var(--muted);font-size:13px">Third Officer · verified</div></div></div>
-        <div style="height:1px;background:var(--line);margin:18px 0"></div>
-        <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--sub);margin:10px 0"><span>ID document</span><span style="color:var(--teal)">checked ✓</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--sub);margin:10px 0"><span>Selfie match</span><span style="color:var(--teal)">checked ✓</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--sub);margin:10px 0"><span>Shown publicly</span><span style="color:var(--gold2)">blue check only</span></div>
-        <div style="margin-top:16px;text-align:center;background:rgba(99,174,240,.12);border-radius:10px;padding:9px;color:var(--blue);font-size:11.5px;font-weight:600;letter-spacing:.05em">YOUR ID PHOTO IS NEVER SHOWN TO ANYONE</div>
-      </div>
-    </div></div>
   </div>
 
   <div class="feat flip reveal">
-    <div class="txt">
-      <div class="tag">The recruitment side</div>
-      <h3>Set your terms. Get discovered.</h3>
+    <div class="txt"><div class="tag">The recruitment side</div><h3>Set your terms. Let them come to you.</h3>
       <p>Set your rank, availability and preferences, and approved manning agencies can find you. Apply to real openings, or let them come to you — you decide exactly what a company sees, and your medical and ID records are never shared automatically.</p>
-      <div class="chips"><span>Job preferences &amp; matching</span><span>You control what's shared</span><span>Approved agencies only</span></div>
-    </div>
-    <div class="shotwrap"><div class="shot" style="padding:26px;background:var(--panel-solid)">
+      <div class="chips"><span>Job preferences &amp; matching</span><span>You control what's shared</span><span>Approved agencies only</span></div></div>
+    <div class="glass">
       <div style="border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--bg2);margin-bottom:14px">
         <div style="font-family:var(--disp);font-weight:600">2nd Officer · Bulk carrier</div>
         <div style="color:var(--muted);font-size:13.5px;margin-top:4px">4,200–4,800 USD · 6 months · joining Aug</div>
-        <div style="display:inline-block;margin-top:12px;background:rgba(66,193,170,.16);color:var(--teal);font-weight:700;font-size:12px;padding:5px 12px;border-radius:999px">92% match</div>
+        <div style="display:inline-block;margin-top:12px;background:rgba(67,200,174,.16);color:var(--teal);font-weight:700;font-size:12px;padding:5px 12px;border-radius:999px">92% match</div>
       </div>
       <div style="border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--bg2)">
         <div style="font-family:var(--disp);font-weight:600">Chief Engineer · Tanker</div>
         <div style="color:var(--muted);font-size:13.5px;margin-top:4px">Verified agency · consent required to view</div>
-        <div style="display:inline-block;margin-top:12px;background:rgba(215,180,90,.16);color:var(--gold2);font-weight:700;font-size:12px;padding:5px 12px;border-radius:999px">78% match</div>
+        <div style="display:inline-block;margin-top:12px;background:rgba(217,182,94,.16);color:var(--gold2);font-weight:700;font-size:12px;padding:5px 12px;border-radius:999px">78% match</div>
       </div>
-    </div></div>
+    </div>
   </div>
 </div></section>
 
-<!-- CREW -->
+<!-- CREW bento -->
 <section class="band"><div class="wrap">
-  <div class="sec-head reveal"><div class="eyebrow">Your crew</div><h2>You're never sailing alone</h2>
-    <p>A community of working seafarers who've stood the same watches — ask, share, help, and be recognised by people who understand the job.</p></div>
-  <div class="grid3">
-    <div class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-      <h3>Ask the crew</h3><p>Stuck on a real problem mid-watch? Ask, and get answers from experienced seafarers who've faced the same thing — tagged to the equipment or port it's about.</p></div>
-    <div class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div>
-      <h3>Checklists &amp; routines you own</h3><p>Turn your hard-won routine or pre-arrival checklist into something you keep — share it to the crew, see who runs it, and save the best ones others post.</p></div>
-    <div class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.5 13.5 7 22l5-3 5 3-1.5-8.5"/></svg></div>
-      <h3>Achievements the crew can trust</h3><p>Earn medals for real milestones — every continent, every canal transit — then the shipmates who sailed with you vouch for them. Prestige that's witnessed, not just tapped.</p></div>
+  <div class="sec-head reveal"><div class="num">04 — YOUR CREW</div><h2>You're never sailing alone</h2>
+    <p>A community of working seafarers who've stood the same watches — ask, share, help, and be recognised.</p></div>
+  <div class="bento">
+    <div class="cell shot c-2 r-2 reveal"><img src="assets/shots/medals.png" alt="The in-app medal wall — hexagonal coins for continents visited and canals transited" width="1080" height="2160" loading="lazy" /></div>
+    <div class="cell feature c-4 dark reveal"><div><div class="tag">Achievements the crew can trust</div><h3>Prestige that's witnessed, not just tapped</h3>
+      <p>Earn medals for real milestones — every continent, every canal transit — then the shipmates who sailed with you vouch for them. Each carries its story, and how rare it really is.</p></div>
+      <div class="chips"><span>35+ medals</span><span>Crew vouching</span><span>World map</span></div></div>
+    <div class="cell c-2 reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><h3>Ask the crew</h3><p>Real answers from seafarers who've faced the same thing, tagged to the kit or port.</p></div>
+    <div class="cell c-2 reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div><h3>Checklists you own</h3><p>Share your routines to the crew, see who runs them, save the best ones back.</p></div>
+    <div class="cell c-2 reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div><h3>Leaderboards</h3><p>Friendly recognition for the crew who show up and help others.</p></div>
   </div>
 </div></section>
 
 <!-- LEARN -->
 <section class="band" id="learn"><div class="wrap">
-  <div class="sec-head reveal"><div class="eyebrow">Learn</div><h2>Grow from cadet to master</h2>
+  <div class="sec-head reveal"><div class="num">05 — LEARN</div><h2>Grow from cadet to master</h2>
     <p>Courses taught by working mentors, plus field guides you can read at sea.</p></div>
   <div class="learn">
     <div class="lc reveal"><h3>Navigators Club</h3>
@@ -457,8 +445,8 @@
 
 <!-- REVIEWS -->
 <section class="band"><div class="wrap">
-  <div class="sec-head reveal"><div class="eyebrow">From our seafarers</div><h2>Built with a real crew</h2>
-    <p>The app grows out of a working community — here's what a few of them say about leveling up with us.</p></div>
+  <div class="sec-head reveal"><div class="num">06 — THE CREW SAYS</div><h2>Built with a real crew</h2>
+    <p>The app grows out of a working community — here's what a few of them say.</p></div>
   <div class="reviews">
     <div class="rev reveal"><div class="stars">★★★★★</div><p>“The knowledge here removed my self-doubt as I moved from cadet to 3rd Officer.”</p><div class="who"><span class="av">RJ</span><div><b>Rick Mark Javier</b><small>Deck Officer</small></div></div></div>
     <div class="rev reveal"><div class="stars">★★★★★</div><p>“More than webinars — the mentors actually share their real experience.”</p><div class="who"><span class="av">PC</span><div><b>Patrick Crisosto</b><small>Navigators Club member</small></div></div></div>
@@ -468,12 +456,12 @@
 
 <!-- PRINCIPLE -->
 <section class="principle band"><div class="wrap reveal">
-  <blockquote>The seafarer <b>owns</b> their data. Everyone else borrows a view of it — <b>with consent</b>, for a purpose.</blockquote>
+  <blockquote>The seafarer <em>owns</em> their data. Everyone else borrows a view of it — <em>with consent</em>, for a purpose.</blockquote>
   <div class="line"></div>
 </div></section>
 
 <!-- CTA -->
-<section class="cta-band" id="join"><div class="wrap"><div class="cta-box reveal">
+<section class="cta-band" id="join"><div class="wrap"><div class="cta-box reveal"><div class="cta-inner">
   <h2>Get early access</h2>
   <p>The app is live on the web and rolling out on Google Play. Leave your email and we'll send an invite and product updates as new features ship.</p>
   <form class="waitlist" id="waitlist" novalidate>
@@ -483,7 +471,7 @@
   </form>
   <p class="wl-msg" id="wlMsg" role="status" aria-live="polite"></p>
   <p class="scarcity" id="scarcity">Your email stays private — no spam, unsubscribe anytime.</p>
-</div></div></section>
+</div></div></div></section>
 
 <footer><div class="wrap fwrap">
   <div>© 2026 Seaman App · made for the people who move the world</div>
@@ -500,46 +488,72 @@
   document.documentElement.classList.add('js');
   const hdr=document.getElementById('top'), bar=document.getElementById('bar');
   const onScroll=()=>{ hdr.classList.toggle('scrolled',scrollY>12);
-    const h=document.documentElement.scrollHeight-innerHeight;
-    bar.style.width=(h>0?(scrollY/h*100):0)+'%'; };
+    const h=document.documentElement.scrollHeight-innerHeight; bar.style.width=(h>0?scrollY/h*100:0)+'%'; };
   addEventListener('scroll',onScroll,{passive:true}); onScroll();
 
   const mb=document.querySelector('.menu-btn'), links=document.querySelector('.nav .links');
   mb?.addEventListener('click',()=>links.classList.toggle('open'));
   links?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>links.classList.remove('open')));
 
-  // staggered reveal + count-up
-  const countUp=(el)=>{ const to=+el.dataset.count, suf=el.dataset.suffix||''; let s=null;
-    const step=(t)=>{ s=s||t; const p=Math.min((t-s)/1100,1); const e=1-Math.pow(1-p,3);
-      el.textContent=Math.round(to*e).toLocaleString()+(p===1?suf:''); if(p<1) requestAnimationFrame(step); };
-    requestAnimationFrame(step); };
-  const io=new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting){
-    e.target.classList.add('in');
-    e.target.querySelectorAll?.('[data-count]').forEach(countUp);
-    if(e.target.dataset&&e.target.dataset.count) countUp(e.target);
-    io.unobserve(e.target); }}),{threshold:.14,rootMargin:'0px 0px -8% 0px'});
-  const items=[...document.querySelectorAll('.reveal')];
-  items.forEach((el)=>io.observe(el));
-  // gentle stagger for siblings in a grid
-  document.querySelectorAll('.grid3,.reviews,.stats,.learn').forEach(g=>{
-    [...g.children].forEach((c,i)=>{ if(c.classList.contains('reveal')) c.style.transitionDelay=(i*80)+'ms'; }); });
-
-  // card spotlight
-  document.querySelectorAll('.card').forEach(c=>{
-    c.addEventListener('pointermove',e=>{ const r=c.getBoundingClientRect();
-      c.style.setProperty('--mx',(e.clientX-r.left)+'px'); c.style.setProperty('--my',(e.clientY-r.top)+'px'); });
-  });
-
-  // subtle device parallax
-  const dev=document.getElementById('device');
-  if(dev && matchMedia('(pointer:fine)').matches){
-    addEventListener('pointermove',e=>{ const x=(e.clientX/innerWidth-.5), y=(e.clientY/innerHeight-.5);
-      dev.style.transform=`rotateY(${x*6}deg) rotateX(${-y*6}deg)`; },{passive:true});
+  // cursor glow
+  const glow=document.getElementById('glow');
+  if(matchMedia('(pointer:fine)').matches){
+    addEventListener('pointermove',e=>{ glow.style.left=e.clientX+'px'; glow.style.top=e.clientY+'px'; },{passive:true});
   }
 
-  // waitlist → Supabase (publishable key, insert-only RLS) + mailto fallback
-  (()=>{ const SB_URL='https://iegxzjflqqoxxarfomnv.supabase.co',
-    SB_KEY='sb_publishable_we44OUTEJHf3kacz0Opi4w_TBWkj0Q2';
+  // reveal + count-up
+  const countUp=(el)=>{ const to=+el.dataset.count, suf=el.dataset.suffix||''; let s=null;
+    const step=(t)=>{ s=s||t; const p=Math.min((t-s)/1200,1), e=1-Math.pow(1-p,3);
+      el.textContent=Math.round(to*e).toLocaleString()+(p===1?suf:''); if(p<1) requestAnimationFrame(step); };
+    requestAnimationFrame(step); };
+  const io=new IntersectionObserver((es)=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in');
+    e.target.querySelectorAll?.('[data-count]').forEach(countUp); io.unobserve(e.target); }}),{threshold:.14,rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+  document.querySelectorAll('.bento,.reviews,.learn').forEach(g=>{ [...g.children].forEach((c,i)=>{ if(c.classList.contains('reveal')) c.style.transitionDelay=(i*70)+'ms'; }); });
+
+  // bento/card spotlight
+  document.querySelectorAll('.cell').forEach(c=>{ c.addEventListener('pointermove',e=>{ const r=c.getBoundingClientRect();
+    c.style.setProperty('--mx',(e.clientX-r.left)+'px'); c.style.setProperty('--my',(e.clientY-r.top)+'px'); }); });
+
+  // hero device parallax
+  const dev=document.getElementById('device');
+  if(dev && matchMedia('(pointer:fine)').matches){ addEventListener('pointermove',e=>{ const x=e.clientX/innerWidth-.5, y=e.clientY/innerHeight-.5;
+    dev.style.transform=`rotateY(${x*7}deg) rotateX(${-y*7}deg)`; },{passive:true}); }
+
+  // hero canvas — drifting constellation
+  (()=>{ const cv=document.getElementById('hero-canvas'); if(!cv||matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+    const ctx=cv.getContext('2d'); let w,h,pts,raf;
+    const DPR=Math.min(devicePixelRatio||1,2);
+    const resize=()=>{ w=cv.width=innerWidth*DPR; h=cv.height=Math.min(innerHeight,900)*DPR; cv.style.width=innerWidth+'px'; cv.style.height=Math.min(innerHeight,900)+'px';
+      const n=Math.min(70,Math.floor(innerWidth/22));
+      pts=Array.from({length:n},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.18*DPR,vy:(Math.random()-.5)*.18*DPR})); };
+    const draw=()=>{ ctx.clearRect(0,0,w,h);
+      for(const p of pts){ p.x+=p.vx; p.y+=p.vy; if(p.x<0||p.x>w)p.vx*=-1; if(p.y<0||p.y>h)p.vy*=-1; }
+      for(let i=0;i<pts.length;i++){ for(let j=i+1;j<pts.length;j++){ const a=pts[i],b=pts[j];
+        const dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy); if(d<140*DPR){ ctx.strokeStyle='rgba(102,176,242,'+(1-d/(140*DPR))*.16+')';
+          ctx.lineWidth=DPR; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); } } }
+      for(const p of pts){ ctx.fillStyle='rgba(160,200,240,.5)'; ctx.beginPath(); ctx.arc(p.x,p.y,1.3*DPR,0,7); ctx.fill(); }
+      raf=requestAnimationFrame(draw); };
+    resize(); draw(); addEventListener('resize',()=>{ cancelAnimationFrame(raf); resize(); draw(); },{passive:true});
+  })();
+
+  // scroll-scrubbed showcase — pinned phone scrubs through screens as you scroll
+  (()=>{ const track=document.querySelector('.scrolly-track'); if(!track) return;
+    const frames=[...document.querySelectorAll('.s-phone .frames img')];
+    const steps=[...document.querySelectorAll('.s-step')];
+    const dots=[...document.querySelectorAll('.s-dots i')];
+    const N=frames.length; let cur=-1;
+    const set=(i)=>{ if(i===cur) return; cur=i;
+      frames.forEach((f,k)=>f.classList.toggle('on',k===i));
+      steps.forEach((s,k)=>s.classList.toggle('on',k===i));
+      dots.forEach((d,k)=>d.classList.toggle('on',k===i)); };
+    const upd=()=>{ const r=track.getBoundingClientRect(), total=track.offsetHeight-innerHeight;
+      const p=Math.min(Math.max(-r.top/total,0),1); set(Math.min(N-1,Math.floor(p*N*0.999))); };
+    addEventListener('scroll',upd,{passive:true}); addEventListener('resize',upd,{passive:true}); upd();
+  })();
+
+  // waitlist → Supabase + mailto fallback
+  (()=>{ const SB_URL='https://iegxzjflqqoxxarfomnv.supabase.co', SB_KEY='sb_publishable_we44OUTEJHf3kacz0Opi4w_TBWkj0Q2';
     const form=document.getElementById('waitlist'); if(!form) return;
     const msg=document.getElementById('wlMsg'), sc=document.getElementById('scarcity'), box=form.closest('.cta-box');
     const H={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};
@@ -547,8 +561,7 @@
     fetch(SB_URL+'/rest/v1/rpc/waitlist_count',{method:'POST',headers:H,body:'{}'}).then(r=>r.ok?r.json():null)
       .then(n=>{ if(typeof n==='number'&&n>=12&&sc){ sc.innerHTML='<b>'+n.toLocaleString()+'</b> seafarers already on board · your email stays private — no spam.'; }}).catch(()=>{});
     const mailFallback=(email)=>{ location.href='mailto:admin@seamanapp.com?subject='+encodeURIComponent('Early access request')+'&body='+encodeURIComponent('Please add me to the beta: '+email); };
-    form.addEventListener('submit',async(e)=>{ e.preventDefault();
-      if(form.company&&form.company.value) return;
+    form.addEventListener('submit',async(e)=>{ e.preventDefault(); if(form.company&&form.company.value) return;
       const email=(form.email.value||'').trim();
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ setMsg('Please enter a valid email so we can reach you.','err'); form.email.focus(); return; }
       form.classList.add('busy');
