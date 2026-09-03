@@ -48,6 +48,9 @@
   .btn.ghost{background:rgba(255,255,255,.04);border-color:var(--line);color:var(--ink)}
   .btn.fb{background:#1877f2;color:#fff}
   .btn.play{background:#0f1e33;border-color:var(--line);color:var(--ink)}
+  /* Secondary to .gold: visible, but never competing with the primary CTA. */
+  .btn.gcash{background:rgba(92,198,255,.13);border-color:rgba(92,198,255,.55);color:#cfe6f7}
+  .btn.gcash:hover{background:rgba(92,198,255,.2)}
   .btn.lg{padding:16px 26px;font-size:16px}
   /* nav */
   header{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);
@@ -295,17 +298,17 @@
            hosted page currently offers no methods. Rather than ship a button
            into a dead end, say so and route the buyer to a person. Restore the
            button - and flip kPaymongoLive in the app - the day it activates. -->
-      <div style="margin-top:12px;padding:14px;border-radius:12px;
-                  background:rgba(88,174,228,.10);border:1px solid rgba(88,174,228,.42);text-align:left">
-        <div style="font-weight:700;color:#cfe6f7;font-size:14px;margin-bottom:6px">
-          Paying in pesos? GCash &amp; Maya are coming</div>
-        <p style="color:var(--muted);font-size:13px;margin:0 0 12px;line-height:1.5">
+      <div style="margin-top:14px;padding:16px;border-radius:12px;
+                  background:rgba(88,174,228,.07);text-align:left">
+        <div style="font-weight:700;color:#cfe6f7;font-size:15px;margin-bottom:6px">
+          Paying in pesos?</div>
+        <p style="color:var(--muted);font-size:13px;margin:0 0 14px;line-height:1.55">
           Card and e-wallet checkout is being switched on &mdash; our payment provider is
           finishing the business verification every Philippine merchant goes through.
-          Until it is live, message Simplified&nbsp;Maritime and we will take your
-          GCash payment and enrol you by hand, usually the same day.</p>
-        <a class="btn fb" style="width:100%;justify-content:center"
-           href="gcash/">&#128172; Pay by GCash &mdash; how it works</a>
+          Until it is live, we take your GCash payment personally and enrol you by
+          hand, usually the same day.</p>
+        <a class="btn gcash" style="width:100%;justify-content:center" href="gcash/">
+          Pay by GCash <span aria-hidden="true">&rarr;</span></a>
       </div>
       <p style="color:var(--muted);font-size:13px;margin:14px 0 0">Pay online with PayPal, or message us to pay by GCash. Either way you'll create a free Seaman&nbsp;App account (or sign in) to unlock the course.</p>
     </div>
