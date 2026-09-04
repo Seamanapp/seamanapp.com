@@ -11,7 +11,6 @@
   :root{
     --navy:#04101f; --card:#0e2540; --line:rgba(255,255,255,.10);
     --ink:#eaf2fb; --muted:#9fb2c8; --gold:#f6b500; --teal:#34d3b0;
-    --bad:#ff6b6b;
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--navy);color:var(--ink);
@@ -45,6 +44,14 @@
     font-size:16px;font-weight:800;font-family:inherit;
     box-shadow:0 10px 30px rgba(246,181,0,.26)}
   button[disabled]{opacity:.6;cursor:default;box-shadow:none}
+  /* Google, in Google's own colours — a familiar button is the point of it. */
+  .google{display:flex;align-items:center;justify-content:center;gap:11px;
+    background:#fff;color:#1f1f1f;box-shadow:0 6px 20px rgba(0,0,0,.28);
+    font-weight:700;font-size:15.5px;padding:15px}
+  .google svg{width:19px;height:19px;flex:none}
+  .or{display:flex;align-items:center;gap:12px;margin:16px 0 15px;
+    color:var(--muted);font-size:12.5px;letter-spacing:.04em;text-transform:uppercase}
+  .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
   .after{margin:14px 0 0;font-size:12.5px;color:var(--muted);line-height:1.55}
   .err{display:none;margin:0 0 14px;padding:12px 13px;border-radius:11px;
     background:rgba(255,107,107,.10);border:1px solid rgba(255,107,107,.35);
@@ -55,6 +62,14 @@
     box-shadow:none;width:auto;font-weight:600}
   #codewrap{display:none}
   #codewrap.on{display:block}
+  #busy{display:none;text-align:center;padding:14px 0 4px}
+  #busy.on{display:block}
+  #busy .spin{width:34px;height:34px;margin:0 auto 14px;border-radius:50%;
+    border:3px solid rgba(255,255,255,.14);border-top-color:var(--gold);
+    animation:sp .9s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  #busy p{margin:0;color:var(--muted);font-size:14px}
+  .hidden{display:none!important}
   .foot{text-align:center;font-size:12.5px;color:var(--muted);padding:0 20px 30px;line-height:1.6}
 </style>
 </head>
@@ -78,30 +93,49 @@
 
     <div class="err" id="err"></div>
 
-    <form id="f" novalidate>
-      <label for="email">Your email</label>
-      <input id="email" name="email" type="email" autocomplete="email"
-             inputmode="email" autocapitalize="off" spellcheck="false"
-             placeholder="you@example.com" required>
+    <div id="busy">
+      <div class="spin"></div>
+      <p id="busytext">Opening your payment…</p>
+    </div>
 
-      <label for="pw">Password
-        <span class="hint">— or the one you already use here</span></label>
-      <input id="pw" name="password" type="password" autocomplete="current-password"
-             placeholder="At least 8 characters" required>
+    <div id="forms">
+      <button type="button" class="google" id="google">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        Continue with Google
+      </button>
 
-      <button type="button" class="codelink" id="codetoggle">Have an invite code?</button>
-      <div id="codewrap">
-        <input id="code" name="code" type="text" autocapitalize="characters"
-               spellcheck="false" placeholder="Invite code (optional)">
-      </div>
+      <div class="or">or</div>
 
-      <button type="submit" id="go">Continue to payment →</button>
-    </form>
+      <form id="f" novalidate>
+        <label for="email">Your email</label>
+        <input id="email" name="email" type="email" autocomplete="email"
+               inputmode="email" autocapitalize="off" spellcheck="false"
+               placeholder="you@example.com" required>
 
-    <p class="after">
-      You'll pay by scanning a <b>QR Ph</b> code with GCash, Maya or any bank app.
-      Your access opens by itself, usually within a minute.
-    </p>
+        <label for="pw">Password
+          <span class="hint">— or the one you already use here</span></label>
+        <input id="pw" name="password" type="password" autocomplete="current-password"
+               placeholder="At least 8 characters" required>
+
+        <button type="button" class="codelink" id="codetoggle">Have an invite code?</button>
+        <div id="codewrap">
+          <input id="code" name="code" type="text" autocapitalize="characters"
+                 spellcheck="false" placeholder="Invite code (optional)">
+        </div>
+
+        <button type="submit" id="go">Continue to payment →</button>
+      </form>
+
+      <p class="after">
+        You'll pay by scanning a <b>QR Ph</b> code with GCash, Maya or any bank app.
+        Your access opens by itself, usually within a minute.
+      </p>
+    </div>
   </div>
 </main>
 
@@ -112,80 +146,182 @@
 
 <script>
 (function () {
-  var FN = 'https://iegxzjflqqoxxarfomnv.supabase.co/functions/v1/club-join';
-  var f = document.getElementById('f');
-  var go = document.getElementById('go');
+  var SB = 'https://iegxzjflqqoxxarfomnv.supabase.co';
+  var ANON = 'sb_publishable_we44OUTEJHf3kacz0Opi4w_TBWkj0Q2';
+  var JOIN_FN = SB + '/functions/v1/club-join';
+  var PAY_FN = SB + '/functions/v1/paymongo-create';
+
+  var forms = document.getElementById('forms');
+  var busy = document.getElementById('busy');
+  var busyText = document.getElementById('busytext');
   var err = document.getElementById('err');
+  var go = document.getElementById('go');
   var codeToggle = document.getElementById('codetoggle');
   var codeWrap = document.getElementById('codewrap');
+  var codeInput = document.getElementById('code');
 
+  // ---- invite code -------------------------------------------------------
   codeToggle.addEventListener('click', function () {
     codeWrap.classList.add('on');
     codeToggle.style.display = 'none';
-    document.getElementById('code').focus();
+    codeInput.focus();
   });
-
-  // An invite link can carry the code, so a friend never has to type it.
-  var pre = new URLSearchParams(location.search).get('code');
+  var params = new URLSearchParams(location.search);
+  var pre = params.get('code');
   if (pre) {
-    document.getElementById('code').value = pre;
+    codeInput.value = pre;
     codeWrap.classList.add('on');
     codeToggle.style.display = 'none';
   }
 
-  function fail(msg) {
-    err.textContent = msg;
-    err.classList.add('on');
+  // ---- shared UI ---------------------------------------------------------
+  function working(msg) {
+    err.classList.remove('on');
+    busyText.textContent = msg;
+    busy.classList.add('on');
+    forms.classList.add('hidden');
+  }
+  function stopWorking() {
+    busy.classList.remove('on');
+    forms.classList.remove('hidden');
     go.disabled = false;
     go.textContent = 'Continue to payment →';
+  }
+  function fail(msg) {
+    stopWorking();
+    err.textContent = msg;
+    err.classList.add('on');
     err.scrollIntoView({ block: 'nearest' });
   }
+  function alreadyIn() {
+    stopWorking();
+    err.innerHTML = 'You are already a member of the club. ' +
+      '<a href="https://app.seamanapp.com/">Open it here</a>.';
+    err.classList.add('on');
+  }
+  // Every path ends the same way: a checkout_url to send them to, an
+  // "already a member" so nobody pays twice, or a reason.
+  function handle(res) {
+    if (res && res.checkout_url) { location.href = res.checkout_url; return; }
+    if (res && res.access) { alreadyIn(); return; }
+    var e = (res && res.error) || '';
+    // The server speaks to itself in places. Say something a buyer can act on.
+    if (/membership/i.test(e)) {
+      e = 'Your account is still being set up. Give it a moment and try again.';
+    } else if (/not configured|misconfigured/i.test(e)) {
+      e = 'Card and e-wallet payment is briefly unavailable. Please try again shortly.';
+    }
+    fail(e || 'Could not start the payment. Please try again.');
+  }
 
-  f.addEventListener('submit', function (e) {
+  // ---- email + password --------------------------------------------------
+  document.getElementById('f').addEventListener('submit', function (e) {
     e.preventDefault();
     err.classList.remove('on');
-
     var email = document.getElementById('email').value.trim();
     var pw = document.getElementById('pw').value;
-    var code = document.getElementById('code').value.trim();
-
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) {
       return fail('Please check your email address.');
     }
-    if (pw.length < 8) {
-      return fail('Your password needs at least 8 characters.');
-    }
+    if (pw.length < 8) return fail('Your password needs at least 8 characters.');
 
     go.disabled = true;
     go.textContent = 'Opening your payment…';
-
-    fetch(FN, {
+    fetch(JOIN_FN, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, password: pw, code: code || undefined })
+      body: JSON.stringify({ email: email, password: pw, code: codeInput.value.trim() || undefined })
     })
-      .then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); })
-      .then(function (res) {
-        if (res.j && res.j.checkout_url) {
-          location.href = res.j.checkout_url;
-          return;
-        }
-        if (res.j && res.j.access) {
-          // Already a member — do not take their money twice.
-          err.innerHTML =
-            'You are already a member of the club. ' +
-            '<a href="https://app.seamanapp.com/">Open it here</a>.';
-          err.classList.add('on');
-          go.disabled = false;
-          go.textContent = 'Continue to payment →';
-          return;
-        }
-        fail((res.j && res.j.error) || 'Could not start the payment. Please try again.');
-      })
-      .catch(function () {
-        fail('No connection. Check your signal and try again.');
-      });
+      .then(function (r) { return r.json(); })
+      .then(handle)
+      .catch(function () { fail('No connection. Check your signal and try again.'); });
   });
+
+  // ---- Google ------------------------------------------------------------
+  // Done by hand rather than by pulling in supabase-js: this page's whole
+  // reason to exist is that it loads instantly on ship wifi, and a library is
+  // 50-odd KB to do what forty lines of PKCE already do. The flow is the
+  // standard one — verifier kept in sessionStorage, challenge sent to
+  // /authorize, code exchanged at /token?grant_type=pkce on the way back.
+  function b64url(bytes) {
+    var s = '';
+    for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  var CAN_GOOGLE = !!(window.crypto && crypto.subtle && crypto.getRandomValues &&
+    window.sessionStorage && window.TextEncoder);
+  if (!CAN_GOOGLE) document.getElementById('google').style.display = 'none';
+
+  document.getElementById('google').addEventListener('click', function () {
+    working('Taking you to Google…');
+    var v = b64url(crypto.getRandomValues(new Uint8Array(48)));
+    try {
+      sessionStorage.setItem('nc_verifier', v);
+      // The invite code has to survive the round trip to Google and back.
+      sessionStorage.setItem('nc_code', codeInput.value.trim());
+    } catch (e) { return fail('Please allow site storage, or use your email instead.'); }
+
+    crypto.subtle.digest('SHA-256', new TextEncoder().encode(v))
+      .then(function (d) {
+        var challenge = b64url(new Uint8Array(d));
+        var back = location.origin + location.pathname;
+        location.href = SB + '/auth/v1/authorize?provider=google' +
+          '&redirect_to=' + encodeURIComponent(back) +
+          '&code_challenge=' + challenge + '&code_challenge_method=s256';
+      })
+      .catch(function () { fail('Could not start Google sign-in. Use your email instead.'); });
+  });
+
+  // Coming back from Google. Google hands Supabase the login, Supabase hands
+  // us a one-time code, and we trade it for a session — then straight to the
+  // checkout, so signing in and paying stay one movement.
+  var authCode = params.get('code');
+  var oauthErr = params.get('error_description') || params.get('error');
+  if (authCode || oauthErr) {
+    // Scrub the URL first: a one-time code must not survive a refresh, and a
+    // ?code= left in the address bar would collide with the invite code field.
+    try { history.replaceState({}, '', location.pathname); } catch (e) {}
+  }
+  if (oauthErr && !authCode) {
+    fail('Google sign-in was cancelled. You can try again, or use your email.');
+  } else if (authCode) {
+    working('Signing you in…');
+    var verifier = null;
+    try { verifier = sessionStorage.getItem('nc_verifier'); } catch (e) {}
+    var savedCode = '';
+    try { savedCode = sessionStorage.getItem('nc_code') || ''; } catch (e) {}
+    if (!verifier) {
+      fail('That sign-in link has expired. Please try again.');
+    } else {
+      fetch(SB + '/auth/v1/token?grant_type=pkce', {
+        method: 'POST',
+        headers: { apikey: ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ auth_code: authCode, code_verifier: verifier })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          try { sessionStorage.removeItem('nc_verifier'); } catch (e) {}
+          if (!j || !j.access_token) throw new Error('no session');
+          busyText.textContent = 'Opening your payment…';
+          return fetch(PAY_FN, {
+            method: 'POST',
+            headers: {
+              Authorization: 'Bearer ' + j.access_token,
+              apikey: ANON,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              return_origin: 'https://seamanapp.com',
+              kind: 'club',
+              code: savedCode || undefined
+            })
+          }).then(function (r) { return r.json(); }).then(handle);
+        })
+        .catch(function () {
+          fail('We could not finish signing you in with Google. Please try your email instead.');
+        });
+    }
+  }
 })();
 </script>
 </body>
