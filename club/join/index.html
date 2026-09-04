@@ -616,6 +616,15 @@
     for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
     return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
+  // Reads a value the pre-Google click stashed, and clears it so a later,
+  // unrelated checkout in the same tab cannot inherit someone else's details.
+  function stashed(k) {
+    try {
+      var v = sessionStorage.getItem(k) || '';
+      sessionStorage.removeItem(k);
+      return v || undefined;
+    } catch (e) { return undefined; }
+  }
   var CAN_GOOGLE = !!(window.crypto && crypto.subtle && crypto.getRandomValues &&
     window.sessionStorage && window.TextEncoder);
   if (!CAN_GOOGLE) document.getElementById('google').style.display = 'none';
@@ -690,7 +699,20 @@
             body: JSON.stringify({
               return_origin: 'https://seamanapp.com',
               kind: 'club',
-              code: savedCode || undefined
+              // THE SAME CHECKOUT THE EMAIL PATH GETS. Without this the Google
+              // buyer silently fell through to PayMongo's hosted page while
+              // everyone else got our own QR - a different experience from the
+              // one the sales team demonstrates, reached by pressing a
+              // different button on the same screen.
+              mode: 'qr',
+              code: savedCode || undefined,
+              // The details typed before the trip to Google. They were being
+              // stashed and then never read, so a Google buyer's name and
+              // mobile were dropped on the floor and PayMongo recorded the
+              // sale against no customer at all.
+              first_name: stashed('nc_first'),
+              last_name: stashed('nc_last'),
+              mobile: stashed('nc_mobile')
             })
           }).then(function (r) { return r.json(); }).then(handle);
         })
