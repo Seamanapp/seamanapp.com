@@ -60,6 +60,33 @@
   .codelink{display:inline-block;margin:-6px 0 15px;font-size:13px;background:none;
     border:0;color:var(--teal);cursor:pointer;padding:0;font-family:inherit;
     box-shadow:none;width:auto;font-weight:600}
+  #film{margin:0 0 16px}
+  #filmplay{display:block;width:100%;padding:0;border:0;background:none;cursor:pointer;
+    position:relative;border-radius:12px;overflow:hidden;line-height:0}
+  #filmplay img{width:100%;height:auto;display:block;border-radius:12px}
+  #filmplay:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+  .playbtn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:60px;height:60px;border-radius:50%;background:rgba(11,22,34,.72);
+    border:2px solid rgba(255,255,255,.9);transition:transform .15s ease}
+  .playbtn::after{content:"";position:absolute;left:53%;top:50%;
+    transform:translate(-50%,-50%);border-style:solid;border-width:11px 0 11px 18px;
+    border-color:transparent transparent transparent #fff}
+  #filmplay:hover .playbtn{transform:translate(-50%,-50%) scale(1.07)}
+  @media (prefers-reduced-motion:reduce){.playbtn,#filmplay:hover .playbtn{transition:none;transform:translate(-50%,-50%)}}
+  #film video{width:100%;border-radius:12px;display:block;background:#000}
+  .filmcap{margin:8px 0 0;font-size:12.5px;color:var(--muted);text-align:center}
+  #qrpanel{text-align:center;padding:6px 0 2px}
+  .qrh{font-size:17px;margin:0 0 12px;font-weight:700;color:var(--ink)}
+  .qrh b{color:var(--gold)}
+  #qrimg{background:#fff;border-radius:12px;padding:10px;width:240px;height:240px;
+    display:block;margin:0 auto 14px}
+  .qrhow{font-size:14px;color:var(--ink);margin:0 0 12px;line-height:1.5}
+  .qrwait{font-size:13.5px;color:var(--teal);margin:0 0 8px;font-weight:600}
+  .qrwait .dot{display:inline-block;width:8px;height:8px;border-radius:50%;
+    background:var(--teal);margin-right:7px;animation:pulse 1.2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
+  @media (prefers-reduced-motion:reduce){.qrwait .dot{animation:none;opacity:1}}
+  .qrsmall{font-size:12.5px;color:var(--muted);margin:0;display:block}
   .clubname{margin:-10px 0 14px;font-size:13.5px;color:var(--muted)}
   .clubname b{color:var(--ink);font-weight:600}
   .was{margin:-12px 0 16px;font-size:13.5px;color:var(--gold);font-weight:600}
@@ -89,7 +116,28 @@
     <h1>Create your account and join</h1>
     <p class="price"><b id="amount">₱6,500</b><span>one payment · yours for life</span></p>
     <p class="clubname">Joining <b id="clubname">the Navigators Club</b></p>
+
+    <div id="qrpanel" hidden>
+      <h2 class="qrh">Scan to pay <b id="qramount"></b></h2>
+      <img id="qrimg" alt="QR Ph code" width="240" height="240">
+      <p class="qrhow">Open <b>GCash</b>, <b>Maya</b> or your bank app, choose
+        <b>Scan QR</b>, and point it at this code.</p>
+      <p class="qrwait"><span class="dot"></span> Waiting for your payment — this
+        page moves on by itself.</p>
+      <p class="qrsmall">Keep this page open. Your membership opens the moment
+        the payment lands.</p>
+      <a id="qrtest" class="qrsmall" hidden target="_blank" rel="noopener">Simulate payment (test mode)</a>
+    </div>
     <p class="was" id="was" hidden></p>
+
+    <div id="film">
+      <button type="button" id="filmplay" aria-label="Play the 80-second introduction">
+        <img id="filmposter" src="https://seamanapp-media.pages.dev/navclub-cover.jpg"
+             alt="" width="560" height="315" loading="lazy" decoding="async">
+        <span class="playbtn" aria-hidden="true"></span>
+      </button>
+      <p class="filmcap">80 seconds — what the club actually is, from the officers who teach it.</p>
+    </div>
 
     <ul>
       <li>All four courses — 63 video lessons</li>
@@ -257,6 +305,24 @@
       .catch(function () { resetPrice(); });
   }
 
+  // THE FILM COSTS NOTHING UNTIL IT IS WANTED. This is a checkout: a buyer who
+  // arrived ready to pay must not wait on a 3 MB download they never asked for.
+  // Only the 24 KB poster loads; the <video> is created on the click.
+  var filmPlay = document.getElementById('filmplay');
+  if (filmPlay) {
+    filmPlay.addEventListener('click', function () {
+      var v = document.createElement('video');
+      v.src = 'https://seamanapp-media.pages.dev/navclub-cover.mp4';
+      v.poster = 'https://seamanapp-media.pages.dev/navclub-cover.jpg';
+      v.controls = true;
+      v.autoplay = true;
+      v.playsInline = true;      // iOS: play in place rather than hijacking fullscreen
+      v.preload = 'auto';
+      filmPlay.replaceWith(v);
+      v.play().catch(function () { /* a blocked autoplay still leaves the controls */ });
+    });
+  }
+
   var params = new URLSearchParams(location.search);
   var pre = params.get('code');
   if (pre) {
@@ -298,7 +364,67 @@
   }
   // Every path ends the same way: a checkout_url to send them to, an
   // "already a member" so nobody pays twice, or a reason.
+  // THE QR, ON THE PAGE THEY ARE ALREADY LOOKING AT.
+  // A hosted checkout cost a page load and then a "Scan QRPh code to pay"
+  // click before the code appeared - two more chances to walk away, at the one
+  // moment the buyer has decided to pay.
+  function showQr(res) {
+    stopWorking();
+    document.getElementById('f').hidden = true;
+    var g = document.getElementById('google');
+    if (g) g.hidden = true;
+    var or = document.querySelector('.or');
+    if (or) or.hidden = true;
+    document.querySelector('.price').hidden = true;
+    // Once the QR is up, it is the only thing that should be on screen.
+    var film = document.getElementById('film');
+    if (film) film.hidden = true;
+    var benefits = document.querySelector('.card ul');
+    if (benefits) benefits.hidden = true;
+    var cn = document.querySelector('.clubname');
+    if (cn) cn.hidden = true;
+    wasEl.hidden = true;
+
+    document.getElementById('qramount').textContent = peso(res.amount / 100);
+    document.getElementById('qrimg').src = res.qr_image;
+    if (res.test_url) {
+      var tl = document.getElementById('qrtest');
+      tl.href = res.test_url; tl.hidden = false;
+    }
+    document.getElementById('qrpanel').hidden = false;
+    watchForPayment(res.access_token);
+  }
+
+  // Their membership is written by the webhook when the money lands, so that
+  // is the thing worth watching - not the payment provider. It is also the
+  // only signal that means the buyer can actually get in.
+  function watchForPayment(token) {
+    if (!token || !CLUB) return;
+    var tries = 0;
+    var timer = setInterval(function () {
+      tries++;
+      if (tries > 400) { clearInterval(timer); return; }  // ~20 minutes
+      fetch(SB + '/rest/v1/rpc/is_club_member', {
+        method: 'POST',
+        headers: { apikey: ANON, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_club: CLUB })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (isMember) {
+          if (isMember === true) {
+            clearInterval(timer);
+            location.href = '/club/welcome/?status=paid';
+          }
+        })
+        .catch(function () { /* a dropped poll is not a failed payment */ });
+    }, 2500);
+  }
+
   function handle(res) {
+    // The QR comes back with the response now, so there is nowhere to send
+    // them - the code goes straight onto this page.
+    if (res && res.mode === 'qr' && res.qr_image) { showQr(res); return; }
+    // Still handled, in case the hosted page is ever used again.
     if (res && res.checkout_url) { location.href = res.checkout_url; return; }
     if (res && res.access) { alreadyIn(); return; }
     var e = (res && res.error) || '';
