@@ -391,6 +391,13 @@
       .then(function (j) {
         if (j && j.ok && j.amount_centavos) {
           showDiscount(code, j.amount_centavos / 100);
+          if (j.email_locked) {
+            // The quote answers a caller with no account, so it cannot tell
+            // WHOSE code this is - only that it belongs to someone. Saying so
+            // beats promising a price the checkout will then refuse.
+            document.getElementById('savedline').textContent =
+              ' — sign in with the email it was sent to';
+          }
         } else {
           // It may still be a member's invite code, which is checked and
           // applied server-side at checkout. Say so rather than showing full
@@ -684,6 +691,14 @@
     if (res && res.access) { alreadyIn(); return; }
     var e = (res && res.error) || '';
     // The server speaks to itself in places. Say something a buyer can act on.
+    if (res && res.code_rejected) {
+      // The one thing they can act on: the code field is right there.
+      fail(e + ' Clear the code to continue at the full price.');
+      codeWrap.classList.add('on');
+      codeToggle.style.display = 'none';
+      codeInput.focus();
+      return;
+    }
     if (/membership/i.test(e)) {
       e = 'Your account is still being set up. Give it a moment and try again.';
     } else if (/not configured|misconfigured/i.test(e)) {
