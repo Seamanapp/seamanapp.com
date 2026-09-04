@@ -60,6 +60,8 @@
   .codelink{display:inline-block;margin:-6px 0 15px;font-size:13px;background:none;
     border:0;color:var(--teal);cursor:pointer;padding:0;font-family:inherit;
     box-shadow:none;width:auto;font-weight:600}
+  .was{margin:-12px 0 16px;font-size:13.5px;color:var(--gold);font-weight:600}
+  .was s{color:var(--muted);font-weight:400;margin-right:6px}
   #codewrap{display:none}
   #codewrap.on{display:block}
   #busy{display:none;text-align:center;padding:14px 0 4px}
@@ -83,7 +85,8 @@
 <main>
   <div class="card">
     <h1>Create your account and join</h1>
-    <p class="price"><b>₱6,500</b><span>one payment · yours for life</span></p>
+    <p class="price"><b id="amount">₱6,500</b><span>one payment · yours for life</span></p>
+    <p class="was" id="was" hidden></p>
 
     <ul>
       <li>All four courses — 63 video lessons</li>
@@ -166,13 +169,59 @@
     codeToggle.style.display = 'none';
     codeInput.focus();
   });
+  // A SALES LINK CARRIES ITS PRICE. A rep sends this link saying "you'll pay
+  // ₱3,250" - if the page then shows ₱6,500 until the buyer is already on
+  // PayMongo, that gap is where the sale dies. So the code is priced here,
+  // before they commit, by a read-only quote that consumes nothing.
+  var CLUB = '22222222-2222-2222-2222-222222222201';
+  var LIST_PHP = 6500;
+  var amountEl = document.getElementById('amount');
+  var wasEl = document.getElementById('was');
+
+  function peso(n) {
+    return '₱' + n.toLocaleString('en-PH', { maximumFractionDigits: 2 });
+  }
+  function resetPrice() {
+    amountEl.textContent = peso(LIST_PHP);
+    wasEl.hidden = true;
+    wasEl.textContent = '';
+  }
+  function quote(code) {
+    if (!code) { resetPrice(); return; }
+    fetch(SB + '/rest/v1/rpc/coupon_quote', {
+      method: 'POST',
+      headers: { apikey: ANON, Authorization: 'Bearer ' + ANON, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_code: code, p_club: CLUB })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j && j.ok && j.amount_centavos) {
+          amountEl.textContent = peso(j.amount_centavos / 100);
+          wasEl.hidden = false;
+          wasEl.innerHTML = '<s>' + peso(LIST_PHP) + '</s> your code is applied';
+        } else {
+          // It may still be a member's invite code, which is checked and
+          // applied server-side at checkout. Say so rather than showing full
+          // price as though the code did nothing - and never quote LESS than
+          // they will be charged.
+          resetPrice();
+          wasEl.hidden = false;
+          wasEl.textContent = 'Your code will be applied at checkout.';
+        }
+      })
+      .catch(function () { resetPrice(); });
+  }
+
   var params = new URLSearchParams(location.search);
   var pre = params.get('code');
   if (pre) {
     codeInput.value = pre;
     codeWrap.classList.add('on');
     codeToggle.style.display = 'none';
+    quote(pre.trim());
   }
+  codeInput.addEventListener('change', function () { quote(codeInput.value.trim()); });
+  codeInput.addEventListener('blur', function () { quote(codeInput.value.trim()); });
 
   // ---- shared UI ---------------------------------------------------------
   function working(msg) {
