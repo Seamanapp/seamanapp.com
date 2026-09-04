@@ -75,6 +75,14 @@
   .price-line{display:flex;align-items:baseline;gap:12px;margin:0 0 18px;flex-wrap:wrap}
   .price-line b{font-family:"Space Grotesk";font-size:38px;color:var(--gold-soft)}
   .price-line span{color:var(--muted);font-size:14.5px}
+  .price-line s{color:var(--muted);font-size:19px;font-family:"Space Grotesk";
+    text-decoration-thickness:2px;opacity:.75}
+  .codebar{display:none;align-items:center;gap:10px;justify-content:center;
+    background:rgba(52,211,176,.10);border:1px solid rgba(52,211,176,.35);
+    color:var(--teal);border-radius:999px;padding:9px 16px;font-size:13.5px;
+    font-weight:600;margin:0 auto 16px;max-width:max-content}
+  .codebar.on{display:flex}
+  .codebar b{color:var(--ink);font-family:"Space Grotesk";letter-spacing:.04em}
   .trust{display:flex;flex-wrap:wrap;gap:10px 22px;color:var(--muted);font-size:13.5px}
   .trust b{color:var(--ink)}
   /* generic cards */
@@ -144,13 +152,39 @@
     .quotes{columns:1}
     section{padding:58px 0}
   }
+  @media(max-width:600px){
+    .wrap{padding:0 16px}
+    section{padding:44px 0}
+    /* 86vh of hero on a phone pushes everything that matters below the fold,
+       and the fold is where a Messenger visitor decides to keep scrolling. */
+    .hero{min-height:auto;padding:36px 0 44px}
+    .hero h1{max-width:none}
+    .price-line b{font-size:31px}
+    .price-line s{font-size:17px}
+    /* A tap target that fills the width beats one a thumb can miss. */
+    .cta-row{gap:10px}
+    .cta-row .btn{width:100%}
+    .btn.lg{padding:16px 20px;font-size:16px;width:100%}
+    .lead{font-size:16px}
+    .trust{gap:8px 16px;font-size:13px}
+    /* The brand and the button were fighting for a 360px bar. */
+    .nav{height:58px}
+    .brand{font-size:15px}
+    .brand img{width:26px;height:26px}
+    .nav .btn{padding:9px 14px;font-size:13.5px}
+    .codebar{font-size:12.5px;padding:8px 13px}
+  }
+  @media(max-width:380px){
+    .brand span.brandname{display:none}
+    .price-line b{font-size:28px}
+  }
 </style>
 </head>
 <body>
 
 <header>
   <div class="wrap nav">
-    <a class="brand" href="https://seamanapp.com"><img src="img/app-icon.png" alt="" />Seaman&nbsp;App</a>
+    <a class="brand" href="https://seamanapp.com"><img src="img/app-icon.png" alt="" /><span class="brandname">Seaman&nbsp;App</span></a>
     <a class="btn gold" href="#join">Join the club</a>
   </div>
 </header>
@@ -361,7 +395,7 @@
 <section>
   <div class="wrap">
     <p class="eyebrow">The honest part</p>
-    <h2 class="big">Why is it only ₱6,500?</h2>
+    <h2 class="big">Why is it only <span data-price>₱6,500</span>?</h2>
     <p class="lead section-lead">
       It is a fair question. A Third Officer in international trade earns around
       <b style="color:var(--gold-soft)">₱180,000 a month</b>. Against that, the
@@ -533,8 +567,13 @@
 <section class="final" id="join">
   <div class="wrap">
     <p class="eyebrow">Join the Navigators Club</p>
+    <p class="codebar" id="codebar">Your code <b id="codebarcode"></b> is applied</p>
     <h2 class="big" style="margin-left:auto;margin-right:auto">One payment. Everything above. For life.</h2>
-    <div class="price-line"><b>₱6,500</b><span>one-time · no subscription</span></div>
+    <div class="price-line">
+      <b data-price>₱6,500</b>
+      <s data-was hidden>₱6,500</s>
+      <span data-pricenote>one-time · no subscription</span>
+    </div>
     <p class="lead" style="margin:0 auto 24px">
       Four courses, 63 video lessons, the file library, the community group chat, and
       every lesson we add later. Pay by scanning a QR Ph code with GCash, Maya or
@@ -563,8 +602,8 @@
          no connection. In a browser you can study anywhere you have signal. iPhone
          users use the website for now.</p></details>
     <details><summary>Is it a subscription?</summary>
-      <p>No. ₱6,500 once, and the club is yours for life — including lessons added
-         later.</p></details>
+      <p>No. <span data-price>₱6,500</span> once, and the club is yours for life —
+         including lessons added later.</p></details>
     <details><summary>How do I pay?</summary>
       <p>Scan a QR Ph code with GCash, Maya or any participating bank app. Access
          opens automatically, usually within a minute. If you would rather send the payment to a person, message
@@ -595,5 +634,59 @@
 </footer>
 
 
+<script>
+(function () {
+  // A SALES LINK PRICES THE WHOLE PAGE, not just the checkout at the end of it.
+  // A rep sends seamanapp.com/club/?code=NAVCLUB3250 and says "₱3,250" - if the
+  // page argues with them the whole way down and only agrees on the last screen,
+  // the reader stops believing the page long before they reach it.
+  var SB = 'https://iegxzjflqqoxxarfomnv.supabase.co';
+  var ANON = 'sb_publishable_we44OUTEJHf3kacz0Opi4w_TBWkj0Q2';
+  var CLUB = '22222222-2222-2222-2222-222222222201';
+
+  var code = (new URLSearchParams(location.search).get('code') || '').trim();
+  if (!code) return;
+
+  // Carry it to the checkout whatever the quote says: it may be a member's
+  // invite code, which is validated server-side at the checkout instead.
+  var joinLinks = document.querySelectorAll('a[href="join/"], a[href^="join/?"]');
+  for (var i = 0; i < joinLinks.length; i++) {
+    joinLinks[i].href = 'join/?code=' + encodeURIComponent(code);
+  }
+
+  function peso(n) { return '₱' + n.toLocaleString('en-PH', { maximumFractionDigits: 2 }); }
+
+  fetch(SB + '/rest/v1/rpc/coupon_quote', {
+    method: 'POST',
+    headers: { apikey: ANON, Authorization: 'Bearer ' + ANON, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_code: code, p_club: CLUB })
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      if (!j || !j.ok || !j.amount_centavos) return;   // not a coupon; leave the page alone
+      var now = peso(j.amount_centavos / 100);
+      var was = peso((j.base_centavos || 650000) / 100);
+
+      var prices = document.querySelectorAll('[data-price]');
+      for (var i = 0; i < prices.length; i++) prices[i].textContent = now;
+
+      var wasEl = document.querySelector('[data-was]');
+      if (wasEl) { wasEl.textContent = was; wasEl.hidden = false; }
+
+      var note = document.querySelector('[data-pricenote]');
+      if (note) note.textContent = 'one-time · no subscription · your code applied';
+
+      var bar = document.getElementById('codebar');
+      if (bar) {
+        document.getElementById('codebarcode').textContent = code.toUpperCase();
+        bar.classList.add('on');
+      }
+      // The share cards still carry the list price; correcting the visible page
+      // is what matters to the person reading it.
+      document.title = 'Navigators Club — ' + now + ' with your code';
+    })
+    .catch(function () { /* the page simply keeps its list price */ });
+})();
+</script>
 </body>
 </html>

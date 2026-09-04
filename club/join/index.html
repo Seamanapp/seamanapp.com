@@ -78,7 +78,10 @@
   #qrpanel{text-align:center;padding:6px 0 2px}
   .qrh{font-size:17px;margin:0 0 12px;font-weight:700;color:var(--ink)}
   .qrh b{color:var(--gold)}
-  #qrimg{background:#fff;border-radius:12px;padding:10px;width:240px;height:240px;
+  /* A QR is scanned by another phone held over it, so bigger is genuinely
+     better - but it must never overflow a narrow screen. */
+  #qrimg{background:#fff;border-radius:12px;padding:10px;
+    width:min(280px,72vw);height:min(280px,72vw);
     display:block;margin:0 auto 14px}
   .qrhow{font-size:14px;color:var(--ink);margin:0 0 12px;line-height:1.5}
   .qrwait{font-size:13.5px;color:var(--teal);margin:0 0 8px;font-weight:600}
@@ -86,6 +89,30 @@
     background:var(--teal);margin-right:7px;animation:pulse 1.2s ease-in-out infinite}
   @keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
   @media (prefers-reduced-motion:reduce){.qrwait .dot{animation:none;opacity:1}}
+
+  /* PHONES. This is a checkout opened from a Messenger link, so the phone is
+     the common case rather than the edge one. Reclaim the horizontal padding
+     that a 360px screen cannot spare, and make every control full-width so a
+     thumb cannot miss it. */
+  @media (max-width:480px){
+    main{padding:4px 12px 32px}
+    .card{padding:20px 16px 18px;border-radius:16px}
+    .top{padding:13px 14px}
+    h1{font-size:21px}
+    .price b{font-size:27px}
+    .price{gap:7px;flex-wrap:wrap}
+    ul{padding-left:20px}
+    li{font-size:14px}
+    input,button[type=submit],.google{font-size:16px}  /* 16px stops iOS zooming on focus */
+    .qrh{font-size:16px}
+    .qrhow{font-size:13.5px}
+    .filmcap{font-size:12px}
+  }
+  @media (max-width:340px){
+    .card{padding:16px 13px 16px}
+    h1{font-size:19.5px}
+    .price b{font-size:24px}
+  }
   .qrsmall{font-size:12.5px;color:var(--muted);margin:0;display:block}
   .clubname{margin:-10px 0 14px;font-size:13.5px;color:var(--muted)}
   .clubname b{color:var(--ink);font-weight:600}
