@@ -13,6 +13,10 @@
     --ink:#eaf2fb; --muted:#9fb2c8; --gold:#f6b500; --teal:#34d3b0;
   }
   *{box-sizing:border-box}
+  /* `hidden` is only a UA display:none, so any author rule that sets its own
+     display silently wins - which is why .google, .price and .or all stayed
+     visible behind the QR. Make the attribute mean what it says. */
+  [hidden]{display:none!important}
   html,body{margin:0;background:var(--navy);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     -webkit-font-smoothing:antialiased}
@@ -84,6 +88,8 @@
     width:min(280px,72vw);height:min(280px,72vw);
     display:block;margin:0 auto 14px}
   .qrhow{font-size:14px;color:var(--ink);margin:0 0 12px;line-height:1.5}
+  .qrwho{font-size:12.5px;color:var(--muted);margin:0 0 10px}
+  .qrwho b{color:var(--ink)}
   .qrwait{font-size:13.5px;color:var(--teal);margin:0 0 8px;font-weight:600}
   .qrwait .dot{display:inline-block;width:8px;height:8px;border-radius:50%;
     background:var(--teal);margin-right:7px;animation:pulse 1.2s ease-in-out infinite}
@@ -116,6 +122,8 @@
   .qrsmall{font-size:12.5px;color:var(--muted);margin:0;display:block}
   .clubname{margin:-10px 0 14px;font-size:13.5px;color:var(--muted)}
   .clubname b{color:var(--ink);font-weight:600}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:400px){.row2{grid-template-columns:1fr;gap:0}}
   .was{margin:-12px 0 16px;font-size:13.5px;color:var(--gold);font-weight:600}
   .was s{color:var(--muted);font-weight:400;margin-right:6px}
   #codewrap{display:none}
@@ -149,6 +157,7 @@
       <img id="qrimg" alt="QR Ph code" width="240" height="240">
       <p class="qrhow">Open <b>GCash</b>, <b>Maya</b> or your bank app, choose
         <b>Scan QR</b>, and point it at this code.</p>
+      <p class="qrwho" id="qrwho" hidden></p>
       <p class="qrwait"><span class="dot"></span> Waiting for your payment — this
         page moves on by itself.</p>
       <p class="qrsmall">Keep this page open. Your membership opens the moment
@@ -193,6 +202,23 @@
       <div class="or">or</div>
 
       <form id="f" novalidate>
+        <div class="row2">
+          <div>
+            <label for="firstname">First name</label>
+            <input id="firstname" name="first_name" type="text" autocomplete="given-name"
+                   placeholder="Juan" maxlength="60" required>
+          </div>
+          <div>
+            <label for="lastname">Last name</label>
+            <input id="lastname" name="last_name" type="text" autocomplete="family-name"
+                   placeholder="Dela Cruz" maxlength="60" required>
+          </div>
+        </div>
+
+        <label for="mobile">Mobile number</label>
+        <input id="mobile" name="mobile" type="tel" autocomplete="tel"
+               inputmode="tel" placeholder="09XX XXX XXXX" maxlength="20" required>
+
         <label for="email">Your email</label>
         <input id="email" name="email" type="email" autocomplete="email"
                inputmode="email" autocapitalize="off" spellcheck="false"
@@ -418,6 +444,13 @@
       var tl = document.getElementById('qrtest');
       tl.href = res.test_url; tl.hidden = false;
     }
+    // A buyer sees a typo in their own name BEFORE paying, not after.
+    if (res.paying_as) {
+      var who = document.getElementById('qrwho');
+      who.innerHTML = 'Paying as <b></b>';
+      who.querySelector('b').textContent = res.paying_as;
+      who.hidden = false;
+    }
     document.getElementById('qrpanel').hidden = false;
     watchForPayment(res.access_token);
   }
@@ -470,6 +503,17 @@
     err.classList.remove('on');
     var email = document.getElementById('email').value.trim();
     var pw = document.getElementById('pw').value;
+    var first = document.getElementById('firstname').value.trim();
+    var last = document.getElementById('lastname').value.trim();
+    var mobile = document.getElementById('mobile').value.trim();
+    // The form is novalidate, so these are checked here or not at all. Each
+    // message names the one field to fix rather than saying "check the form".
+    if (first.length < 2) return fail('Please enter your first name.');
+    if (last.length < 2) return fail('Please enter your last name.');
+    // 09xx xxx xxxx, or +63 9xx xxx xxxx, spaces and dashes welcome.
+    if (!/^(\+?63|0)9\d{9}$/.test(mobile.replace(/[\s()-]/g, ''))) {
+      return fail('Please enter a mobile number like 0917 123 4567.');
+    }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) {
       return fail('Please check your email address.');
     }
@@ -482,6 +526,7 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: email, password: pw,
+        first_name: first, last_name: last, mobile: mobile,
         code: codeInput.value.trim() || undefined,
         club: CLUB_SLUG
       })
@@ -507,6 +552,14 @@
   if (!CAN_GOOGLE) document.getElementById('google').style.display = 'none';
 
   document.getElementById('google').addEventListener('click', function () {
+    // Google gives us a name and an email but never a mobile number, and the
+    // form is skipped entirely - so stash whatever has been typed and let the
+    // return leg send it on.
+    try {
+      sessionStorage.setItem('nc_first', document.getElementById('firstname').value.trim());
+      sessionStorage.setItem('nc_last', document.getElementById('lastname').value.trim());
+      sessionStorage.setItem('nc_mobile', document.getElementById('mobile').value.trim());
+    } catch (e) { /* private mode: the details are simply not carried */ }
     working('Taking you to Google…');
     var v = b64url(crypto.getRandomValues(new Uint8Array(48)));
     try {
