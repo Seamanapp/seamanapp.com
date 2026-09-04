@@ -88,6 +88,13 @@
     width:min(280px,72vw);height:min(280px,72vw);
     display:block;margin:0 auto 14px}
   .qrhow{font-size:14px;color:var(--ink);margin:0 0 12px;line-height:1.5}
+  .qractions{margin:0 0 10px}
+  .qrbtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;padding:13px 16px;border-radius:12px;font-size:15px;font-weight:700;
+    cursor:pointer;background:rgba(255,255,255,.06);color:var(--ink);
+    border:1px solid var(--line)}
+  .qrbtn:hover{background:rgba(255,255,255,.10)}
+  .qrbtn:active{transform:translateY(1px)}
   .qrwho{font-size:12.5px;color:var(--muted);margin:0 0 10px}
   .qrwho b{color:var(--ink)}
   .qrwait{font-size:13.5px;color:var(--teal);margin:0 0 8px;font-weight:600}
@@ -155,9 +162,16 @@
     <div id="qrpanel" hidden>
       <h2 class="qrh">Scan to pay <b id="qramount"></b></h2>
       <img id="qrimg" alt="QR Ph code" width="240" height="240">
-      <p class="qrhow">Open <b>GCash</b>, <b>Maya</b> or your bank app, choose
-        <b>Scan QR</b>, and point it at this code.</p>
+      <p class="qrhow">Scanning from another phone? Open <b>GCash</b>, <b>Maya</b>
+        or your bank app, choose <b>Scan QR</b> and point it at this code.<br>
+        <b>Paying on this phone?</b> Save the code first, then pick it from your
+        gallery in the app.</p>
       <p class="qrwho" id="qrwho" hidden></p>
+      <div class="qractions">
+        <button type="button" id="qrsave" class="qrbtn">Save the QR to my phone</button>
+      </div>
+      <p class="qrsmall" id="qrsaved" hidden>Saved. In GCash or Maya, tap
+        <b>Scan QR</b> then the small gallery icon, and pick it.</p>
       <p class="qrwait"><span class="dot"></span> Waiting for your payment — this
         page moves on by itself.</p>
       <p class="qrsmall">Keep this page open. Your membership opens the moment
@@ -422,14 +436,14 @@
   // click before the code appeared - two more chances to walk away, at the one
   // moment the buyer has decided to pay.
   function showQr(res) {
-    stopWorking();
-    document.getElementById('f').hidden = true;
-    var g = document.getElementById('google');
-    if (g) g.hidden = true;
-    var or = document.querySelector('.or');
-    if (or) or.hidden = true;
-    document.querySelector('.price').hidden = true;
+    // Stop the spinner WITHOUT calling stopWorking(), which un-hides the form
+    // block and resets the button - the opposite of what is wanted here.
+    busy.classList.remove('on');
+    // One wrapper carries the form, the Google button and the "or" divider, so
+    // hiding it is both simpler and less fragile than hiding each in turn.
+    forms.classList.add('hidden');
     // Once the QR is up, it is the only thing that should be on screen.
+    document.querySelector('.price').hidden = true;
     var film = document.getElementById('film');
     if (film) film.hidden = true;
     var benefits = document.querySelector('.card ul');
@@ -451,8 +465,48 @@
       who.querySelector('b').textContent = res.paying_as;
       who.hidden = false;
     }
+    var saveBtn = document.getElementById('qrsave');
+    saveBtn.onclick = function () {
+      var ok = saveQr(res.qr_image, Math.round(res.amount / 100));
+      var note = document.getElementById('qrsaved');
+      if (ok) {
+        note.hidden = false;
+        saveBtn.textContent = 'Saved to your downloads';
+      } else {
+        // Some browsers refuse a programmatic download outright. Say the thing
+        // that still works rather than pretending it saved.
+        note.textContent = 'Press and hold the code above, then Save image.';
+        note.hidden = false;
+      }
+    };
     document.getElementById('qrpanel').hidden = false;
     watchForPayment(res.access_token);
+  }
+
+  // A data: URI and the `download` attribute do not get along on every phone -
+  // iOS in particular. A Blob object URL does, and it is also what lets the
+  // file carry a sensible name into the gallery.
+  function saveQr(dataUri, amountPhp) {
+    try {
+      var b64 = dataUri.split(',')[1];
+      var bin = atob(b64);
+      var bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      var blob = new Blob([bytes], { type: 'image/png' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'seamanapp-qrph-' + amountPhp + '.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // Revoked late: a phone may still be writing the file when the click
+      // returns, and a revoked URL mid-write saves nothing.
+      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   // Their membership is written by the webhook when the money lands, so that
@@ -521,6 +575,9 @@
 
     go.disabled = true;
     go.textContent = 'Opening your payment…';
+    // Same spinner the Google path has always used. Nothing moving for several
+    // seconds reads as a hang, and a buyer who thinks it hung presses back.
+    working('Opening your payment…');
     fetch(JOIN_FN, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
