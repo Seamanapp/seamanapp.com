@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Welcome aboard — Navigators Club</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="../img/app-icon.png">
+<style>
+  :root{
+    --navy:#04101f; --card:#0e2540; --line:rgba(255,255,255,.10);
+    --ink:#eaf2fb; --muted:#9fb2c8; --gold:#f6b500; --teal:#34d3b0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--navy);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px 20px;
+    background:radial-gradient(120% 90% at 50% 0%, #0a2036 0%, #06172a 55%, #04101f 100%)}
+  .card{width:100%;max-width:460px;background:var(--card);border:1px solid var(--line);
+    border-radius:18px;padding:30px 26px}
+  .tick{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;background:rgba(52,211,176,.14);
+    border:1px solid rgba(52,211,176,.45);margin:0 0 18px}
+  .tick svg{width:28px;height:28px;stroke:var(--teal);fill:none;stroke-width:3;
+    stroke-linecap:round;stroke-linejoin:round}
+  h1{margin:0 0 10px;font-size:24px;letter-spacing:-.3px}
+  p{margin:0 0 15px;font-size:14.5px;line-height:1.6;color:var(--muted)}
+  p b{color:var(--ink)}
+  .btn{display:block;text-align:center;text-decoration:none;padding:16px;border-radius:12px;
+    background:linear-gradient(180deg,#ffd257,#f6b500);color:#04101f;font-weight:800;
+    font-size:16px;box-shadow:0 10px 30px rgba(246,181,0,.26);margin:20px 0 12px}
+  .btn.ghost{background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--ink);
+    box-shadow:none;font-weight:700;font-size:14.5px;padding:13px}
+  .fine{font-size:12.5px;line-height:1.6;color:var(--muted);margin:18px 0 0}
+  a{color:var(--teal)}
+  .cancel .tick{background:rgba(255,255,255,.05);border-color:var(--line)}
+  .cancel .tick svg{stroke:var(--muted)}
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="tick">
+    <svg viewBox="0 0 24 24" id="mark"><polyline points="4,13 9,18 20,6"></polyline></svg>
+  </div>
+  <h1 id="h">Payment received</h1>
+  <p id="p1">
+    Thank you — welcome to the Navigators Club. We're opening your access now,
+    which usually takes under a minute.
+  </p>
+  <p id="p2">
+    <b>Sign in with the email and password you just created</b> and the club will
+    be waiting for you.
+  </p>
+  <a class="btn" id="cta" href="https://app.seamanapp.com/">Sign in and open the club</a>
+  <a class="btn ghost" id="cta2"
+     href="https://play.google.com/store/apps/details?id=com.seamanapp.seafarer_app">
+    Get the Android app
+  </a>
+  <p class="fine" id="fine">
+    If the club still looks locked, give it a minute and reopen it — nothing is
+    lost. Stuck? <a href="https://www.facebook.com/simplifiedmaritime">Message
+    Simplified Maritime</a> and we'll sort it out.
+  </p>
+</div>
+
+<script>
+// The cancel_url lands here too, so say the truth in that case rather than
+// congratulating someone who did not pay. Arriving at this URL is PayMongo's
+// claim that the payment went through; the entitlement itself is written by
+// the signed webhook, which is why the copy says "opening" and not "open".
+(function () {
+  var status = new URLSearchParams(location.search).get('status');
+  if (status === 'paid') return;
+  document.getElementById('card').className = 'card cancel';
+  document.getElementById('mark').innerHTML =
+    '<circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line>' +
+    '<line x1="12" y1="16.5" x2="12" y2="16.6"></line>';
+  document.getElementById('h').textContent = 'Checkout closed';
+  document.getElementById('p1').textContent =
+    'Nothing was charged. You can join whenever you are ready.';
+  document.getElementById('p2').style.display = 'none';
+  var cta = document.getElementById('cta');
+  cta.textContent = 'Back to joining';
+  cta.href = '../join/';
+  document.getElementById('cta2').style.display = 'none';
+  document.getElementById('fine').innerHTML =
+    'Changed your mind about paying online? <a href="https://www.facebook.com/simplifiedmaritime">' +
+    'Message Simplified Maritime</a> and we will enrol you by hand.';
+})();
+</script>
+</body>
+</html>
