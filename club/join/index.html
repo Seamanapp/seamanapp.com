@@ -30,9 +30,22 @@
   .card{width:100%;max-width:440px;background:var(--card);border:1px solid var(--line);
     border-radius:18px;padding:26px 24px 24px}
   h1{margin:0 0 6px;font-size:23px;line-height:1.25;letter-spacing:-.3px}
-  .price{display:flex;align-items:baseline;gap:9px;margin:0 0 16px}
-  .price b{font-size:30px;color:var(--gold);letter-spacing:-.5px}
-  .price span{font-size:13.5px;color:var(--muted)}
+  .offer{background:rgba(255,255,255,.035);border:1px solid var(--line);
+    border-radius:14px;padding:14px 16px 15px;margin:0 0 18px}
+  .offer-club{margin:0 0 7px;font-size:11.5px;font-weight:700;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted)}
+  .offer-price{display:flex;align-items:baseline;gap:11px;margin:0;flex-wrap:wrap}
+  .offer-price b{font-size:36px;line-height:1;color:var(--gold);letter-spacing:-1px}
+  .offer-price s{font-size:19px;color:var(--muted);text-decoration-thickness:2px}
+  .offer-note{margin:7px 0 0;font-size:13px;color:var(--muted)}
+  .offer-code{display:flex;align-items:center;gap:9px;margin:12px 0 0;
+    padding:9px 11px;border-radius:10px;font-size:13px;line-height:1.4;
+    background:rgba(52,211,176,.10);border:1px solid rgba(52,211,176,.3);
+    color:var(--teal)}
+  .offer-code b{color:var(--ink);letter-spacing:.03em}
+  .offer-code .tick{flex:none;width:19px;height:19px;border-radius:50%;
+    background:var(--teal);color:#04101f;font-size:12px;font-weight:800;
+    display:flex;align-items:center;justify-content:center}
   ul{margin:0 0 20px;padding:0;list-style:none;font-size:14px;color:var(--muted)}
   ul li{position:relative;padding-left:22px;margin-bottom:7px;line-height:1.45}
   ul li::before{content:"";position:absolute;left:4px;top:7px;width:7px;height:7px;
@@ -87,6 +100,9 @@
   #qrimg{background:#fff;border-radius:12px;padding:10px;
     width:min(280px,72vw);height:min(280px,72vw);
     display:block;margin:0 auto 14px}
+  /* When the branded card replaces the bare code it is portrait, not square,
+     and needs no white plate of its own. */
+  #qrimg.ascard{background:none;padding:0;height:auto;width:min(300px,78vw)}
   .qrhow{font-size:14px;color:var(--ink);margin:0 0 12px;line-height:1.5}
   .qractions{margin:0 0 10px}
   .qrbtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
@@ -112,8 +128,8 @@
     .card{padding:20px 16px 18px;border-radius:16px}
     .top{padding:13px 14px}
     h1{font-size:21px}
-    .price b{font-size:27px}
-    .price{gap:7px;flex-wrap:wrap}
+    .offer{padding:12px 13px 13px}
+    .offer-price b{font-size:32px}
     ul{padding-left:20px}
     li{font-size:14px}
     input,button[type=submit],.google{font-size:16px}  /* 16px stops iOS zooming on focus */
@@ -124,15 +140,11 @@
   @media (max-width:340px){
     .card{padding:16px 13px 16px}
     h1{font-size:19.5px}
-    .price b{font-size:24px}
+    .offer-price b{font-size:29px}
   }
   .qrsmall{font-size:12.5px;color:var(--muted);margin:0;display:block}
-  .clubname{margin:-10px 0 14px;font-size:13.5px;color:var(--muted)}
-  .clubname b{color:var(--ink);font-weight:600}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media (max-width:400px){.row2{grid-template-columns:1fr;gap:0}}
-  .was{margin:-12px 0 16px;font-size:13.5px;color:var(--gold);font-weight:600}
-  .was s{color:var(--muted);font-weight:400;margin-right:6px}
   #codewrap{display:none}
   #codewrap.on{display:block}
   #busy{display:none;text-align:center;padding:14px 0 4px}
@@ -156,8 +168,19 @@
 <main>
   <div class="card">
     <h1>Create your account and join</h1>
-    <p class="price"><b id="amount">₱6,500</b><span>one payment · yours for life</span></p>
-    <p class="clubname">Joining <b id="clubname">the Navigators Club</b></p>
+
+    <div class="offer">
+      <p class="offer-club" id="clubname">Navigators Club</p>
+      <p class="offer-price">
+        <b id="amount">₱6,500</b>
+        <s id="was" hidden></s>
+      </p>
+      <p class="offer-note">one payment · no subscription · yours for life</p>
+      <p class="offer-code" id="codebadge" hidden>
+        <span class="tick" aria-hidden="true">✓</span>
+        <span>Code <b id="codeshown"></b> applied<span id="savedline"></span></span>
+      </p>
+    </div>
 
     <div id="qrpanel" hidden>
       <h2 class="qrh">Scan to pay <b id="qramount"></b></h2>
@@ -178,7 +201,6 @@
         the payment lands.</p>
       <a id="qrtest" class="qrsmall" hidden target="_blank" rel="noopener">Simulate payment (test mode)</a>
     </div>
-    <p class="was" id="was" hidden></p>
 
     <div id="film">
       <button type="button" id="filmplay" aria-label="Play the 80-second introduction">
@@ -307,10 +329,24 @@
   function peso(n) {
     return '₱' + n.toLocaleString('en-PH', { maximumFractionDigits: 2 });
   }
+  var codeBadge = document.getElementById('codebadge');
   function resetPrice() {
     if (LIST_PHP !== null) amountEl.textContent = peso(LIST_PHP);
     wasEl.hidden = true;
     wasEl.textContent = '';
+    codeBadge.hidden = true;
+  }
+  // One place decides how a discount is presented, so the badge and the struck
+  // price can never disagree with each other.
+  function showDiscount(code, nowPhp) {
+    amountEl.textContent = peso(nowPhp);
+    wasEl.textContent = peso(LIST_PHP);
+    wasEl.hidden = false;
+    document.getElementById('codeshown').textContent = code.toUpperCase();
+    var saved = LIST_PHP - nowPhp;
+    document.getElementById('savedline').textContent =
+      saved > 0 ? ' — you save ' + peso(saved) : '';
+    codeBadge.hidden = false;
   }
 
   // Resolve the club before anything else: the coupon quote needs its id, and
@@ -337,8 +373,6 @@
         amountEl.textContent = peso(LIST_PHP);
         if (j.name) {
           document.title = 'Join ' + j.name + ' — Seaman App';
-          var h = document.querySelector('.card h1');
-          if (h) h.textContent = 'Create your account and join';
           var nm = document.getElementById('clubname');
           if (nm) nm.textContent = j.name;
         }
@@ -356,17 +390,16 @@
       .then(function (r) { return r.json(); })
       .then(function (j) {
         if (j && j.ok && j.amount_centavos) {
-          amountEl.textContent = peso(j.amount_centavos / 100);
-          wasEl.hidden = false;
-          wasEl.innerHTML = '<s>' + peso(LIST_PHP) + '</s> your code is applied';
+          showDiscount(code, j.amount_centavos / 100);
         } else {
           // It may still be a member's invite code, which is checked and
           // applied server-side at checkout. Say so rather than showing full
           // price as though the code did nothing - and never quote LESS than
           // they will be charged.
           resetPrice();
-          wasEl.hidden = false;
-          wasEl.textContent = 'Your code will be applied at checkout.';
+          document.getElementById('codeshown').textContent = code.toUpperCase();
+          document.getElementById('savedline').textContent = ' — checked at payment';
+          codeBadge.hidden = false;
         }
       })
       .catch(function () { resetPrice(); });
@@ -443,14 +476,11 @@
     // hiding it is both simpler and less fragile than hiding each in turn.
     forms.classList.add('hidden');
     // Once the QR is up, it is the only thing that should be on screen.
-    document.querySelector('.price').hidden = true;
+    document.querySelector('.offer').hidden = true;
     var film = document.getElementById('film');
     if (film) film.hidden = true;
     var benefits = document.querySelector('.card ul');
     if (benefits) benefits.hidden = true;
-    var cn = document.querySelector('.clubname');
-    if (cn) cn.hidden = true;
-    wasEl.hidden = true;
 
     document.getElementById('qramount').textContent = peso(res.amount / 100);
     document.getElementById('qrimg').src = res.qr_image;
@@ -467,42 +497,47 @@
     }
     var saveBtn = document.getElementById('qrsave');
     var note = document.getElementById('qrsaved');
+    var php = Math.round(res.amount / 100);
+    var cardName = 'navigators-club-qrph-' + php + '.png';
+
+    // Built NOW, not on the click. Two reasons, and the second is the bug that
+    // stopped anything saving: the file is ready the instant they ask for it,
+    // and share() can then run inside the gesture instead of after it.
+    buildQrCard(res.qr_image, php, res.paying_as, res.item, function (blob) {
+      if (!blob) return;
+      cardUrl = URL.createObjectURL(blob);
+      try { cardFile = new File([blob], cardName, { type: 'image/png' }); } catch (e) { /* older browser */ }
+    });
+
     saveBtn.onclick = function () {
-      var php = Math.round(res.amount / 100);
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Preparing…';
-      buildQrCard(res.qr_image, php, res.paying_as, res.item, function (blob) {
-        if (!blob) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Save the QR to my phone';
-          note.textContent = 'Press and hold the code above, then Save image.';
-          note.hidden = false;
-          return;
-        }
-        saveQrCard(blob, php, function (outcome) {
-          saveBtn.disabled = false;
-          if (outcome === 'shared') {
+      // Synchronous, inside the gesture. Anything awaited before this point
+      // and the browser refuses the sheet.
+      if (cardFile && navigator.canShare && navigator.canShare({ files: [cardFile] })) {
+        navigator.share({ files: [cardFile] })
+          .then(function () {
             saveBtn.textContent = 'Saved';
             note.innerHTML = 'Now open <b>GCash</b> or <b>Maya</b>, tap <b>Scan QR</b>, ' +
               'then the gallery icon, and pick it.';
-          } else if (outcome === 'downloaded') {
-            saveBtn.textContent = 'Save the QR again';
-            // Deliberately not "Saved": the browser does not tell us whether it
-            // wrote the file, and claiming it did is how the last version lied.
-            note.innerHTML = 'Check your <b>Downloads</b> or gallery. If it is not ' +
-              'there, press and hold the code above and choose <b>Save image</b>.';
-          } else if (outcome === 'cancelled') {
-            saveBtn.textContent = 'Save the QR to my phone';
-            note.hidden = true;
-            return;
-          } else {
-            saveBtn.textContent = 'Save the QR to my phone';
-            note.innerHTML = 'Your browser would not save it. Press and hold the ' +
-              'code above and choose <b>Save image</b>.';
-          }
-          note.hidden = false;
-        });
-      });
+            note.hidden = false;
+          })
+          .catch(function (e) {
+            // A cancel is not a failure and should say nothing.
+            if (e && e.name === 'AbortError') return;
+            offerLongPress(note);
+          });
+        return;
+      }
+      // No share sheet. Try a download, but do NOT claim it worked - a browser
+      // that ignores it says nothing either way - and put the card on the page
+      // so there is a route that cannot be blocked.
+      if (cardUrl) {
+        try {
+          var a = document.createElement('a');
+          a.href = cardUrl; a.download = cardName;
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        } catch (e) { /* fall through to the long-press route */ }
+      }
+      offerLongPress(note);
     };
     document.getElementById('qrpanel').hidden = false;
     watchForPayment(res.access_token);
@@ -597,34 +632,22 @@
     img.src = qrDataUri;   // a data: URI, so the canvas is never tainted
   }
 
-  // Returns what ACTUALLY happened: 'shared' | 'downloaded' | 'cancelled' |
-  // 'failed'. 'downloaded' still cannot be confirmed by the browser, and the
-  // wording says so.
-  function saveQrCard(blob, amountPhp, done) {
-    var name = 'navigators-club-qrph-' + amountPhp + '.png';
-    var file = null;
-    try { file = new File([blob], name, { type: 'image/png' }); } catch (e) { /* older browser */ }
+  // Prepared ahead of the click, because navigator.share() must be called
+  // synchronously inside the user gesture - awaiting anything first loses it.
+  var cardFile = null, cardUrl = null;
 
-    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file] })
-        .then(function () { done('shared'); })
-        .catch(function (e) {
-          done(e && e.name === 'AbortError' ? 'cancelled' : 'failed');
-        });
-      return;
+  // The path that always exists: show the card ON the page. Every mobile
+  // browser can long-press an image and save it, with no download API and
+  // nothing for an in-app browser to block.
+  function offerLongPress(note) {
+    if (cardUrl) {
+      var im = document.getElementById('qrimg');
+      im.src = cardUrl;
+      im.classList.add('ascard');
     }
-    try {
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url; a.download = name;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      // Revoked late: a phone may still be writing the file when the click
-      // returns, and a revoked URL mid-write saves nothing.
-      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
-      done('downloaded');
-    } catch (e) {
-      done('failed');
-    }
+    note.innerHTML = '<b>Press and hold the image above</b>, then choose ' +
+      '<b>Save image</b> — that puts it in your gallery.';
+    note.hidden = false;
   }
 
   // Their membership is written by the webhook when the money lands, so that
