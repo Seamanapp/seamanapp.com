@@ -32,7 +32,14 @@
       // Forward the part after /app plus the query + hash so deep links survive.
       if (/^\/app(\/|$)/i.test(p)) {
         var rest = p.replace(/^\/app\/?/i, '');
-        location.replace('https://app.seamanapp.com/' + rest + location.search + location.hash);
+        // The web app routes on the URL FRAGMENT (Flutter default hash
+        // strategy), so a bare path like /courses/<id> is invisible to it.
+        // Carry the forwarded subpath in the hash, or keep an existing one.
+        var t = 'https://app.seamanapp.com/';
+        if (location.hash) { t += location.search + location.hash; }
+        else if (rest) { t += '#/' + rest + location.search; }
+        else { t += location.search; }
+        location.replace(t);
         return;
       }
       var m = p.match(/^\/v\/([^\/?#]+)/i);
