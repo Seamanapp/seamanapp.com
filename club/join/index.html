@@ -466,18 +466,43 @@
       who.hidden = false;
     }
     var saveBtn = document.getElementById('qrsave');
+    var note = document.getElementById('qrsaved');
     saveBtn.onclick = function () {
-      var ok = saveQr(res.qr_image, Math.round(res.amount / 100));
-      var note = document.getElementById('qrsaved');
-      if (ok) {
-        note.hidden = false;
-        saveBtn.textContent = 'Saved to your downloads';
-      } else {
-        // Some browsers refuse a programmatic download outright. Say the thing
-        // that still works rather than pretending it saved.
-        note.textContent = 'Press and hold the code above, then Save image.';
-        note.hidden = false;
-      }
+      var php = Math.round(res.amount / 100);
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Preparing…';
+      buildQrCard(res.qr_image, php, res.paying_as, res.item, function (blob) {
+        if (!blob) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save the QR to my phone';
+          note.textContent = 'Press and hold the code above, then Save image.';
+          note.hidden = false;
+          return;
+        }
+        saveQrCard(blob, php, function (outcome) {
+          saveBtn.disabled = false;
+          if (outcome === 'shared') {
+            saveBtn.textContent = 'Saved';
+            note.innerHTML = 'Now open <b>GCash</b> or <b>Maya</b>, tap <b>Scan QR</b>, ' +
+              'then the gallery icon, and pick it.';
+          } else if (outcome === 'downloaded') {
+            saveBtn.textContent = 'Save the QR again';
+            // Deliberately not "Saved": the browser does not tell us whether it
+            // wrote the file, and claiming it did is how the last version lied.
+            note.innerHTML = 'Check your <b>Downloads</b> or gallery. If it is not ' +
+              'there, press and hold the code above and choose <b>Save image</b>.';
+          } else if (outcome === 'cancelled') {
+            saveBtn.textContent = 'Save the QR to my phone';
+            note.hidden = true;
+            return;
+          } else {
+            saveBtn.textContent = 'Save the QR to my phone';
+            note.innerHTML = 'Your browser would not save it. Press and hold the ' +
+              'code above and choose <b>Save image</b>.';
+          }
+          note.hidden = false;
+        });
+      });
     };
     document.getElementById('qrpanel').hidden = false;
     watchForPayment(res.access_token);
@@ -486,26 +511,119 @@
   // A data: URI and the `download` attribute do not get along on every phone -
   // iOS in particular. A Blob object URL does, and it is also what lets the
   // file carry a sensible name into the gallery.
-  function saveQr(dataUri, amountPhp) {
+  // ── SAVING THE QR, HONESTLY ────────────────────────────────────────────
+  //
+  // The previous version claimed "Saved to your downloads" whenever nothing
+  // threw. But a browser that silently ignores a programmatic <a download>
+  // throws nothing either - so it announced a success it had never observed,
+  // and on a phone (the Messenger in-app browser especially, which is where
+  // these buyers come from) the file was simply never written.
+  //
+  // navigator.share with a file is the path that actually works on a phone:
+  // it opens the native sheet with Save Image / Save to Photos, and it REPORTS
+  // whether it happened. canShare({files}) is a real capability check, not a
+  // guess. Where that is missing we fall back to a download and say plainly
+  // that we cannot confirm it, rather than inventing a confirmation.
+
+  // A bare QR in the gallery is an unlabelled square nobody can identify an
+  // hour later. This draws a card around it: what it is, how much, and who for.
+  function buildQrCard(qrDataUri, amountPhp, payingAs, itemName, cb) {
+    var W = 760, H = 1180;
+    var c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    var x = c.getContext('2d');
+    var NAVY = '#04101f', CARD = '#0e2540', GOLD = '#f6b500',
+        INK = '#eaf2fb', MUTED = '#9fb2c8';
+    var SANS = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
+
+    var g = x.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#0a2036'); g.addColorStop(1, NAVY);
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+
+    function roundRect(px, py, w, h, r) {
+      x.beginPath();
+      x.moveTo(px + r, py);
+      x.arcTo(px + w, py, px + w, py + h, r);
+      x.arcTo(px + w, py + h, px, py + h, r);
+      x.arcTo(px, py + h, px, py, r);
+      x.arcTo(px, py, px + w, py, r);
+      x.closePath();
+    }
+    function centre(text, y, font, colour) {
+      x.font = font; x.fillStyle = colour; x.textAlign = 'center';
+      x.fillText(text, W / 2, y);
+    }
+
+    // header
+    centre('SEAMAN APP', 84, '700 27px ' + SANS, GOLD);
+    centre(itemName || 'Navigators Club', 132, '600 31px ' + SANS, INK);
+
+    // the amount is the thing they check before paying
+    centre('₱' + amountPhp.toLocaleString('en-PH'), 240, '800 78px ' + SANS, GOLD);
+    centre('one payment · yours for life', 282, '400 22px ' + SANS, MUTED);
+
+    // white plate, because a QR must be dark-on-light to scan
+    var plate = 560, px = (W - plate) / 2, py = 336;
+    x.fillStyle = '#ffffff';
+    roundRect(px, py, plate, plate, 28); x.fill();
+
+    var img = new Image();
+    img.onload = function () {
+      var pad = 26, inner = plate - pad * 2;
+      x.drawImage(img, px + pad, py + pad, inner, inner);
+
+      // QR Ph mark, drawn rather than borrowed: the BSP publishes no
+      // licensable logo pack, and inventing an official-looking seal would be
+      // worse than a plain label.
+      var by = py + plate + 46;
+      x.font = '700 24px ' + SANS; x.textAlign = 'center';
+      var label = 'QR Ph', wLab = x.measureText(label).width;
+      x.fillStyle = CARD;
+      roundRect(W / 2 - wLab / 2 - 22, by - 26, wLab + 44, 44, 22); x.fill();
+      x.fillStyle = INK; x.fillText(label, W / 2, by + 4);
+
+      if (payingAs) centre('Paying as ' + payingAs, by + 60, '500 23px ' + SANS, MUTED);
+
+      // Measured, not eyeballed: at the old height the second instruction line
+      // fell off the bottom of the canvas whenever a name was present.
+      var iy = payingAs ? by + 116 : by + 82;
+      centre('Open GCash, Maya or your bank app', iy, '600 24px ' + SANS, INK);
+      centre('Scan QR → pick this image from your gallery', iy + 38, '400 22px ' + SANS, MUTED);
+      centre('seamanapp.com', H - 46, '500 21px ' + SANS, MUTED);
+
+      c.toBlob(function (blob) { cb(blob); }, 'image/png');
+    };
+    img.onerror = function () { cb(null); };
+    img.src = qrDataUri;   // a data: URI, so the canvas is never tainted
+  }
+
+  // Returns what ACTUALLY happened: 'shared' | 'downloaded' | 'cancelled' |
+  // 'failed'. 'downloaded' still cannot be confirmed by the browser, and the
+  // wording says so.
+  function saveQrCard(blob, amountPhp, done) {
+    var name = 'navigators-club-qrph-' + amountPhp + '.png';
+    var file = null;
+    try { file = new File([blob], name, { type: 'image/png' }); } catch (e) { /* older browser */ }
+
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file] })
+        .then(function () { done('shared'); })
+        .catch(function (e) {
+          done(e && e.name === 'AbortError' ? 'cancelled' : 'failed');
+        });
+      return;
+    }
     try {
-      var b64 = dataUri.split(',')[1];
-      var bin = atob(b64);
-      var bytes = new Uint8Array(bin.length);
-      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      var blob = new Blob([bytes], { type: 'image/png' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
-      a.href = url;
-      a.download = 'seamanapp-qrph-' + amountPhp + '.png';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
       // Revoked late: a phone may still be writing the file when the click
       // returns, and a revoked URL mid-write saves nothing.
       setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
-      return true;
+      done('downloaded');
     } catch (e) {
-      return false;
+      done('failed');
     }
   }
 
