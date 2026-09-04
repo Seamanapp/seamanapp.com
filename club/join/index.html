@@ -100,17 +100,16 @@
   #qrimg{background:#fff;border-radius:12px;padding:10px;
     width:min(280px,72vw);height:min(280px,72vw);
     display:block;margin:0 auto 14px}
-  /* When the branded card replaces the bare code it is portrait, not square,
-     and needs no white plate of its own. */
-  #qrimg.ascard{background:none;padding:0;height:auto;width:min(300px,78vw)}
   .qrhow{font-size:14px;color:var(--ink);margin:0 0 12px;line-height:1.5}
-  .qractions{margin:0 0 10px}
-  .qrbtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
-    width:100%;padding:13px 16px;border-radius:12px;font-size:15px;font-weight:700;
-    cursor:pointer;background:rgba(255,255,255,.06);color:var(--ink);
-    border:1px solid var(--line)}
-  .qrbtn:hover{background:rgba(255,255,255,.10)}
-  .qrbtn:active{transform:translateY(1px)}
+  .qrsteps{margin:0 0 12px;padding:0 0 0 4px;list-style:none;counter-reset:qs;
+    text-align:left;display:grid;gap:8px}
+  .qrsteps li{counter-increment:qs;position:relative;padding-left:32px;
+    font-size:13.5px;color:var(--muted);line-height:1.45}
+  .qrsteps li::before{content:counter(qs);position:absolute;left:0;top:0;
+    width:22px;height:22px;border-radius:50%;background:rgba(52,211,176,.15);
+    border:1px solid rgba(52,211,176,.45);color:var(--teal);
+    font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .qrsteps b{color:var(--ink)}
   .qrwho{font-size:12.5px;color:var(--muted);margin:0 0 10px}
   .qrwho b{color:var(--ink)}
   .qrwait{font-size:13.5px;color:var(--teal);margin:0 0 8px;font-weight:600}
@@ -185,16 +184,14 @@
     <div id="qrpanel" hidden>
       <h2 class="qrh">Scan to pay <b id="qramount"></b></h2>
       <img id="qrimg" alt="QR Ph code" width="240" height="240">
-      <p class="qrhow">Scanning from another phone? Open <b>GCash</b>, <b>Maya</b>
-        or your bank app, choose <b>Scan QR</b> and point it at this code.<br>
-        <b>Paying on this phone?</b> Save the code first, then pick it from your
-        gallery in the app.</p>
+      <p class="qrhow">Scanning with another phone? Just point its camera at this
+        code. <b>Paying on this phone?</b> A screenshot is all you need:</p>
       <p class="qrwho" id="qrwho" hidden></p>
-      <div class="qractions">
-        <button type="button" id="qrsave" class="qrbtn">Save the QR to my phone</button>
-      </div>
-      <p class="qrsmall" id="qrsaved" hidden>Saved. In GCash or Maya, tap
-        <b>Scan QR</b> then the small gallery icon, and pick it.</p>
+      <ol class="qrsteps">
+        <li><b>Screenshot this page</b> — that saves the code to your gallery.</li>
+        <li>Open <b>GCash</b>, <b>Maya</b> or your bank app and tap <b>Scan QR</b>.</li>
+        <li>Tap the small <b>gallery</b> icon and pick the screenshot.</li>
+      </ol>
       <p class="qrwait"><span class="dot"></span> Waiting for your payment — this
         page moves on by itself.</p>
       <p class="qrsmall">Keep this page open. Your membership opens the moment
@@ -204,7 +201,7 @@
 
     <div id="film">
       <button type="button" id="filmplay" aria-label="Play the 80-second introduction">
-        <img id="filmposter" src="https://seamanapp-media.pages.dev/navclub-cover.jpg"
+        <img id="filmposter" src="https://seamanapp-media.pages.dev/navclub-checkout.jpg"
              alt="" width="560" height="315" loading="lazy" decoding="async">
         <span class="playbtn" aria-hidden="true"></span>
       </button>
@@ -419,8 +416,8 @@
   if (filmPlay) {
     filmPlay.addEventListener('click', function () {
       var v = document.createElement('video');
-      v.src = 'https://seamanapp-media.pages.dev/navclub-cover.mp4';
-      v.poster = 'https://seamanapp-media.pages.dev/navclub-cover.jpg';
+      v.src = 'https://seamanapp-media.pages.dev/navclub-checkout.mp4';
+      v.poster = 'https://seamanapp-media.pages.dev/navclub-checkout.jpg';
       v.controls = true;
       v.autoplay = true;
       v.playsInline = true;      // iOS: play in place rather than hijacking fullscreen
@@ -502,50 +499,6 @@
       who.querySelector('b').textContent = res.paying_as;
       who.hidden = false;
     }
-    var saveBtn = document.getElementById('qrsave');
-    var note = document.getElementById('qrsaved');
-    var php = Math.round(res.amount / 100);
-    var cardName = 'navigators-club-qrph-' + php + '.png';
-
-    // Built NOW, not on the click. Two reasons, and the second is the bug that
-    // stopped anything saving: the file is ready the instant they ask for it,
-    // and share() can then run inside the gesture instead of after it.
-    buildQrCard(res.qr_image, php, res.paying_as, res.item, function (blob) {
-      if (!blob) return;
-      cardUrl = URL.createObjectURL(blob);
-      try { cardFile = new File([blob], cardName, { type: 'image/png' }); } catch (e) { /* older browser */ }
-    });
-
-    saveBtn.onclick = function () {
-      // Synchronous, inside the gesture. Anything awaited before this point
-      // and the browser refuses the sheet.
-      if (cardFile && navigator.canShare && navigator.canShare({ files: [cardFile] })) {
-        navigator.share({ files: [cardFile] })
-          .then(function () {
-            saveBtn.textContent = 'Saved';
-            note.innerHTML = 'Now open <b>GCash</b> or <b>Maya</b>, tap <b>Scan QR</b>, ' +
-              'then the gallery icon, and pick it.';
-            note.hidden = false;
-          })
-          .catch(function (e) {
-            // A cancel is not a failure and should say nothing.
-            if (e && e.name === 'AbortError') return;
-            offerLongPress(note);
-          });
-        return;
-      }
-      // No share sheet. Try a download, but do NOT claim it worked - a browser
-      // that ignores it says nothing either way - and put the card on the page
-      // so there is a route that cannot be blocked.
-      if (cardUrl) {
-        try {
-          var a = document.createElement('a');
-          a.href = cardUrl; a.download = cardName;
-          document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        } catch (e) { /* fall through to the long-press route */ }
-      }
-      offerLongPress(note);
-    };
     document.getElementById('qrpanel').hidden = false;
     watchForPayment(res.access_token);
   }
@@ -553,109 +506,12 @@
   // A data: URI and the `download` attribute do not get along on every phone -
   // iOS in particular. A Blob object URL does, and it is also what lets the
   // file carry a sensible name into the gallery.
-  // ── SAVING THE QR, HONESTLY ────────────────────────────────────────────
-  //
-  // The previous version claimed "Saved to your downloads" whenever nothing
-  // threw. But a browser that silently ignores a programmatic <a download>
-  // throws nothing either - so it announced a success it had never observed,
-  // and on a phone (the Messenger in-app browser especially, which is where
-  // these buyers come from) the file was simply never written.
-  //
-  // navigator.share with a file is the path that actually works on a phone:
-  // it opens the native sheet with Save Image / Save to Photos, and it REPORTS
-  // whether it happened. canShare({files}) is a real capability check, not a
-  // guess. Where that is missing we fall back to a download and say plainly
-  // that we cannot confirm it, rather than inventing a confirmation.
-
-  // A bare QR in the gallery is an unlabelled square nobody can identify an
-  // hour later. This draws a card around it: what it is, how much, and who for.
-  function buildQrCard(qrDataUri, amountPhp, payingAs, itemName, cb) {
-    var W = 760, H = 1180;
-    var c = document.createElement('canvas');
-    c.width = W; c.height = H;
-    var x = c.getContext('2d');
-    var NAVY = '#04101f', CARD = '#0e2540', GOLD = '#f6b500',
-        INK = '#eaf2fb', MUTED = '#9fb2c8';
-    var SANS = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
-
-    var g = x.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#0a2036'); g.addColorStop(1, NAVY);
-    x.fillStyle = g; x.fillRect(0, 0, W, H);
-
-    function roundRect(px, py, w, h, r) {
-      x.beginPath();
-      x.moveTo(px + r, py);
-      x.arcTo(px + w, py, px + w, py + h, r);
-      x.arcTo(px + w, py + h, px, py + h, r);
-      x.arcTo(px, py + h, px, py, r);
-      x.arcTo(px, py, px + w, py, r);
-      x.closePath();
-    }
-    function centre(text, y, font, colour) {
-      x.font = font; x.fillStyle = colour; x.textAlign = 'center';
-      x.fillText(text, W / 2, y);
-    }
-
-    // header
-    centre('SEAMAN APP', 84, '700 27px ' + SANS, GOLD);
-    centre(itemName || 'Navigators Club', 132, '600 31px ' + SANS, INK);
-
-    // the amount is the thing they check before paying
-    centre('₱' + amountPhp.toLocaleString('en-PH'), 240, '800 78px ' + SANS, GOLD);
-    centre('one payment · yours for life', 282, '400 22px ' + SANS, MUTED);
-
-    // white plate, because a QR must be dark-on-light to scan
-    var plate = 560, px = (W - plate) / 2, py = 336;
-    x.fillStyle = '#ffffff';
-    roundRect(px, py, plate, plate, 28); x.fill();
-
-    var img = new Image();
-    img.onload = function () {
-      var pad = 26, inner = plate - pad * 2;
-      x.drawImage(img, px + pad, py + pad, inner, inner);
-
-      // QR Ph mark, drawn rather than borrowed: the BSP publishes no
-      // licensable logo pack, and inventing an official-looking seal would be
-      // worse than a plain label.
-      var by = py + plate + 46;
-      x.font = '700 24px ' + SANS; x.textAlign = 'center';
-      var label = 'QR Ph', wLab = x.measureText(label).width;
-      x.fillStyle = CARD;
-      roundRect(W / 2 - wLab / 2 - 22, by - 26, wLab + 44, 44, 22); x.fill();
-      x.fillStyle = INK; x.fillText(label, W / 2, by + 4);
-
-      if (payingAs) centre('Paying as ' + payingAs, by + 60, '500 23px ' + SANS, MUTED);
-
-      // Measured, not eyeballed: at the old height the second instruction line
-      // fell off the bottom of the canvas whenever a name was present.
-      var iy = payingAs ? by + 116 : by + 82;
-      centre('Open GCash, Maya or your bank app', iy, '600 24px ' + SANS, INK);
-      centre('Scan QR → pick this image from your gallery', iy + 38, '400 22px ' + SANS, MUTED);
-      centre('seamanapp.com', H - 46, '500 21px ' + SANS, MUTED);
-
-      c.toBlob(function (blob) { cb(blob); }, 'image/png');
-    };
-    img.onerror = function () { cb(null); };
-    img.src = qrDataUri;   // a data: URI, so the canvas is never tainted
-  }
-
-  // Prepared ahead of the click, because navigator.share() must be called
-  // synchronously inside the user gesture - awaiting anything first loses it.
-  var cardFile = null, cardUrl = null;
-
-  // The path that always exists: show the card ON the page. Every mobile
-  // browser can long-press an image and save it, with no download API and
-  // nothing for an in-app browser to block.
-  function offerLongPress(note) {
-    if (cardUrl) {
-      var im = document.getElementById('qrimg');
-      im.src = cardUrl;
-      im.classList.add('ascard');
-    }
-    note.innerHTML = '<b>Press and hold the image above</b>, then choose ' +
-      '<b>Save image</b> — that puts it in your gallery.';
-    note.hidden = false;
-  }
+  // NO DOWNLOAD BUTTON. Tried three ways - <a download>, a Blob object URL, and
+  // the native share sheet - and on the phones that matter (Messenger's in-app
+  // browser above all) each was either blocked or reported a success that never
+  // happened. A screenshot is the one gesture every phone has, needs no
+  // permission, and puts the code straight in the gallery where the wallet apps
+  // look for it. Telling the buyer to do that beats a button that might lie.
 
   // Their membership is written by the webhook when the money lands, so that
   // is the thing worth watching - not the payment provider. It is also the
