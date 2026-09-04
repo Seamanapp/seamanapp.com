@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Navigators Club — the handover nobody gave you</title>
+<meta name="description" content="Most aspiring officers study hard for the wrong things, because nobody ever showed them what the job actually is. Four courses — Third Officer, Second Officer, COLREG Mastery, Passage Planning — taught by serving officers. 63 lessons, offline at sea. ₱6,500 once, yours for life." />
+<link rel="canonical" href="https://seamanapp.com/club/" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Seaman App · Simplified Maritime" />
+<meta property="og:title" content="Navigators Club — the handover nobody gave you" />
+<meta property="og:description" content="Nobody tells you what the job actually is. Four courses, taught by officers still sailing. 63 lessons, offline at sea. ₱6,500 once, for life." />
+<meta property="og:url" content="https://seamanapp.com/club/" />
+<meta property="og:image" content="https://seamanapp.com/club/img/cover-club.jpg" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Navigators Club — the handover nobody gave you" />
+<meta name="twitter:description" content="Four courses, taught by officers still sailing. 63 lessons, offline at sea. ₱6,500 once, for life." />
+<meta name="twitter:image" content="https://seamanapp.com/club/img/cover-club.jpg" />
+<meta name="theme-color" content="#04101f" />
+<link rel="icon" href="img/app-icon.png" />
+<link rel="apple-touch-icon" href="img/app-icon.png" />
+<link rel="preload" as="image" href="img/cover-club.jpg" fetchpriority="high" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --navy:#04101f; --navy2:#0a1f3a; --card:#0e2540; --line:rgba(255,255,255,.10);
+    --ink:#eaf2fb; --muted:#9fb2c8; --gold:#f6b500; --gold-soft:#ffd27a;
+    --teal:#34d3b0; --cyan:#5cc6ff; --maxw:1120px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--navy);color:var(--ink);
+    font-family:Inter,system-ui,Segoe UI,Roboto,sans-serif;line-height:1.6;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden}
+  h1,h2,h3{font-family:"Space Grotesk",Inter,sans-serif;letter-spacing:-.01em;line-height:1.18}
+  a{color:inherit}
+  img{max-width:100%;display:block}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+  section{padding:76px 0}
+  .eyebrow{font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--gold-soft);font-weight:700;margin:0 0 12px}
+  .lead{color:var(--muted);font-size:17px;max-width:62ch}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border-radius:12px;
+    padding:14px 22px;font-weight:700;font-size:15px;text-decoration:none;
+    border:1px solid transparent;cursor:pointer;
+    transition:transform .12s ease, box-shadow .2s ease, background .2s ease}
+  .btn:hover{transform:translateY(-2px)}
+  .btn.gold{background:linear-gradient(180deg,#ffd257,#f6b500);color:#04101f;
+    box-shadow:0 10px 30px rgba(246,181,0,.28)}
+  .btn.ghost{background:rgba(255,255,255,.04);border-color:var(--line);color:var(--ink)}
+  .btn.lg{padding:17px 28px;font-size:16.5px}
+  .btn.block{width:100%}
+  /* nav */
+  header{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);
+    background:rgba(4,16,31,.72);border-bottom:1px solid var(--line)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:"Space Grotesk";
+    font-weight:700;font-size:16px;text-decoration:none;color:var(--ink)}
+  .brand img{width:30px;height:30px;border-radius:8px}
+  .nav .btn{padding:10px 18px;font-size:14px}
+  /* hero */
+  .hero{position:relative;min-height:86vh;display:flex;align-items:center;
+    padding:64px 0 84px;overflow:hidden}
+  .hero-bg{position:absolute;inset:0;z-index:0}
+  .hero-bg img{width:100%;height:100%;object-fit:cover;opacity:.34}
+  .hero-bg::after{content:"";position:absolute;inset:0;
+    background:radial-gradient(120% 90% at 15% 20%,transparent,var(--navy) 76%),
+      linear-gradient(180deg,rgba(4,16,31,.55),var(--navy))}
+  .hero .wrap{position:relative;z-index:1}
+  .hero h1{font-size:clamp(34px,6.2vw,60px);margin:0 0 18px;max-width:17ch}
+  .hero p.lead{font-size:clamp(16px,2.1vw,19px);margin:0 0 26px}
+  .cta-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:18px}
+  .price-line{display:flex;align-items:baseline;gap:12px;margin:0 0 18px;flex-wrap:wrap}
+  .price-line b{font-family:"Space Grotesk";font-size:38px;color:var(--gold-soft)}
+  .price-line span{color:var(--muted);font-size:14.5px}
+  .trust{display:flex;flex-wrap:wrap;gap:10px 22px;color:var(--muted);font-size:13.5px}
+  .trust b{color:var(--ink)}
+  /* generic cards */
+  .grid{display:grid;gap:18px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .card h3{margin:0 0 8px;font-size:18px}
+  .card p{margin:0;color:var(--muted);font-size:14.5px}
+  h2.big{font-size:clamp(26px,3.8vw,38px);margin:0 0 14px;max-width:20ch}
+  .section-lead{margin:0 0 34px}
+  /* course cards */
+  .course{background:var(--card);border:1px solid var(--line);border-radius:18px;
+    overflow:hidden;display:flex;flex-direction:column}
+  .course .shot{aspect-ratio:16/9;background:#08192c}
+  .course .shot img{width:100%;height:100%;object-fit:cover}
+  .course .body{padding:18px 18px 20px;display:flex;flex-direction:column;gap:8px;flex:1}
+  .course h3{margin:0;font-size:17.5px}
+  .course .sub{color:var(--gold-soft);font-size:12.5px;font-weight:600}
+  .course p{margin:0;color:var(--muted);font-size:14px}
+  .meta{margin-top:auto;padding-top:10px;color:var(--muted);font-size:12.5px;
+    display:flex;gap:14px;flex-wrap:wrap;border-top:1px solid var(--line)}
+  .meta b{color:var(--ink)}
+  /* callout */
+  .callout{border:1px solid rgba(246,181,0,.34);background:rgba(246,181,0,.07);
+    border-radius:16px;padding:24px 26px;margin:0 0 34px}
+  .callout h3{margin:0 0 10px;font-size:20px;color:var(--gold-soft)}
+  .callout p{margin:0;color:#dbe7f5;font-size:15.5px}
+  /* video */
+  .vid{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  .vid .frame{aspect-ratio:16/9;position:relative;background:#08192c}
+  .vid .frame img{width:100%;height:100%;object-fit:cover;opacity:.55}
+  .vid iframe{width:100%;height:100%;border:0;display:block}
+  .play{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:12px;text-decoration:none}
+  .play .disc{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;
+    background:rgba(246,181,0,.92);color:#04101f;font-size:24px;
+    box-shadow:0 10px 30px rgba(0,0,0,.45)}
+  .play span{font-size:13.5px;color:var(--ink);font-weight:600;
+    background:rgba(4,16,31,.72);padding:6px 12px;border-radius:20px}
+  .vid .cap{padding:16px 18px}
+  .vid .cap h3{margin:0 0 4px;font-size:16.5px}
+  .vid .cap p{margin:0;color:var(--muted);font-size:13.5px}
+  /* reviews */
+  .quotes{columns:3;column-gap:18px}
+  .quote{break-inside:avoid;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:18px;margin:0 0 18px}
+  .quote p{margin:0 0 10px;font-size:14.5px;color:#dce8f6}
+  .quote .who{color:var(--muted);font-size:12.5px}
+  .stars{color:var(--gold);letter-spacing:2px;font-size:13px;margin-bottom:8px}
+  /* faq */
+  details{border-bottom:1px solid var(--line);padding:16px 0}
+  summary{cursor:pointer;font-weight:600;font-size:16px;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"+ ";color:var(--gold)}
+  details[open] summary::before{content:"– "}
+  details p{color:var(--muted);margin:10px 0 0;font-size:14.5px}
+  /* final */
+  .final{background:linear-gradient(180deg,var(--navy2),var(--navy));
+    border-top:1px solid var(--line);text-align:center}
+  .final .price-line{justify-content:center}
+  footer{border-top:1px solid var(--line);padding:34px 0 46px;color:var(--muted);font-size:13px}
+  footer a{color:var(--cyan)}
+  .fine{font-size:12.5px;color:var(--muted);margin-top:12px;max-width:70ch}
+  @media(max-width:900px){
+    .g3,.g2{grid-template-columns:1fr}
+    .quotes{columns:1}
+    section{padding:58px 0}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="https://seamanapp.com"><img src="img/app-icon.png" alt="" />Seaman&nbsp;App</a>
+    <a class="btn gold" href="#join">Join the club</a>
+  </div>
+</header>
+
+<!-- ───────────────────────── hero ───────────────────────── -->
+<div class="hero">
+  <div class="hero-bg"><img src="img/cover-club.jpg" alt="" width="1600" height="900" fetchpriority="high" /></div>
+  <div class="wrap">
+    <p class="eyebrow">Navigators Club</p>
+    <h1>Nobody ever told you what the job actually is.</h1>
+    <p class="lead">
+      That is the real reason good seafarers stall. Not laziness — nobody sat them
+      down and showed them the work. You study hard for the wrong things, join the
+      ship, and find out what you needed on the day you needed it, in front of the
+      Master. This club is the handover you never got, from officers who are still
+      sailing.
+    </p>
+    <div class="price-line">
+      <b>₱6,500</b><span>one payment · yours for life · four courses</span>
+    </div>
+    <div class="cta-row">
+      <a class="btn gold lg" href="#join">Join the club — ₱6,500</a>
+      <a class="btn ghost lg" href="#free">Watch a lesson free</a>
+    </div>
+    <div class="trust">
+      <span><b>1,900+</b> seafarers inside</span>
+      <span><b>★ 5.0</b> from 181 reviews</span>
+      <span><b>63</b> video lessons</span>
+      <span><b>Works offline</b> at sea</span>
+    </div>
+  </div>
+</div>
+
+<!-- ───────────────────── the real problem ───────────────────── -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Why officers stall</p>
+    <h2 class="big">You cannot prepare for a job nobody has described to you.</h2>
+    <p class="lead section-lead">
+      Every aspiring officer we meet is willing. Almost none of them can tell you
+      what they will actually be doing on watch, in port, or during an inspection —
+      because no one has ever spelled it out. That gap is not a knowledge problem.
+      It is a mentorship problem.
+    </p>
+    <div class="grid g3">
+      <div class="card">
+        <h3>The books teach the rules</h3>
+        <p>The ship runs on routine. Knowing Rule 15 is not the same as a crossing
+           situation at 0300 with a fishing fleet on the bow and the Master asleep.</p>
+      </div>
+      <div class="card">
+        <h3>Your rank does not decide your work</h3>
+        <p>One ship puts you on safety gear and port documents. The next hands you
+           the passage plan. The job description changes with the company.</p>
+      </div>
+      <div class="card">
+        <h3>You find out too late</h3>
+        <p>Most officers learn what they were missing during their first month
+           aboard — the most expensive place in the world to learn it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────── the mentors ───────────────────── -->
+<section style="background:linear-gradient(180deg,#071a30,var(--navy))">
+  <div class="wrap">
+    <p class="eyebrow">What we actually are</p>
+    <h2 class="big">Not a school. Mentors who are still sailing.</h2>
+    <p class="lead section-lead">
+      Everything inside is taught by working officers, in plain language, about the
+      ship you will actually join. Not a syllabus written by someone who came ashore
+      twenty years ago — the handover, the routine, the forms, the shortcuts, and the
+      mistakes worth avoiding, explained the way a good senior officer would explain
+      them to you on the bridge wing.
+    </p>
+    <div class="grid g3">
+      <div class="card">
+        <h3>Ask, and get an answer</h3>
+        <p>A community of 1,900+ seafarers and the mentors themselves. Questions get
+           answered by people who did the job last contract.</p>
+      </div>
+      <div class="card">
+        <h3>Taught for Filipino seafarers</h3>
+        <p>The realities you will meet — the company, the agency, the inspection,
+           the paperwork — spoken about honestly.</p>
+      </div>
+      <div class="card">
+        <h3>Yours for life</h3>
+        <p>One payment. Come back to it before every contract, every promotion,
+           every inspection. New material is added as it is made.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────── what is inside ───────────────────── -->
+<section id="inside">
+  <div class="wrap">
+    <p class="eyebrow">What you get</p>
+    <h2 class="big">Four courses, one club.</h2>
+
+    <div class="callout">
+      <h3>Why four, and not just your rank</h3>
+      <p>
+        A Third Officer's responsibilities are <em>not</em> guaranteed. On one ship you
+        are safety equipment and port documents. On the next, the Master hands you the
+        passage plan, or you cover the Second Officer's charts and cargo watch. Sell a
+        man one rank and you have prepared him for a job he might not be given. So the
+        club covers the work you might <em>actually</em> be handed — Third Officer and
+        Second Officer, plus passage planning and the COLREGs underneath both.
+      </p>
+    </div>
+
+    <div class="grid g2">
+      <article class="course">
+        <div class="shot"><img src="img/c-third.jpg" alt="Third Officer course" loading="lazy" width="800" height="450" /></div>
+        <div class="body">
+          <h3>Third Officer</h3>
+          <div class="sub">Job Familiarization</div>
+          <p>The whole role, start to finish: handover, safety equipment, drills and
+             muster lists, port documents, requisitions, PSC inspections, month-end
+             paperwork, and the computer tricks that save you hours.</p>
+          <div class="meta"><span><b>39</b> lessons</span><span><b>37</b> videos</span></div>
+        </div>
+      </article>
+
+      <article class="course">
+        <div class="shot"><img src="img/c-second.jpg" alt="Second Officer course" loading="lazy" width="800" height="450" /></div>
+        <div class="body">
+          <h3>Second Officer</h3>
+          <div class="sub">Job Familiarization</div>
+          <p>The next rank before you are standing in it: handover notes, the ship's
+             hospital and medical chest, mooring, PSC practical tips, bridge equipment
+             routines, and reporting procedures.</p>
+          <div class="meta"><span><b>11</b> lessons</span><span><b>10</b> videos</span></div>
+        </div>
+      </article>
+
+      <article class="course">
+        <div class="shot"><img src="img/c-colreg.jpg" alt="COLREG Mastery course" loading="lazy" width="800" height="450" /></div>
+        <div class="body">
+          <h3>COLREG Mastery</h3>
+          <div class="sub">The WHY behind the rules</div>
+          <p>Not memorising rule numbers — understanding why each rule exists, so you
+             read a real situation correctly on a dark bridge and can defend the
+             decision you made.</p>
+          <div class="meta"><span><b>8</b> lessons</span><span><b>6</b> videos</span></div>
+        </div>
+      </article>
+
+      <article class="course">
+        <div class="shot"><img src="img/c-passage.jpg" alt="Passage Planning Mastery course" loading="lazy" width="800" height="450" /></div>
+        <div class="body">
+          <h3>Passage Planning Mastery</h3>
+          <div class="sub">Step-by-step guide</div>
+          <p>Appraisal to execution: the key resources, how you actually plot the
+             course lines, and how to fill the passage plan form properly — the task
+             most often handed to a junior officer with no instruction.</p>
+          <div class="meta"><span><b>5</b> lessons</span><span><b>5</b> videos</span></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────── free lessons ───────────────────── -->
+<section id="free" style="background:linear-gradient(180deg,#071a30,var(--navy))">
+  <div class="wrap">
+    <p class="eyebrow">See it first</p>
+    <h2 class="big">Watch before you pay.</h2>
+    <p class="lead section-lead">
+      Two lessons are open to everybody. Judge the teaching for yourself — if it does
+      not tell you something you did not know, do not join.
+    </p>
+    <div class="grid g2" id="freeVideos"></div>
+  </div>
+</section>
+
+<!-- ───────────────────── offline ───────────────────── -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Built for a ship</p>
+    <h2 class="big">A ship's connection is not a connection.</h2>
+    <p class="lead section-lead">
+      Every other course assumes you are sitting in a café. Ours assumes you are three
+      days from land with the wifi card finished. Download the videos in port on the
+      Android app and watch them mid-ocean — no signal, no streaming, no buffering.
+      On a laptop or a phone browser you can study anywhere you do have a connection.
+    </p>
+    <div class="grid g3">
+      <div class="card">
+        <h3>Download in port</h3>
+        <p>Take the whole course offline on Android before you sail. Watch it on
+           passage, on watch-below, in your cabin.</p>
+      </div>
+      <div class="card">
+        <h3>Study in a browser</h3>
+        <p>No install needed. Sign in on any laptop or phone browser and the same
+           lessons are there.</p>
+      </div>
+      <div class="card">
+        <h3>Your progress follows you</h3>
+        <p>Start on the ship, finish at home. The club remembers where you stopped
+           once you are back online.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────── files & colreg ───────────────────── -->
+<section style="background:linear-gradient(180deg,#071a30,var(--navy))">
+  <div class="wrap">
+    <p class="eyebrow">More than video</p>
+    <h2 class="big">The files you will actually be asked for.</h2>
+    <div class="grid g2">
+      <div class="card">
+        <h3>The maritime file library</h3>
+        <p>Forms, checklists, reporting templates and reference material shared inside
+           the club — the documents a junior officer is expected to produce and has
+           never been shown. Members add to it as they sail.</p>
+      </div>
+      <div class="card">
+        <h3>COLREGs you can defend</h3>
+        <p>A full COLREG course built around the reasoning, not the recital — so when
+           the situation is ambiguous and the decision is yours, you know why you are
+           doing what you are doing.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────── reviews ───────────────────── -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow">From the crew</p>
+    <h2 class="big">★ 5.0 from 181 reviews.</h2>
+    <p class="lead section-lead">Real members, real words, unedited.</p>
+    <div class="quotes">
+      <div class="quote"><div class="stars">★★★★★</div>
+        <p>“Highly recommended for aspiring and newly promoted officers who want to be
+           more confident, knowledgeable, and efficient onboard. It refreshes and
+           updates skills, trains you for the next rank, and offers practical advice.”</p>
+        <div class="who">Ian Villadolid</div></div>
+      <div class="quote"><div class="stars">★★★★★</div>
+        <p>“Ang dami ko natutunan lalo na sa Ratings part na hindi namin masyado kasama
+           si 3rd sa mga trabaho niya. All topics are well explained. I will replay
+           everything para mas ma absorb ko lahat ng tinuturo.”</p>
+        <div class="who">Kinitboy Bibera</div></div>
+      <div class="quote"><div class="stars">★★★★★</div>
+        <p>“Highly recommend this community for its actual hands-on teaching about the
+           work of a Third Officer. It emphasizes real-world applications like
+           navigation watchkeeping and safety inspections, with experienced mentors
+           sharing firsthand knowledge.”</p>
+        <div class="who">Fredmerson Torregosa</div></div>
+      <div class="quote"><div class="stars">★★★★★</div>
+        <p>“An excellent learning platform for maritime professionals and aspiring
+           officers. The lessons are simplified, easy to understand, and very helpful
+           for improving competence and confidence as officers.”</p>
+        <div class="who">Christian Riel Tajos</div></div>
+      <div class="quote"><div class="stars">★★★★★</div>
+        <p>“Very passionate and approachable mentors. Malaking tulong ang system at
+           community nyo sir, lalo na ang step-by-step tutorials — crew change,
+           navigation, at tips about port docs.”</p>
+        <div class="who">Mark Eväscò</div></div>
+      <div class="quote"><div class="stars">★★★★★</div>
+        <p>“Very helpful for beginners and cadets who want to become officers. The
+           information is clear, easy to understand, and well organized, making
+           learning less confusing and more effective.”</p>
+        <div class="who">Kenneth Katigbak</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────── join ───────────────────── -->
+<section class="final" id="join">
+  <div class="wrap">
+    <p class="eyebrow">Join the Navigators Club</p>
+    <h2 class="big" style="margin-left:auto;margin-right:auto">One payment. Everything above. For life.</h2>
+    <div class="price-line"><b>₱6,500</b><span>one-time · no subscription</span></div>
+    <p class="lead" style="margin:0 auto 24px">
+      Four courses, 63 video lessons, the file library, the community, and every
+      lesson we add later. Pay with GCash, Maya, or any bank app by scanning a QR Ph
+      code — access opens by itself, usually within a minute.
+    </p>
+    <a class="btn gold lg" href="https://app.seamanapp.com/courses?club=22222222-2222-2222-2222-222222222201&amp;pay=paymongo">Join the club — ₱6,500</a>
+    <p class="fine" style="margin-left:auto;margin-right:auto">
+      Paying from outside the Philippines, or prefer to send the money to a person?
+      <a href="https://www.facebook.com/simplifiedmaritime" style="color:var(--cyan)">Message Simplified Maritime</a>
+      and we will enrol you by hand, usually the same day.
+    </p>
+  </div>
+</section>
+
+<!-- ───────────────────── faq ───────────────────── -->
+<section>
+  <div class="wrap" style="max-width:820px">
+    <p class="eyebrow">Questions</p>
+    <h2 class="big">Before you join</h2>
+    <details><summary>I am still a cadet / rating. Is this too advanced?</summary>
+      <p>No — this is exactly who it is built for. The whole point is showing you the
+         job before you are standing in it, so you arrive knowing what is expected
+         instead of finding out during your first month.</p></details>
+    <details><summary>Can I study offline?</summary>
+      <p>Yes. Download the videos in port on the Android app and watch them at sea with
+         no connection. In a browser you can study anywhere you have signal. iPhone
+         users use the website for now.</p></details>
+    <details><summary>Is it a subscription?</summary>
+      <p>No. ₱6,500 once, and the club is yours for life — including lessons added
+         later.</p></details>
+    <details><summary>How do I pay?</summary>
+      <p>Scan a QR Ph code with GCash, Maya, or any participating bank app. Access
+         opens automatically, usually within a minute. If you would rather send the
+         payment to a person, message us on Facebook and we will enrol you by hand.</p></details>
+    <details><summary>Does this give me a certificate or STCW endorsement?</summary>
+      <p>No, and we will not pretend otherwise. This is peer mentorship from serving
+         officers — knowledge and preparation, not approved or assessed training. It
+         confers no certificate and no endorsement.</p></details>
+    <details><summary>What if it is not for me?</summary>
+      <p>Watch the free lessons above first. They are the same teaching, unedited, so
+         you can judge before you spend anything.</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>© Seaman App · Simplified Maritime ·
+      <a href="https://seamanapp.com/privacy.html">Privacy</a> ·
+      <a href="https://seamanapp.com/terms.html">Terms</a> ·
+      <a href="https://www.facebook.com/simplifiedmaritime">Facebook</a>
+    </div>
+    <p class="fine">
+      Peer-to-peer mentorship between seafarers. Not approved or assessed training; it
+      confers no certificate and no STCW endorsement. Always follow your company's
+      procedures, your ship's documented system, and the Master's orders.
+    </p>
+  </div>
+</footer>
+
+<script>
+/* The two free lessons.
+ *
+ * `uid` is the Cloudflare Stream id. Those videos currently require signed URLs
+ * (they are course content), so they CANNOT be embedded on a public page yet.
+ * Rather than ship a broken player or a fake one, each card probes whether its
+ * video is publicly playable and only then embeds it; otherwise it sends the
+ * visitor to the same lesson inside the app, which is free to any signed-in
+ * account. Turn "require signed URLs" off for a uid in Cloudflare Stream and
+ * this page upgrades itself to an inline player with no redeploy. */
+var FREE_LESSONS = [
+  {
+    uid: '4c75be136b433919411c336a3a9b77bf',
+    title: 'What are you paid for as a Third Officer?',
+    note: 'Third Officer · lesson 1 — the question almost nobody can answer.',
+    poster: 'img/c-third.jpg',
+    app: 'https://app.seamanapp.com/courses/e09549fe-5063-47d1-b6b9-bce8b9e3b857'
+  },
+  {
+    // El Marinero case study - not yet uploaded. Give it a uid (or an app
+    // lesson link) and the card fills in exactly like the one above.
+    uid: '',
+    title: 'El Marinero — case study, part 1',
+    note: 'A real career, taken apart: what he was never told, and what it cost.',
+    poster: 'img/cover-club.jpg',
+    app: 'https://app.seamanapp.com/courses?club=22222222-2222-2222-2222-222222222201'
+  }
+];
+
+(function () {
+  var host = document.getElementById('freeVideos');
+  if (!host) return;
+
+  FREE_LESSONS.forEach(function (v) {
+    var el = document.createElement('article');
+    el.className = 'vid';
+    el.innerHTML =
+      '<div class="frame">' +
+        '<img src="' + v.poster + '" alt="" loading="lazy" width="800" height="450" />' +
+        '<a class="play" href="' + v.app + '">' +
+          '<span class="disc">&#9654;</span><span>Watch free in the app</span>' +
+        '</a>' +
+      '</div>' +
+      '<div class="cap"><h3>' + v.title + '</h3><p>' + v.note + '</p></div>';
+    host.appendChild(el);
+
+    if (!v.uid) return;
+    // A public Stream video serves its manifest to anyone; a signed one does
+    // not. Both a non-200 and a blocked request mean "not public", and the
+    // card simply stays as it is.
+    fetch('https://videodelivery.net/' + v.uid + '/manifest/video.m3u8', { method: 'GET' })
+      .then(function (r) {
+        if (!r.ok) return;
+        var frame = el.querySelector('.frame');
+        frame.innerHTML =
+          '<iframe src="https://iframe.videodelivery.net/' + v.uid +
+          '" allow="accelerometer; gyroscope; encrypted-media; picture-in-picture;" ' +
+          'allowfullscreen title="' + v.title + '"></iframe>';
+      })
+      .catch(function () { /* not public - keep the app link */ });
+  });
+})();
+</script>
+</body>
+</html>
