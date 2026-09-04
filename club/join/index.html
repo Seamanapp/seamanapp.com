@@ -60,6 +60,8 @@
   .codelink{display:inline-block;margin:-6px 0 15px;font-size:13px;background:none;
     border:0;color:var(--teal);cursor:pointer;padding:0;font-family:inherit;
     box-shadow:none;width:auto;font-weight:600}
+  .clubname{margin:-10px 0 14px;font-size:13.5px;color:var(--muted)}
+  .clubname b{color:var(--ink);font-weight:600}
   .was{margin:-12px 0 16px;font-size:13.5px;color:var(--gold);font-weight:600}
   .was s{color:var(--muted);font-weight:400;margin-right:6px}
   #codewrap{display:none}
@@ -86,6 +88,7 @@
   <div class="card">
     <h1>Create your account and join</h1>
     <p class="price"><b id="amount">₱6,500</b><span>one payment · yours for life</span></p>
+    <p class="clubname">Joining <b id="clubname">the Navigators Club</b></p>
     <p class="was" id="was" hidden></p>
 
     <ul>
@@ -169,12 +172,20 @@
     codeToggle.style.display = 'none';
     codeInput.focus();
   });
+  // WHICH CLUB. ?club=<slug>, defaulting to the Navigators Club so every ad and
+  // link written before clubs became plural keeps working. The id, the name and
+  // the price all come from the server - hard-coding them here is what made the
+  // whole page single-club, and the day a second club goes on sale that is a
+  // buyer paying for the wrong thing.
+  var CLUB_SLUG = (new URLSearchParams(location.search).get('club') || 'navigators')
+    .trim().toLowerCase();
+  var CLUB = null;        // resolved uuid
+  var LIST_PHP = null;    // resolved list price
+
   // A SALES LINK CARRIES ITS PRICE. A rep sends this link saying "you'll pay
-  // ₱3,250" - if the page then shows ₱6,500 until the buyer is already on
-  // PayMongo, that gap is where the sale dies. So the code is priced here,
+  // ₱3,250" - if the page then shows the list price until the buyer is already
+  // on PayMongo, that gap is where the sale dies. So the code is priced here,
   // before they commit, by a read-only quote that consumes nothing.
-  var CLUB = '22222222-2222-2222-2222-222222222201';
-  var LIST_PHP = 6500;
   var amountEl = document.getElementById('amount');
   var wasEl = document.getElementById('was');
 
@@ -182,12 +193,46 @@
     return '₱' + n.toLocaleString('en-PH', { maximumFractionDigits: 2 });
   }
   function resetPrice() {
-    amountEl.textContent = peso(LIST_PHP);
+    if (LIST_PHP !== null) amountEl.textContent = peso(LIST_PHP);
     wasEl.hidden = true;
     wasEl.textContent = '';
   }
+
+  // Resolve the club before anything else: the coupon quote needs its id, and
+  // the heading and price need its name. One call, cached for the page.
+  function loadClub() {
+    return fetch(SB + '/rest/v1/rpc/club_checkout_info', {
+      method: 'POST',
+      headers: { apikey: ANON, Authorization: 'Bearer ' + ANON, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_slug: CLUB_SLUG })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j || !j.ok) {
+          // A stale link, or a club nobody has finished setting up. Either way
+          // the buyer must not be walked into a checkout.
+          fail(j && j.reason === 'no_such_club'
+            ? 'We could not find that club.'
+            : 'That club is not open for joining yet.');
+          go.disabled = true;
+          return null;
+        }
+        CLUB = j.id;
+        LIST_PHP = j.price_centavos / 100;
+        amountEl.textContent = peso(LIST_PHP);
+        if (j.name) {
+          document.title = 'Join ' + j.name + ' — Seaman App';
+          var h = document.querySelector('.card h1');
+          if (h) h.textContent = 'Create your account and join';
+          var nm = document.getElementById('clubname');
+          if (nm) nm.textContent = j.name;
+        }
+        return j;
+      })
+      .catch(function () { /* the price simply stays as rendered */ return null; });
+  }
   function quote(code) {
-    if (!code) { resetPrice(); return; }
+    if (!code || !CLUB) { resetPrice(); return; }
     fetch(SB + '/rest/v1/rpc/coupon_quote', {
       method: 'POST',
       headers: { apikey: ANON, Authorization: 'Bearer ' + ANON, 'Content-Type': 'application/json' },
@@ -218,8 +263,11 @@
     codeInput.value = pre;
     codeWrap.classList.add('on');
     codeToggle.style.display = 'none';
-    quote(pre.trim());
   }
+  // The quote is keyed on the club, so it waits for the club.
+  loadClub().then(function (club) {
+    if (club && pre) quote(pre.trim());
+  });
   codeInput.addEventListener('change', function () { quote(codeInput.value.trim()); });
   codeInput.addEventListener('blur', function () { quote(codeInput.value.trim()); });
 
@@ -279,7 +327,11 @@
     fetch(JOIN_FN, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, password: pw, code: codeInput.value.trim() || undefined })
+      body: JSON.stringify({
+        email: email, password: pw,
+        code: codeInput.value.trim() || undefined,
+        club: CLUB_SLUG
+      })
     })
       .then(function (r) { return r.json(); })
       .then(handle)
@@ -308,6 +360,7 @@
       sessionStorage.setItem('nc_verifier', v);
       // The invite code has to survive the round trip to Google and back.
       sessionStorage.setItem('nc_code', codeInput.value.trim());
+      sessionStorage.setItem('nc_club', CLUB_SLUG);
     } catch (e) { return fail('Please allow site storage, or use your email instead.'); }
 
     crypto.subtle.digest('SHA-256', new TextEncoder().encode(v))
