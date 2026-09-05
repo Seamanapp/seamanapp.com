@@ -4,20 +4,20 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Port to Port — a full navigation course, last line to first line</title>
-<meta name="description" content="The missing conversation in navigation training. One voyage, in the order it really happens — preparation, departure, the watch, arrival — taught by a serving Second Officer. 19 chapters, 112 lessons. ₱3,250 (was ₱17,000)." />
+<meta name="description" content="The missing conversation in navigation training. One voyage, in the order it really happens — preparation, departure, the watch, arrival — taught by a serving Second Officer. 16 lessons out now, 19 chapters as they are finished. ₱3,250 while it is being built." />
 <link rel="canonical" href="https://course.seamanapp.com/" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Seaman App · Simplified Maritime" />
 <meta property="og:title" content="Port to Port — a full navigation course" />
-<meta property="og:description" content="One voyage, last line to first line, in the order it really happens. Taught by a serving 2/O. 19 chapters · 112 lessons. ₱3,250 (was ₱17,000)." />
+<meta property="og:description" content="One voyage, last line to first line, in the order it really happens. Taught by a serving 2/O. 16 lessons out now; 19 chapters as they land. ₱3,250 while it is being built." />
 <meta property="og:url" content="https://course.seamanapp.com/" />
-<meta property="og:image" content="https://port-to-port.pages.dev/img/cover.webp" />
-<meta property="og:image:width" content="1600" />
-<meta property="og:image:height" content="900" />
+<meta property="og:image" content="https://course.seamanapp.com/img/cover.webp" />
+<meta property="og:image:width" content="1400" />
+<meta property="og:image:height" content="788" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Port to Port — a full navigation course" />
-<meta name="twitter:description" content="One voyage, last line to first line. Taught by a serving 2/O. ₱3,250 (was ₱17,000)." />
-<meta name="twitter:image" content="https://port-to-port.pages.dev/img/cover.webp" />
+<meta name="twitter:description" content="One voyage, last line to first line. Taught by a serving 2/O. ₱3,250 while it is being built." />
+<meta name="twitter:image" content="https://course.seamanapp.com/img/cover.webp" />
 <meta name="theme-color" content="#04101f" />
 <link rel="icon" href="img/app-icon.png" />
 <link rel="apple-touch-icon" href="img/app-icon.png" />
@@ -41,7 +41,7 @@
   img{max-width:100%;display:block}
   .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
   .eyebrow{font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-soft);font-weight:700}
-  .btn{display:inline-flex;align-items:center;gap:9px;border-radius:12px;padding:14px 22px;
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border-radius:12px;padding:14px 22px;
     font-weight:700;font-size:15px;text-decoration:none;border:1px solid transparent;cursor:pointer;
     transition:transform .12s ease, box-shadow .2s ease, background .2s ease}
   .btn:hover{transform:translateY(-2px)}
@@ -49,18 +49,19 @@
   .btn.ghost{background:rgba(255,255,255,.04);border-color:var(--line);color:var(--ink)}
   .btn.fb{background:#1877f2;color:#fff}
   .btn.play{background:#0f1e33;border-color:var(--line);color:var(--ink)}
-  /* Secondary to .gold: visible, but never competing with the primary CTA. */
-  .btn.gcash{background:rgba(92,198,255,.13);border-color:rgba(92,198,255,.55);color:#cfe6f7}
-  .btn.gcash:hover{background:rgba(92,198,255,.2)}
   .btn.lg{padding:16px 26px;font-size:16px}
+  .btn.block{width:100%}
   /* nav */
   header{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);
     background:rgba(4,16,31,.72);border-bottom:1px solid var(--line)}
-  .nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:64px;gap:12px}
   .brand{display:flex;align-items:center;gap:10px;font-family:"Space Grotesk";font-weight:700;
     font-size:16px;text-decoration:none;color:var(--ink)}
   .brand img{width:30px;height:30px;border-radius:8px}
   .nav .btn{padding:10px 18px;font-size:14px}
+  .nav .links{display:flex;gap:22px;font-size:14px;color:var(--muted);margin-left:auto;margin-right:6px}
+  .nav .links a{text-decoration:none}
+  .nav .links a:hover{color:var(--ink)}
   /* hero */
   .hero{position:relative;min-height:88vh;display:flex;align-items:center;
     padding:70px 0 90px;overflow:hidden}
@@ -75,13 +76,17 @@
   .stats{display:flex;flex-wrap:wrap;gap:10px 26px;margin:22px 0 26px;color:var(--muted);font-size:14px}
   .stats b{color:var(--ink)}
   .stats .dot{color:var(--gold)}
-  .price-pill{display:inline-flex;align-items:baseline;gap:12px;background:rgba(246,181,0,.10);
-    border:1px solid rgba(246,181,0,.45);border-radius:14px;padding:12px 18px;margin:0 0 26px}
+  .price-pill{display:inline-flex;align-items:baseline;flex-wrap:wrap;gap:8px 12px;background:rgba(246,181,0,.10);
+    border:1px solid rgba(246,181,0,.45);border-radius:14px;padding:12px 18px;margin:0 0 22px}
   .price-pill .now{font-family:"Space Grotesk";font-weight:700;font-size:30px;color:var(--gold-soft)}
   .price-pill .was{color:var(--muted);text-decoration:line-through;font-size:16px}
   .price-pill .save{background:var(--teal);color:#04101f;font-weight:700;font-size:12px;
     border-radius:999px;padding:3px 10px;letter-spacing:.02em}
   .cta-row{display:flex;flex-wrap:wrap;gap:12px}
+  .cta-block{max-width:520px}
+  .fineprint{color:var(--muted);font-size:12.5px;margin:9px 0 0;text-align:center;width:100%}
+  .qr-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:6px;
+    background:rgba(92,198,255,.18);font-size:11.5px;font-weight:800;color:#cfe6f7}
   /* sections */
   section{padding:76px 0;position:relative}
   .kicker{color:var(--gold-soft)}
@@ -100,6 +105,19 @@
   .card p{color:var(--muted);margin:0;font-size:14.5px}
   .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;margin-bottom:14px;
     background:rgba(246,181,0,.14);border:1px solid rgba(246,181,0,.3)}
+  /* build state */
+  .state{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:28px}
+  .state .card{padding:26px}
+  .state .now{border-color:rgba(52,211,176,.45);background:linear-gradient(180deg,rgba(52,211,176,.10),rgba(52,211,176,.03))}
+  .state .tag{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+    border-radius:999px;padding:4px 11px;margin-bottom:14px}
+  .state .now .tag{background:var(--teal);color:#04101f}
+  .state .soon .tag{background:rgba(255,255,255,.09);color:var(--muted);border:1px solid var(--line)}
+  .state h3{font-size:22px;margin:.1em 0 .4em}
+  .state ul{margin:14px 0 0;padding:0;display:grid;gap:9px}
+  .state li{list-style:none;display:flex;gap:10px;color:var(--muted);font-size:14.5px}
+  .state .now li::before{content:"✓";color:var(--teal);font-weight:700}
+  .state .soon li::before{content:"·";color:var(--gold);font-weight:700}
   /* curriculum */
   .voyage{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:28px}
   .ch{display:flex;gap:14px;align-items:flex-start;background:rgba(255,255,255,.03);
@@ -107,23 +125,32 @@
   .ch .no{font-family:"Space Grotesk";font-weight:700;color:var(--gold);font-size:15px;
     min-width:34px;padding-top:2px}
   .ch .t{font-weight:600;font-size:15.5px}
-  .ch .c{color:var(--muted);font-size:13px;margin-top:2px}
+  .ch .c{color:var(--muted);font-size:13px;margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .ch.lane .no{color:var(--teal)}
+  .pill{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    border-radius:999px;padding:2px 8px;white-space:nowrap}
+  .pill.out{background:rgba(52,211,176,.16);color:var(--teal);border:1px solid rgba(52,211,176,.4)}
+  .pill.part{background:rgba(246,181,0,.14);color:var(--gold-soft);border:1px solid rgba(246,181,0,.4)}
+  .pill.prod{background:rgba(255,255,255,.05);color:var(--muted);border:1px solid var(--line)}
   /* gallery */
   .gal{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:26px}
-  .gal figure{margin:0;border-radius:14px;overflow:hidden;border:1px solid var(--line);position:relative;aspect-ratio:4/3}
+  .gal figure{margin:0;border-radius:14px;overflow:hidden;border:1px solid var(--line);position:relative;aspect-ratio:16/9}
   .gal img{width:100%;height:100%;object-fit:cover;transition:transform .5s ease}
   .gal figure:hover img{transform:scale(1.06)}
+  .gal figcaption{position:absolute;left:0;right:0;bottom:0;padding:24px 12px 9px;font-size:12px;
+    color:var(--ink);background:linear-gradient(180deg,transparent,rgba(4,16,31,.92))}
   /* teacher */
   .teacher{display:grid;grid-template-columns:1.1fr .9fr;gap:34px;align-items:center}
   .teacher .card{padding:30px}
+  .teacher figure{margin:0;border-radius:18px;overflow:hidden;border:1px solid var(--line);aspect-ratio:16/9}
+  .teacher figure img{width:100%;height:100%;object-fit:cover}
   /* pricing */
   .pricing{max-width:560px;margin:0 auto;text-align:center}
   .pricebox{background:linear-gradient(180deg,#0e2947,#0a1f3a);border:1px solid rgba(246,181,0,.4);
     border-radius:22px;padding:38px 30px;box-shadow:0 30px 80px rgba(0,0,0,.35)}
   .pricebox .amt{font-family:"Space Grotesk";font-weight:700;font-size:64px;line-height:1;color:var(--gold-soft)}
   .pricebox .was{color:var(--muted);text-decoration:line-through;font-size:20px;margin-left:8px}
-  .incl{text-align:left;max-width:360px;margin:24px auto 26px;display:grid;gap:11px}
+  .incl{text-align:left;max-width:380px;margin:24px auto 26px;display:grid;gap:11px;padding:0}
   .incl li{list-style:none;display:flex;gap:11px;color:var(--ink);font-size:15px}
   .incl li::before{content:"⚓";color:var(--gold)}
   /* steps */
@@ -136,14 +163,14 @@
   .step p{color:var(--muted);margin:0;font-size:14px}
   /* faq */
   details{border:1px solid var(--line);border-radius:14px;padding:4px 20px;margin-bottom:10px;background:rgba(255,255,255,.02)}
-  summary{cursor:pointer;font-weight:600;padding:16px 0;font-size:16px;list-style:none;display:flex;justify-content:space-between}
+  summary{cursor:pointer;font-weight:600;padding:16px 0;font-size:16px;list-style:none;display:flex;justify-content:space-between;gap:14px}
   summary::-webkit-details-marker{display:none}
-  summary::after{content:"+";color:var(--gold);font-size:22px}
+  summary::after{content:"+";color:var(--gold);font-size:22px;line-height:1}
   details[open] summary::after{content:"–"}
   details p{color:var(--muted);margin:0 0 18px;font-size:14.5px}
   /* note + footer */
   .note{background:rgba(52,211,176,.08);border:1px solid rgba(52,211,176,.3);border-radius:14px;
-    padding:18px 20px;color:var(--muted);font-size:13.5px;max-width:760px;margin:20px auto 0}
+    padding:18px 20px;color:var(--muted);font-size:13.5px;max-width:760px;margin:20px auto 0;text-align:left}
   footer{border-top:1px solid var(--line);padding:48px 0 60px;color:var(--muted);font-size:14px}
   .foot-cta{background:linear-gradient(120deg,#0e2947,#0a1f3a);border:1px solid var(--line);
     border-radius:22px;padding:44px;text-align:center;margin-bottom:44px}
@@ -152,10 +179,11 @@
   .foot-links a:hover{color:var(--ink)}
   .center{text-align:center}
   @media(max-width:820px){
-    .g3,.g4,.g2,.voyage,.steps,.teacher,.gal{grid-template-columns:1fr}
+    .g3,.g4,.g2,.voyage,.steps,.teacher,.state{grid-template-columns:1fr}
     .gal{grid-template-columns:repeat(2,1fr)}
-    .nav nav-hide{display:none}
+    .nav .links{display:none}
     section{padding:56px 0}
+    .foot-cta{padding:30px 22px}
   }
 </style>
 </head>
@@ -163,6 +191,11 @@
 
 <header><div class="wrap nav">
   <a class="brand" href="https://seamanapp.com"><img src="img/app-icon.png" alt="Seaman App" width="30" height="30" decoding="async" />Seaman&nbsp;App</a>
+  <div class="links">
+    <a href="#inside">What's inside</a>
+    <a href="#curriculum">Chapters</a>
+    <a href="#faq">Questions</a>
+  </div>
   <a class="btn gold" href="#enrol">Enrol — ₱3,250</a>
 </div></header>
 
@@ -174,35 +207,185 @@
     <h1>Port to&nbsp;Port</h1>
     <p class="lede">A full navigation course — the last line ashore to the first line at the next port, in the order it really happens.</p>
     <div class="stats">
-      <span><b>19</b> chapters</span><span class="dot">·</span>
-      <span><b>112</b> lessons</span><span class="dot">·</span>
+      <span><b>16</b> lessons out now</span><span class="dot">·</span>
+      <span><b>19</b> chapters as they land</span><span class="dot">·</span>
       <span>Taught by a <b>serving 2/O</b></span><span class="dot">·</span>
       <span>Watch <b>offline</b> at sea</span>
     </div>
     <div class="price-pill">
       <span class="now">&#8369;3,250</span>
       <span class="was">&#8369;17,000</span>
-      <span class="save">Save $250</span>
+      <span class="save">While it's being built</span>
     </div>
-    <div class="cta-row">
-      <a class="btn gold lg" style="width:100%;justify-content:center"
+    <div class="cta-row cta-block">
+      <a class="btn gold lg block"
          href="https://app.seamanapp.com/#/courses/88a59975-14d7-4acb-8a33-ae366d1893ed?pay=paymongo">
          Enrol now &mdash; &#8369;3,250</a>
-      <p style="color:var(--muted);font-size:12.5px;margin:9px 0 0;text-align:center">
-        <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 7px;
-                     border-radius:6px;background:rgba(92,198,255,.18);font-size:11.5px;
-                     font-weight:800;color:#cfe6f7">&#9635; QR Ph</span>
+      <p class="fineprint">
+        <span class="qr-tag">&#9635; QR Ph</span>
         Scan with GCash, Maya or any bank app.</p>
-      <p style="color:var(--muted);font-size:12.5px;margin:12px 0 0;text-align:center">
+      <p class="fineprint" style="margin-top:12px">
         Paying from outside the Philippines?
         <a href="https://app.seamanapp.com/#/courses/88a59975-14d7-4acb-8a33-ae366d1893ed?pay=paypal"
            style="color:var(--cyan)">Pay $50 with PayPal</a></p>
       <p style="color:var(--muted);font-size:13px;margin:14px 0 0">One payment for <b style="color:var(--ink)">2 years of access</b> — no subscription. You'll create a free Seaman&nbsp;App account (or sign in) to unlock the course.</p>
-
     </div>
-    <div class="cta-row" style="justify-content:center;margin-top:22px">
+    <div class="cta-row" style="margin-top:22px">
       <a class="btn fb" href="https://www.facebook.com/simplifiedmaritime" target="_blank" rel="noopener">💬 Questions? Message us on Facebook</a>
       <a class="btn play" href="https://play.google.com/store/apps/details?id=com.seamanapp.seafarer_app" target="_blank" rel="noopener">▶ Get the Android app</a>
+    </div>
+  </div>
+</div>
+
+<!-- THE GAP -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow kicker">Why this exists</div>
+    <p class="lead-quote">You were taught the rules. You were never shown <b>the watch</b>.<br />
+      The exams assume a conversation with a senior officer that, for most of us, never happened.</p>
+    <p class="sub" style="margin-top:26px">Nobody hands you a written procedure for how to take over a watch at 0345 in traffic, what to check before you accept the con, or what the Master actually wants to be called for. You learn it by being lucky with your seniors — or you learn it the hard way. This course is that conversation, in the order a voyage really happens.</p>
+    <div class="grid g3" style="margin-top:34px">
+      <div class="card"><div class="ic">📕</div><h3>Not another rulebook</h3><p>COLREGs and SOLAS are on your ship already. What is missing is what a competent officer does with them at 0345 in traffic.</p></div>
+      <div class="card"><div class="ic">🧭</div><h3>In voyage order</h3><p>Preparation, departure, the passage, the watch, arrival — the sequence you will live, not a syllabus sorted by subject.</p></div>
+      <div class="card"><div class="ic">🎙️</div><h3>From someone still sailing</h3><p>Taught by a serving Second Officer, in the words a senior would actually use on the bridge wing.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT YOU GET TODAY -->
+<section id="inside" style="background:var(--navy2)">
+  <div class="wrap">
+    <div class="eyebrow kicker">Read this before you pay</div>
+    <h2>Being built, in the order you'd sail it.</h2>
+    <p class="sub">This is an honest page, so here is exactly where the course stands today. You are enrolling in something that is still being made — which is the only reason it is ₱3,250 and not ₱17,000.</p>
+    <div class="state">
+      <div class="card now">
+        <span class="tag">Watchable today</span>
+        <h3>16 lessons · 2 h 18 min</h3>
+        <ul>
+          <li>Chapter 00 — Introduction: how this mentorship works (4 lessons)</li>
+          <li>Chapter 01 — Foundations: the ground you stand on (7 lessons)</li>
+          <li>Chapter 02 — The bridge and your instruments (5 of 9 so far)</li>
+          <li>Every one a finished film, playable the minute you enrol</li>
+        </ul>
+      </div>
+      <div class="card soon">
+        <span class="tag">In production</span>
+        <h3>16 more chapters · 96 lessons</h3>
+        <ul>
+          <li>Ship handling, the bridge team, departure and arrival</li>
+          <li>The watch itself — coastal, open sea, ocean</li>
+          <li>GMDSS, weather, emergencies, anchoring, port state</li>
+          <li>Bulk, tanker and container lanes for your ship type</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note" style="margin-left:0;max-width:none">
+      <b style="color:var(--ink)">What that means for you.</b> You pay once, today, at the price it costs while it is being built — and every chapter lands in your account as it is finished, at no extra cost, for the whole two years. If you would rather wait until it is complete, that is a fair choice: it will be priced as a finished course by then.
+    </div>
+  </div>
+</section>
+
+<!-- CURRICULUM -->
+<section id="curriculum">
+  <div class="wrap">
+    <div class="eyebrow kicker">The full voyage</div>
+    <h2>19 chapters. 112 lessons.</h2>
+    <p class="sub">The complete plan, exactly as it sits in the app — including what is still in production. Nothing here is padding: every chapter is one part of the same single voyage.</p>
+    <div class="voyage">
+      <div class="ch"><div class="no">00</div><div><div class="t">Introduction: how this mentorship works</div><div class="c">4 lessons <span class="pill out">Out now</span></div></div></div>
+      <div class="ch"><div class="no">01</div><div><div class="t">Foundations: the ground you stand on</div><div class="c">7 lessons <span class="pill out">Out now</span></div></div></div>
+      <div class="ch"><div class="no">02</div><div><div class="t">The bridge and your instruments</div><div class="c">9 lessons <span class="pill part">5 out now</span></div></div></div>
+      <div class="ch"><div class="no">03</div><div><div class="t">How your ship handles</div><div class="c">6 lessons <span class="pill prod">In production</span></div></div></div>
+      <div class="ch"><div class="no">04</div><div><div class="t">The bridge team</div><div class="c">4 lessons <span class="pill prod">In production</span></div></div></div>
+      <div class="ch"><div class="no">05</div><div><div class="t">Preparation prior to departure</div><div class="c">9 lessons <span class="pill prod">In production</span></div></div></div>
+      <div class="ch"><div class="no">06</div><div><div class="t">During departure</div><div class="c">6 lessons <span class="pill prod">In production</span></div></div></div>
+      <div class="ch"><div class="no">07</div><div><div class="t">Knowing where you are</div><div class="c">6 lessons <span class="pill prod">In production</span></div></div></div>
+      <div class="ch"><div class="no">08</div><div><div class="t">The bridge watch: coastal · open sea · ocean</div><div class="c">10 lessons <span class="pill prod">In production</span></div></div></div>
+      <div class="ch"><div class="no">09</div><div><div class="t">GMDSS for the OOW</div><div class="c">7 lessons <span class="pill prod">In production</span></div></div></div>
+      <div class="ch"><div class="no">10</div><div><div class="t">Weather on your watch</div><div class="c">3 lessons <span class="pill prod">In production</span></div></div></div>
+      <div class="ch"><div class="no">11</div><div><div class="t">Emergencies on your watch</div><div class="c">8 lessons <span class="pill prod">In production</span></div></div></div>
+      <div class="ch"><div class="no">12</div><div><div class="t">Anchoring and the anchor watch</div><div class="c">3 lessons <span class="pill prod">In production</span></div></div></div>
+      <div class="ch"><div class="no">13</div><div><div class="t">Arrival preparation</div><div class="c">7 lessons <span class="pill prod">In production</span></div></div></div>
+      <div class="ch"><div class="no">14</div><div><div class="t">Arrival: pilot, stations, alongside</div><div class="c">5 lessons <span class="pill prod">In production</span></div></div></div>
+      <div class="ch"><div class="no">15</div><div><div class="t">When they come aboard</div><div class="c">6 lessons <span class="pill prod">In production</span></div></div></div>
+      <div class="ch lane"><div class="no">LB</div><div><div class="t">Bulk carrier lane</div><div class="c">4 lessons <span class="pill prod">In production</span></div></div></div>
+      <div class="ch lane"><div class="no">LT</div><div><div class="t">Tanker lane</div><div class="c">4 lessons <span class="pill prod">In production</span></div></div></div>
+      <div class="ch lane"><div class="no">LC</div><div><div class="t">Container lane</div><div class="c">4 lessons <span class="pill prod">In production</span></div></div></div>
+    </div>
+    <p class="sub" style="margin-top:22px;font-size:14.5px">The three lanes at the end are the same voyage seen from your own deck — what changes when the cargo is grain, crude or boxes.</p>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section style="background:var(--navy2)">
+  <div class="wrap">
+    <div class="eyebrow kicker">From the course</div>
+    <h2>Filmed for the bridge, not the classroom.</h2>
+    <p class="sub">Frames from chapters released and in production — the rehearsal you get to have before it is your watch.</p>
+    <div class="gal">
+      <figure><img src="img/g-00.1.webp" alt="Welcome aboard" width="1400" height="788" loading="lazy" decoding="async" /><figcaption>00 · Welcome aboard</figcaption></figure>
+      <figure><img src="img/g-02.1.webp" alt="A tour of the bridge" width="1400" height="788" loading="lazy" decoding="async" /><figcaption>02 · The bridge and your instruments</figcaption></figure>
+      <figure><img src="img/g-03.1.webp" alt="Charts and the manoeuvring booklet" width="1400" height="788" loading="lazy" decoding="async" /><figcaption>03 · How your ship handles</figcaption></figure>
+      <figure><img src="img/g-05.1.webp" alt="Preparation prior to departure" width="1400" height="788" loading="lazy" decoding="async" /><figcaption>05 · Preparation prior to departure</figcaption></figure>
+      <figure><img src="img/g-07.1.webp" alt="Knowing where you are" width="1400" height="788" loading="lazy" decoding="async" /><figcaption>07 · Knowing where you are</figcaption></figure>
+      <figure><img src="img/g-08.1.webp" alt="Handing over the bridge watch at night" width="1400" height="788" loading="lazy" decoding="async" /><figcaption>08 · The bridge watch</figcaption></figure>
+      <figure><img src="img/g-11.1.webp" alt="Emergencies on your watch" width="1400" height="788" loading="lazy" decoding="async" /><figcaption>11 · Emergencies on your watch</figcaption></figure>
+      <figure><img src="img/g-14.1.webp" alt="Arrival: pilot, stations, alongside" width="1400" height="788" loading="lazy" decoding="async" /><figcaption>14 · Arrival: pilot and stations</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- TEACHER -->
+<section>
+  <div class="wrap teacher">
+    <div>
+      <div class="eyebrow kicker">Who is teaching</div>
+      <h2>A serving Second Officer, not a retired lecturer.</h2>
+      <p class="sub">Someone who stood the watch this contract — who knows what the Master will call you about at 0200, which alarm you will learn to ignore and why that is the dangerous one, and what a pilot expects to find when he steps onto your bridge.</p>
+      <p class="sub" style="margin-top:16px">Simplified Maritime has taught Filipino officers on Facebook for years, and the Navigators Club community is now more than 1,900 seafarers. Port to Port is that same voice, written down properly and filmed.</p>
+      <div class="cta-row" style="margin-top:24px">
+        <a class="btn ghost" href="https://www.facebook.com/simplifiedmaritime" target="_blank" rel="noopener">See Simplified Maritime on Facebook</a>
+      </div>
+    </div>
+    <figure><img src="img/g-08.1.webp" alt="Two officers over the chart table at night" width="1400" height="788" loading="lazy" decoding="async" /></figure>
+  </div>
+</section>
+
+<!-- OFFLINE -->
+<section style="background:var(--navy2)">
+  <div class="wrap">
+    <div class="eyebrow kicker">Built for a ship</div>
+    <h2>A ship's connection is not a connection.</h2>
+    <p class="sub">Most courses assume you are ashore on wifi. This one assumes you are three days off the coast with a satellite link you have been told not to waste.</p>
+    <div class="grid g3" style="margin-top:30px">
+      <div class="card"><div class="ic">⬇️</div><h3>Download in port</h3><p>Pull the chapters onto your phone alongside, then watch them mid-ocean with the data off. The whole app is offline-first.</p></div>
+      <div class="card"><div class="ic">📱</div><h3>Phone or laptop</h3><p>Your access is on both — the Android app and app.seamanapp.com. Same account, same progress, whichever you have to hand.</p></div>
+      <div class="card"><div class="ic">🔁</div><h3>Watch it again</h3><p>Two years of access. Come back to the arrival chapter the night before you actually do one — that is when it means the most.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="enrol">
+  <div class="wrap pricing">
+    <div class="eyebrow kicker center">Enrol</div>
+    <h2 style="margin-bottom:.35em">One payment. No subscription.</h2>
+    <div class="pricebox">
+      <div><span class="amt">&#8369;3,250</span><span class="was">&#8369;17,000</span></div>
+      <p style="color:var(--muted);font-size:14px;margin:10px 0 0">The price while the course is being built.</p>
+      <ul class="incl">
+        <li>16 lessons watchable today — 2 h 18 min</li>
+        <li>Every remaining chapter as it is finished</li>
+        <li>Two years of access from the day you enrol</li>
+        <li>Bulk, tanker and container lanes for your ship</li>
+        <li>Offline download on the Android app</li>
+        <li>Watch on your phone and on the web</li>
+      </ul>
+      <a class="btn gold lg block" href="https://app.seamanapp.com/#/courses/88a59975-14d7-4acb-8a33-ae366d1893ed?pay=paymongo">Enrol now &mdash; &#8369;3,250</a>
+      <p class="fineprint"><span class="qr-tag">&#9635; QR Ph</span> Scan with GCash, Maya or any bank app.</p>
+      <p class="fineprint" style="margin-top:10px">Outside the Philippines? <a href="https://app.seamanapp.com/#/courses/88a59975-14d7-4acb-8a33-ae366d1893ed?pay=paypal" style="color:var(--cyan)">Pay $50 with PayPal</a></p>
+      <p class="fineprint" style="margin-top:10px">Would rather send the money to a person? <a href="gcash/" style="color:var(--cyan)">We can enrol you by hand</a>.</p>
     </div>
     <div class="note">
       Peer-to-peer mentorship, not approved or assessed training. It confers no certificate and no STCW endorsement, nothing is marked or scored, and it does not replace your company's safety-management system or the officer teaching you onboard.
@@ -211,25 +394,27 @@
 </section>
 
 <!-- HOW IT WORKS -->
-<section id="how">
+<section id="how" style="background:var(--navy2)">
   <div class="wrap">
     <div class="eyebrow kicker">How to start</div>
     <h2>Three steps to your first watch</h2>
     <div class="steps">
       <div class="step"><h3>Enrol for &#8369;3,250</h3><p>Scan the QR Ph code with GCash, Maya or your bank app, and create your free Seaman&nbsp;App account with the same email.</p></div>
       <div class="step"><h3>Open the course</h3><p>On the web at app.seamanapp.com, or in the Seaman&nbsp;App on your phone — your access is on both.</p></div>
-      <div class="step"><h3>Learn at sea</h3><p>Chapters open weekly. Download the videos in port and study them on passage, offline.</p></div>
+      <div class="step"><h3>Learn at sea</h3><p>Start with the 16 lessons that are out. Download them in port and study them on passage, offline. New chapters appear as they are finished.</p></div>
     </div>
   </div>
 </section>
 
 <!-- FAQ -->
-<section id="faq" style="background:var(--navy2)">
+<section id="faq">
   <div class="wrap" style="max-width:760px">
     <div class="eyebrow kicker">Questions</div>
     <h2>Good to know</h2>
-    <details open><summary>Is this a certificate or STCW course?</summary><p>No. It's honest peer-to-peer mentorship from a serving officer. It confers no certificate and no endorsement, and it doesn't replace your company's SMS or the officer teaching you onboard. It's the conversation the certificates assume you already had.</p></details>
-    <details><summary>How long do I keep access?</summary><p>Two years from the day you enrol — one payment, no subscription. Chapters release weekly so you build the voyage in order, and everything you've unlocked stays open to revisit for the whole two years.</p></details>
+    <details open><summary>How much of the course is finished?</summary><p>Sixteen lessons — about two hours and twenty minutes — are complete and watchable the moment you enrol: the introduction, the whole Foundations chapter, and five of the nine lessons on the bridge and its instruments. The other sixteen chapters are in production and appear in your account as each one is finished, at no extra cost. That unfinished state is the reason the price is ₱3,250 rather than ₱17,000.</p></details>
+    <details><summary>When will the rest be released?</summary><p>Chapters are filmed and released in voyage order, and we publish each one the week it is finished rather than promising a date we might miss. Your two years of access begins the day you enrol and comfortably covers the build.</p></details>
+    <details><summary>Is this a certificate or STCW course?</summary><p>No. It's honest peer-to-peer mentorship from a serving officer. It confers no certificate and no endorsement, and it doesn't replace your company's SMS or the officer teaching you onboard. It's the conversation the certificates assume you already had.</p></details>
+    <details><summary>How long do I keep access?</summary><p>Two years from the day you enrol — one payment, no subscription. Everything released in that window is yours to watch and re-watch as often as you like.</p></details>
     <details><summary>Can I study offline?</summary><p>Yes. Download the videos in port on the Android app and watch them mid-ocean. The whole app is built offline-first for a ship's connection.</p></details>
     <details><summary>Who is it for?</summary><p>Entry to intermediate — cadets, new OOWs, and anyone who knows the theory but wants to know how the watch actually runs. There are dedicated lanes for bulk, tanker and container ships.</p></details>
     <details><summary>How do I pay?</summary><p>Tap <b>Enrol now</b> and scan the QR&nbsp;Ph code with GCash, Maya or any bank app &mdash; your access unlocks by itself, usually within a minute. Paying from outside the Philippines? PayPal is $50. And if you would rather send the money to a person, <a href="gcash/" style="color:var(--cyan)">we can enrol you by hand</a>. You create a free Seaman&nbsp;App account with the same email and the course unlocks.</p></details>
@@ -241,7 +426,7 @@
   <div class="wrap">
     <div class="foot-cta">
       <h2 style="margin-top:0">Sail your first voyage the right way</h2>
-      <p class="sub" style="margin:0 auto 22px">19 chapters. 112 lessons. One voyage, last line to first line. <b style="color:var(--gold-soft)">&#8369;3,250</b> <span style="text-decoration:line-through;color:var(--muted)">$300</span>.</p>
+      <p class="sub" style="margin:0 auto 22px">16 lessons out now, 19 chapters as they land. One voyage, last line to first line. <b style="color:var(--gold-soft)">&#8369;3,250</b> <span style="text-decoration:line-through;color:var(--muted)">&#8369;17,000</span>.</p>
       <a class="btn gold lg" href="https://app.seamanapp.com/#/courses/88a59975-14d7-4acb-8a33-ae366d1893ed?pay=paymongo">Enrol now — ₱3,250</a>
     </div>
     <div class="foot-links">
@@ -255,6 +440,31 @@
     <p style="margin-top:26px;font-size:12.5px;color:var(--muted)">© Seaman App · Simplified Maritime. Peer-to-peer mentorship — not approved or assessed training, and not a substitute for your company's safety-management system.</p>
   </div>
 </footer>
+
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"Course",
+  "name":"Port to Port",
+  "description":"A full navigation course — the last line ashore to the first line at the next port, in the order it really happens. Taught by a serving Second Officer.",
+  "url":"https://course.seamanapp.com/",
+  "image":"https://course.seamanapp.com/img/cover.webp",
+  "inLanguage":"en",
+  "provider":{"@type":"Organization","name":"Simplified Maritime","url":"https://seamanapp.com"},
+  "offers":{
+    "@type":"Offer",
+    "price":"3250",
+    "priceCurrency":"PHP",
+    "availability":"https://schema.org/InStock",
+    "url":"https://course.seamanapp.com/#enrol"
+  },
+  "hasCourseInstance":{
+    "@type":"CourseInstance",
+    "courseMode":"online",
+    "courseWorkload":"PT2H18M"
+  }
+}
+</script>
 
 </body>
 </html>
