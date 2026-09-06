@@ -4,19 +4,19 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Port to Port — a full navigation course, last line to first line</title>
-<meta name="description" content="The missing conversation in navigation training. One voyage, in the order it really happens — preparation, departure, the watch, arrival — taught by a serving Second Officer. 16 lessons out now, 19 chapters as they are finished. ₱3,250 while it is being built." />
+<meta name="description" content="The missing conversation in navigation training. One voyage, in the order it really happens — preparation, departure, the watch, arrival — taught by a serving Second Officer. 18 lessons out now, two of them free to watch on this page. 19 chapters as they are finished.." />
 <link rel="canonical" href="https://course.seamanapp.com/" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Seaman App · Simplified Maritime" />
 <meta property="og:title" content="Port to Port — a full navigation course" />
-<meta property="og:description" content="One voyage, last line to first line, in the order it really happens. Taught by a serving 2/O. 16 lessons out now; 19 chapters as they land. ₱3,250 while it is being built." />
+<meta property="og:description" content="One voyage, last line to first line, in the order it really happens. Taught by a serving 2/O. 18 lessons out now, two free to watch. 19 chapters as they land.." />
 <meta property="og:url" content="https://course.seamanapp.com/" />
 <meta property="og:image" content="https://course.seamanapp.com/img/cover.webp" />
 <meta property="og:image:width" content="1400" />
 <meta property="og:image:height" content="788" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Port to Port — a full navigation course" />
-<meta name="twitter:description" content="One voyage, last line to first line. Taught by a serving 2/O. ₱3,250 while it is being built." />
+<meta name="twitter:description" content="One voyage, last line to first line. Taught by a serving 2/O.." />
 <meta name="twitter:image" content="https://course.seamanapp.com/img/cover.webp" />
 <meta name="theme-color" content="#04101f" />
 <link rel="icon" href="img/app-icon.png" />
@@ -185,6 +185,60 @@
     section{padding:56px 0}
     .foot-cta{padding:30px 22px}
   }
+
+  /* ── course-page view ── */
+  .coursehead{display:grid;grid-template-columns:1.05fr .95fr;gap:34px;align-items:start}
+  .coursehead .cover{border-radius:18px;overflow:hidden;border:1px solid var(--line);aspect-ratio:16/9;background:#0a1f3a}
+  .coursehead .cover img{width:100%;height:100%;object-fit:cover}
+  .coursehead h1{font-size:clamp(34px,5vw,54px);line-height:1.02;margin:.1em 0 .25em}
+  .coursehead .lede{font-size:clamp(16px,2vw,19px);color:var(--ink);max-width:560px;margin:0 0 14px}
+  .coursehead .desc{color:var(--muted);font-size:15px;max-width:600px}
+  .ratingbar{display:flex;align-items:center;gap:10px;border:1px solid rgba(246,181,0,.35);border-radius:12px;padding:10px 14px;margin:16px 0 10px;font-size:14px;max-width:560px}
+  .ratingbar .stars{color:var(--gold);letter-spacing:1px}
+  .progressline{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13.5px;margin:6px 0 18px}
+  .progressline .bar{flex:1;max-width:260px;height:6px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+  .progressline .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-soft))}
+  .chapters{display:grid;gap:10px;margin-top:26px}
+  details.chapter{border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025);overflow:hidden}
+  details.chapter[open]{border-color:rgba(246,181,0,.35)}
+  details.chapter>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:96px auto 1fr 28px;gap:14px;align-items:center;padding:12px 16px 12px 12px}
+  details.chapter>summary::-webkit-details-marker{display:none}
+  .chthumb{width:96px;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#0a1f3a;border:1px solid var(--line)}
+  .chthumb img,.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .nocover{display:block;width:100%;height:100%;background:linear-gradient(135deg,#0e2947,#0a1f3a)}
+  .chno{font-family:"Space Grotesk";font-weight:700;color:var(--gold);font-size:15px;min-width:30px}
+  details.lane .chno{color:var(--teal)}
+  .chtitle b{display:block;font-size:16px;line-height:1.25}
+  .chmeta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--muted);font-size:12.5px;margin-top:4px}
+  .chev{color:var(--muted);font-size:26px;line-height:1;transition:transform .2s ease;justify-self:end}
+  details.chapter[open] .chev{transform:rotate(90deg)}
+  .pill.free{background:rgba(52,211,176,.2);color:var(--teal);border:1px solid rgba(52,211,176,.5)}
+  ul.lessons{list-style:none;margin:0;padding:6px 12px 12px;display:grid;gap:6px;border-top:1px solid var(--line)}
+  li.lesson .row{display:grid;grid-template-columns:72px 1fr auto;gap:12px;align-items:center;padding:8px 6px;border-radius:12px}
+  li.lesson .row:hover{background:rgba(255,255,255,.03)}
+  .thumb{width:72px;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:#0a1f3a;border:1px solid var(--line)}
+  li.lesson .t b{display:block;font-size:14.5px;font-weight:600;line-height:1.3}
+  li.lesson .meta{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+  li.lesson .meta em{color:var(--teal);font-style:normal;font-weight:600}
+  .tag{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:3px 9px;white-space:nowrap}
+  .tag.lock{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--line)}
+  .tag.soon{background:rgba(255,255,255,.04);color:var(--muted);border:1px dashed var(--line)}
+  .tag.freetag{background:var(--teal);color:#04101f;border:1px solid var(--teal)}
+  li.lesson.free{background:rgba(52,211,176,.06);border:1px solid rgba(52,211,176,.3);border-radius:14px;padding:4px}
+  .player{margin:4px 6px 8px;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#000;aspect-ratio:16/9;position:relative}
+  .player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .player .play{position:absolute;inset:0;width:100%;height:100%;border:0;padding:0;cursor:pointer;background:#000}
+  .player .play img{width:100%;height:100%;object-fit:cover;opacity:.75}
+  .player .playbtn{position:absolute;left:50%;top:50%;transform:translate(-50%,-60%);width:66px;height:66px;border-radius:50%;background:var(--gold);color:#04101f;display:grid;place-items:center;font-size:26px;box-shadow:0 10px 30px rgba(246,181,0,.4)}
+  .player .playlabel{position:absolute;left:50%;top:50%;transform:translate(-50%,28px);color:#fff;font-weight:700;font-size:14px;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+  .freecta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  @media(max-width:820px){
+    .coursehead{grid-template-columns:1fr}
+    details.chapter>summary{grid-template-columns:72px auto 1fr 22px;gap:10px;padding:10px}
+    .chthumb{width:72px}
+    li.lesson .row{grid-template-columns:60px 1fr auto;gap:10px}
+    .thumb{width:60px}
+  }
 </style>
 <!-- meta-pixel:begin (generated by inject_pixel.mjs - edit assets/pixel.js, not this) -->
 <script>
@@ -297,146 +351,480 @@
 <header><div class="wrap nav">
   <a class="brand" href="https://seamanapp.com"><img src="img/app-icon.png" alt="Seaman App" width="30" height="30" decoding="async" />Seaman&nbsp;App</a>
   <div class="links">
-    <a href="#inside">What's inside</a>
-    <a href="#curriculum">Chapters</a>
+    <a href="#chapters">Chapters</a>
+    <a href="#free-03.4">Free lessons</a>
     <a href="#faq">Questions</a>
   </div>
-  <a class="btn gold" href="#enrol">Enrol — ₱3,250</a>
+  <a class="btn gold" href="#enrol">Enrol</a>
 </div></header>
 
-<!-- HERO -->
-<div class="hero">
-  <div class="hero-bg"><img src="img/cover.webp" alt="A ship at sea" width="1400" height="788" decoding="async" fetchpriority="high" /></div>
+<!-- THE COURSE, as a member sees it -->
+<section id="course" style="padding-top:44px">
   <div class="wrap">
-    <div class="eyebrow">Seaman&nbsp;App&nbsp;·&nbsp;Simplified&nbsp;Maritime</div>
-    <h1>Port to&nbsp;Port</h1>
-    <p class="lede">A full navigation course — the last line ashore to the first line at the next port, in the order it really happens.</p>
-    <div class="stats">
-      <span><b>16</b> lessons out now</span><span class="dot">·</span>
-      <span><b>19</b> chapters as they land</span><span class="dot">·</span>
-      <span>Taught by a <b>serving 2/O</b></span><span class="dot">·</span>
-      <span>Watch <b>offline</b> at sea</span>
+    <div class="coursehead">
+      <div>
+        <div class="eyebrow">Seaman&nbsp;App&nbsp;·&nbsp;Simplified&nbsp;Maritime</div>
+        <h1>Port to&nbsp;Port</h1>
+        <p class="lede">A full navigation course — the last line ashore to the first line at the next port, in the order it really happens.</p>
+        <p class="desc">Most navigation training tells you what the rules say. Almost none of it tells you what the job feels like at the moment you have to do it — which order things happen in, what you write down and where, who you call and when, and what somebody checks when they step onto your bridge. Port to Port is that missing conversation, taught by a serving Second Officer.</p>
+        <div class="ratingbar"><span class="stars">★★★★★</span><b>5.0</b><span style="color:var(--muted)">· member review</span></div>
+        <div class="progressline"><span><b style="color:var(--ink)">18</b> of 112 lessons released</span><span class="bar"><i style="width:16%"></i></span><span>2 h 32 min out now</span></div>
+        <div class="freecta"><a class="btn gold" href="#free-03.4">▶ Shallow water, squat and interaction</a> <a class="btn gold" href="#free-03.6">▶ The emergency turns</a></div>
+        <p style="color:var(--muted);font-size:13px;margin:12px 0 0">Two lessons are open to everyone — no account, no card. The rest unlock when you enrol.</p>
+      </div>
+      <div class="cover"><img src="img/lessons/cover.webp" alt="Port to Port" width="560" height="315" decoding="async" fetchpriority="high" /></div>
     </div>
-    <div class="price-pill">
-      <span class="now">&#8369;3,250</span>
-      <span class="was">&#8369;17,000</span>
-      <span class="save">While it's being built</span>
-    </div>
-    <div class="cta-row cta-block">
-      <a class="btn gold lg block"
-         href="https://app.seamanapp.com/#/courses/88a59975-14d7-4acb-8a33-ae366d1893ed?pay=paymongo">
-         Enrol now &mdash; &#8369;3,250</a>
-      <p class="fineprint">
-        <span class="qr-tag">&#9635; QR Ph</span>
-        Scan with GCash, Maya or any bank app.</p>
-      <p class="fineprint" style="margin-top:12px">
-        Paying from outside the Philippines?
-        <a href="https://app.seamanapp.com/#/courses/88a59975-14d7-4acb-8a33-ae366d1893ed?pay=paypal"
-           style="color:var(--cyan)">Pay $50 with PayPal</a></p>
-      <p style="color:var(--muted);font-size:13px;margin:14px 0 0">One payment for <b style="color:var(--ink)">2 years of access</b> — no subscription. You'll create a free Seaman&nbsp;App account (or sign in) to unlock the course.</p>
-    </div>
-    <div class="cta-row" style="margin-top:22px">
-      <a class="btn fb" href="https://www.facebook.com/simplifiedmaritime" target="_blank" rel="noopener">💬 Questions? Message us on Facebook</a>
-      <a class="btn play" href="https://play.google.com/store/apps/details?id=com.seamanapp.seafarer_app" target="_blank" rel="noopener">▶ Get the Android app</a>
-    </div>
-  </div>
-</div>
 
-<!-- THE GAP -->
-<section>
+    <div id="chapters" class="eyebrow kicker" style="margin-top:44px">Curriculum · 19 chapters</div>
+    <p class="sub" style="margin-top:6px">Tap a chapter to see its lessons. Chapter 03 is open — it holds the two free lessons.</p>
+    <div class="chapters">
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/00.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">00</span>
+      <span class="chtitle"><b>Introduction: How This Mentorship Works</b><span class="chmeta">4 lessons <span class="pill out">Out now</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/00.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Welcome aboard</b><span class="meta">00.1 · 9:32</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/00.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The gap between the book and the bridge</b><span class="meta">00.2 · 6:05</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/00.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>How we will balance theory and practice</b><span class="meta">00.3 · 5:12</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/00.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>What to expect of yourself</b><span class="meta">00.4 · 5:55</span></span><span class="tag lock">🔒</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/01.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">01</span>
+      <span class="chtitle"><b>Foundations: The Ground You Stand On</b><span class="chmeta">7 lessons <span class="pill out">Out now</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/01.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Who makes the rules</b><span class="meta">01.1 · 9:14</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/01.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The conventions that touch your watch</b><span class="meta">01.2 · 10:22</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/01.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The ship&#x27;s authority to sail</b><span class="meta">01.3 · 10:12</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/01.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The SMS, your company&#x27;s law</b><span class="meta">01.4 · 12:22</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/01.5.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Publications, and what corrected really means</b><span class="meta">01.5 · 10:23</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/01.6.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The Master, and the orders he writes down</b><span class="meta">01.6 · 10:32</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/01.7.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>So which one wins? — resolving conflicts</b><span class="meta">01.7 · 8:41</span></span><span class="tag lock">🔒</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/02.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">02</span>
+      <span class="chtitle"><b>The Bridge and Your Instruments</b><span class="chmeta">9 lessons <span class="pill part">5 of 9 out</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/02.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>A tour of the bridge — where everything is and why it&#x27;s there</b><span class="meta">02.1 · 8:13</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/02.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The compasses — gyro, magnetic, error, and the daily check</b><span class="meta">02.2 · 9:13</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/02.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Radar and ARPA — what it sees, what it misses, how you set it up</b><span class="meta">02.3 · 7:35</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/02.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>ECDIS — the chart, the settings that matter, the alarms that save you</b><span class="meta">02.4 · 7:35</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/02.5.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>GNSS and AIS — position and identity, and how both lie</b><span class="meta">02.5 · 7:19</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/02.6.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Echo sounder, speed log, and the numbers you trust</b><span class="meta">02.6 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/02.7.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Steering — modes, autopilot, hand steering, and the changeover</b><span class="meta">02.7 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/02.8.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>BNWAS, VDR and the recorders that watch you</b><span class="meta">02.8 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/02.9.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The tools that do the maths for you — and the ones that get you caught</b><span class="meta">02.9 · in production</span></span><span class="tag soon">Coming</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter" open>
+    <summary>
+      <span class="chthumb"><img src="img/lessons/03.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">03</span>
+      <span class="chtitle"><b>How Your Ship Handles</b><span class="chmeta">6 lessons <span class="pill part">2 of 6 out</span> <span class="pill free">2 free</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/03.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The three documents — pilot card, wheelhouse poster, manoeuvring booklet</b><span class="meta">03.1 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/03.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Turning circle — advance, transfer, tactical diameter, kick</b><span class="meta">03.2 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/03.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Stopping — crash stop, and the truth about &quot;full astern&quot;</b><span class="meta">03.3 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson free" id="free-03.4">
+        <div class="row"><span class="thumb"><img src="img/lessons/03.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Shallow water, squat and interaction</b><span class="meta">03.4 · 6:07 · <em>Free preview — watch it here</em></span></span>
+          <span class="tag freetag">▶ Free</span></div>
+        <div class="player" data-uid="9f5d43e38407d65de961389d4a5496bc">
+          <button type="button" class="play" data-uid="9f5d43e38407d65de961389d4a5496bc" aria-label="Play Shallow water, squat and interaction">
+            <img src="img/lessons/03.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" />
+            <span class="playbtn">▶</span><span class="playlabel">Watch free · 6:07</span>
+          </button>
+        </div>
+      </li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/03.5.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Wind and current on the hull — and the help you have</b><span class="meta">03.5 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson free" id="free-03.6">
+        <div class="row"><span class="thumb"><img src="img/lessons/03.6.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The emergency turns — Williamson, Anderson, Scharnov</b><span class="meta">03.6 · 8:13 · <em>Free preview — watch it here</em></span></span>
+          <span class="tag freetag">▶ Free</span></div>
+        <div class="player" data-uid="341f9bbc0aaafc7ba1b847cc44b97db6">
+          <button type="button" class="play" data-uid="341f9bbc0aaafc7ba1b847cc44b97db6" aria-label="Play The emergency turns — Williamson, Anderson, Scharnov">
+            <img src="img/lessons/03.6.webp" alt="" width="560" height="315" loading="lazy" decoding="async" />
+            <span class="playbtn">▶</span><span class="playlabel">Watch free · 8:13</span>
+          </button>
+        </div>
+      </li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/04.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">04</span>
+      <span class="chtitle"><b>The Bridge Team</b><span class="chmeta">4 lessons <span class="pill prod">In production</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/04.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Who everyone is to you — Master, Chief Officer, pilot, AB, cadet</b><span class="meta">04.1 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/04.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>How accidents build — the error chain and situational awareness</b><span class="meta">04.2 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/04.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Saying it out loud — closed-loop communication, challenge and response</b><span class="meta">04.3 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/04.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Being new — asking, admitting, and being corrected in front of people</b><span class="meta">04.4 · in production</span></span><span class="tag soon">Coming</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/05.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">05</span>
+      <span class="chtitle"><b>Preparation Prior Departure</b><span class="chmeta">9 lessons <span class="pill prod">In production</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/05.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Working backwards from last line — the departure timeline</b><span class="meta">05.1 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/05.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The passage plan you were handed — reading it, checking it, loading it</b><span class="meta">05.2 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/05.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Charts, ENC and publications corrected up to the day</b><span class="meta">05.3 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/05.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Bridge equipment pre-departure tests</b><span class="meta">05.4 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/05.5.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Steering gear tests — the one they always ask about</b><span class="meta">05.5 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/05.6.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The pre-departure checklist — signing it honestly, and what &quot;N/A&quot; costs you</b><span class="meta">05.6 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/05.7.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Draft, air draft and under-keel clearance — your sanity check</b><span class="meta">05.7 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/05.8.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The Master–Pilot exchange — preparing the card</b><span class="meta">05.8 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/05.9.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Squaring away — lights and shapes, flags, ETA and reports</b><span class="meta">05.9 · in production</span></span><span class="tag soon">Coming</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/06.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">06</span>
+      <span class="chtitle"><b>During Departure</b><span class="chmeta">6 lessons <span class="pill prod">In production</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/06.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Stations — who&#x27;s where, and your job in them</b><span class="meta">06.1 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/06.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The bell book — what you write, when, in what words</b><span class="meta">06.2 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/06.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The pilot on your bridge — advice, the con, and monitoring</b><span class="meta">06.3 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/06.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Helm orders — giving them, checking them, correcting them</b><span class="meta">06.4 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/06.5.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Tugs, lines, and the moments things go wrong</b><span class="meta">06.5 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/06.6.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>From stations to sea watch — the changeover and the log</b><span class="meta">06.6 · in production</span></span><span class="tag soon">Coming</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/07.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">07</span>
+      <span class="chtitle"><b>Knowing Where You Are</b><span class="chmeta">6 lessons <span class="pill prod">In production</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/07.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>What a fix actually is — and why one source is never enough</b><span class="meta">07.1 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/07.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Visual fixes — bearings, transits, and the ones you can take fast</b><span class="meta">07.2 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/07.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Radar fixing and parallel indexing</b><span class="meta">07.3 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/07.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>GNSS — using it, cross-checking it, knowing when it&#x27;s wrong</b><span class="meta">07.4 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/07.5.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>DR, EP, set and drift</b><span class="meta">07.5 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/07.6.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Monitoring on ECDIS — XTD, safety contour, alarms, and the check cycle</b><span class="meta">07.6 · in production</span></span><span class="tag soon">Coming</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/08.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">08</span>
+      <span class="chtitle"><b>The Bridge Watch: Coastal · Open Sea · Ocean</b><span class="chmeta">10 lessons <span class="pill prod">In production</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/08.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Taking over — the handover that protects you</b><span class="meta">08.1 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/08.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The watch you owe — STCW watchkeeping in plain language</b><span class="meta">08.2 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/08.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The deck logbook — what you write, what you never write, how to correct it</b><span class="meta">08.3 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/08.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The coastal watch — traffic, TSS, pilotage waters, close quarters</b><span class="meta">08.4 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/08.5.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The open-sea watch — rhythm, routine checks, staying awake to it</b><span class="meta">08.5 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/08.6.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The ocean watch and the noon report</b><span class="meta">08.6 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/08.7.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The lookout — posting one, using one, managing an AB</b><span class="meta">08.7 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/08.8.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Calling the Master — the threshold, the phone call, the words</b><span class="meta">08.8 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/08.9.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Restricted visibility — what changes the moment it closes in</b><span class="meta">08.9 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/08.10.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Night, fatigue and rest hours — the honest version</b><span class="meta">08.10 · in production</span></span><span class="tag soon">Coming</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/09.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">09</span>
+      <span class="chtitle"><b>GMDSS for the OOW</b><span class="chmeta">7 lessons <span class="pill prod">In production</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/09.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>What GMDSS is, in one lesson — sea areas, and why your ship carries what she carries</b><span class="meta">09.1 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/09.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The equipment on your bridge — what you touch, what you never touch</b><span class="meta">09.2 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/09.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Sending a distress alert — the button, the words, the sequence</b><span class="meta">09.3 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/09.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Receiving one — acknowledge, relay, and waking the Master</b><span class="meta">09.4 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/09.5.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>False alerts — how they happen, and how to cancel one properly</b><span class="meta">09.5 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/09.6.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Tests, batteries and the radio log</b><span class="meta">09.6 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/09.7.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>NAVTEX, MSI, and talking on the radio — SMCP with VTS, pilot and port</b><span class="meta">09.7 · in production</span></span><span class="tag soon">Coming</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/10.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">10</span>
+      <span class="chtitle"><b>Weather on Your Watch</b><span class="chmeta">3 lessons <span class="pill prod">In production</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/10.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Getting the weather — what reaches the bridge, and the routing services</b><span class="meta">10.1 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/10.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Reading the picture — what a synoptic chart tells a watchkeeper</b><span class="meta">10.2 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/10.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Heavy weather and tropical revolving storms — precautions, avoidance, reporting</b><span class="meta">10.3 · in production</span></span><span class="tag soon">Coming</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/11.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">11</span>
+      <span class="chtitle"><b>Emergencies on Your Watch</b><span class="chmeta">8 lessons <span class="pill prod">In production</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/11.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The first sixty seconds — what every emergency has in common</b><span class="meta">11.1 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/11.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Man overboard</b><span class="meta">11.2 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/11.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Fire alarm</b><span class="meta">11.3 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/11.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Blackout and steering failure</b><span class="meta">11.4 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/11.5.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Collision, grounding and flooding</b><span class="meta">11.5 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/11.6.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Distress received — the duty to assist, and what your ship can actually do</b><span class="meta">11.6 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/11.7.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Medical emergency, and calling for help</b><span class="meta">11.7 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/11.8.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Muster and abandon ship — the bridge&#x27;s part, and what leaves with you</b><span class="meta">11.8 · in production</span></span><span class="tag soon">Coming</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/12.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">12</span>
+      <span class="chtitle"><b>Anchoring and the Anchor Watch</b><span class="chmeta">3 lessons <span class="pill prod">In production</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/12.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Preparing to anchor — the plan, the brief, the checks</b><span class="meta">12.1 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/12.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Letting go, and brought up — what you record</b><span class="meta">12.2 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/12.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The anchor watch alone at night — dragging, swinging, traffic, and when to call</b><span class="meta">12.3 · in production</span></span><span class="tag soon">Coming</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/13.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">13</span>
+      <span class="chtitle"><b>Arrival Preparation</b><span class="chmeta">7 lessons <span class="pill prod">In production</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/13.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Working backwards from the pilot station</b><span class="meta">13.1 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/13.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Arrival charts, berth information and port guides</b><span class="meta">13.2 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/13.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The arrival checklist and equipment tests</b><span class="meta">13.3 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/13.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The Master–Pilot exchange, inbound</b><span class="meta">13.4 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/13.5.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Pre-arrival reports and formalities — ETA, ISPS, pratique, agent</b><span class="meta">13.5 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/13.6.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The pilot ladder — rigging it right, because this one kills people</b><span class="meta">13.6 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/13.7.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Under-keel clearance, tide, and the arrival window</b><span class="meta">13.7 · in production</span></span><span class="tag soon">Coming</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/14.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">14</span>
+      <span class="chtitle"><b>Arrival: Pilot, Stations, Alongside</b><span class="chmeta">5 lessons <span class="pill prod">In production</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/14.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The approach and the pilot boarding</b><span class="meta">14.1 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/14.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Stations, tugs, and the bell book again</b><span class="meta">14.2 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/14.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Alongside — first line to all fast</b><span class="meta">14.3 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/14.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Closing the passage — logs, drafts, times, reports</b><span class="meta">14.4 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/14.5.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Handing over to port routine</b><span class="meta">14.5 · in production</span></span><span class="tag soon">Coming</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/15.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">15</span>
+      <span class="chtitle"><b>When They Come Aboard</b><span class="chmeta">6 lessons <span class="pill prod">In production</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/15.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Port State Control — what they check in your domain</b><span class="meta">15.1 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/15.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Talking to an inspector — what you say, what you don&#x27;t, what you never guess</b><span class="meta">15.2 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/15.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The internal ISM audit and the superintendent</b><span class="meta">15.3 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/15.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Vetting — SIRE 2.0 and RightShip/DryBMS</b><span class="meta">15.4 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/15.5.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Flag, class, and the certificate folder</b><span class="meta">15.5 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/15.6.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>When they find something — non-conformity, corrective action, and not panicking</b><span class="meta">15.6 · in production</span></span><span class="tag soon">Coming</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter lane">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/LB.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">LB</span>
+      <span class="chtitle"><b>Bulk lane</b><span class="chmeta">4 lessons <span class="pill prod">In production</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/LB.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Hold readiness and surveys</b><span class="meta">LB.1 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/LB.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>BLU Code and the loading plan</b><span class="meta">LB.2 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/LB.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Draft survey and the deck watch</b><span class="meta">LB.3 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/LB.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Bulk-specific inspection</b><span class="meta">LB.4 · in production</span></span><span class="tag soon">Coming</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter lane">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/LT.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">LT</span>
+      <span class="chtitle"><b>Tanker lane</b><span class="chmeta">4 lessons <span class="pill prod">In production</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/LT.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>The ship–shore safety checklist</b><span class="meta">LT.1 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/LT.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>ISGOTT and the deck watch in port</b><span class="meta">LT.2 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/LT.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Inert gas and cargo-area rules that reach the bridge</b><span class="meta">LT.3 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/LT.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>SIRE 2.0 for the junior officer</b><span class="meta">LT.4 · in production</span></span><span class="tag soon">Coming</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter lane">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/LC.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">LC</span>
+      <span class="chtitle"><b>Container lane</b><span class="chmeta">4 lessons <span class="pill prod">In production</span></span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/LC.1.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Lashing and securing</b><span class="meta">LC.1 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/LC.2.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>VGM and stowage information</b><span class="meta">LC.2 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/LC.3.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Deck watch and the box count</b><span class="meta">LC.3 · in production</span></span><span class="tag soon">Coming</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/LC.4.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+          <span class="t"><b>Container-specific inspection</b><span class="meta">LC.4 · in production</span></span><span class="tag soon">Coming</span></div></li>
+    </ul>
+  </details>
+    </div>
+    <p class="sub" style="margin-top:18px;font-size:14px">The three lanes at the end are the same voyage seen from your own deck — what changes when the cargo is grain, crude or boxes. Lessons marked <em>in production</em> are written and being filmed; they land in your account as each is finished.</p>
+  </div>
+</section>
+
+<!-- WHY THIS EXISTS -->
+<section style="background:var(--navy2)">
   <div class="wrap">
     <div class="eyebrow kicker">Why this exists</div>
     <p class="lead-quote">You were taught the rules. You were never shown <b>the watch</b>.<br />
       The exams assume a conversation with a senior officer that, for most of us, never happened.</p>
-    <p class="sub" style="margin-top:26px">Nobody hands you a written procedure for how to take over a watch at 0345 in traffic, what to check before you accept the con, or what the Master actually wants to be called for. You learn it by being lucky with your seniors — or you learn it the hard way. This course is that conversation, in the order a voyage really happens.</p>
     <div class="grid g3" style="margin-top:34px">
       <div class="card"><div class="ic">📕</div><h3>Not another rulebook</h3><p>COLREGs and SOLAS are on your ship already. What is missing is what a competent officer does with them at 0345 in traffic.</p></div>
       <div class="card"><div class="ic">🧭</div><h3>In voyage order</h3><p>Preparation, departure, the passage, the watch, arrival — the sequence you will live, not a syllabus sorted by subject.</p></div>
       <div class="card"><div class="ic">🎙️</div><h3>From someone still sailing</h3><p>Taught by a serving Second Officer, in the words a senior would actually use on the bridge wing.</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- WHAT YOU GET TODAY -->
-<section id="inside" style="background:var(--navy2)">
-  <div class="wrap">
-    <div class="eyebrow kicker">Read this before you pay</div>
-    <h2>Being built, in the order you'd sail it.</h2>
-    <p class="sub">This is an honest page, so here is exactly where the course stands today. You are enrolling in something that is still being made — which is the only reason it is ₱3,250 and not ₱17,000.</p>
-    <div class="state">
-      <div class="card now">
-        <span class="tag">Watchable today</span>
-        <h3>16 lessons · 2 h 18 min</h3>
-        <ul>
-          <li>Chapter 00 — Introduction: how this mentorship works (4 lessons)</li>
-          <li>Chapter 01 — Foundations: the ground you stand on (7 lessons)</li>
-          <li>Chapter 02 — The bridge and your instruments (5 of 9 so far)</li>
-          <li>Every one a finished film, playable the minute you enrol</li>
-        </ul>
-      </div>
-      <div class="card soon">
-        <span class="tag">In production</span>
-        <h3>16 more chapters · 96 lessons</h3>
-        <ul>
-          <li>Ship handling, the bridge team, departure and arrival</li>
-          <li>The watch itself — coastal, open sea, ocean</li>
-          <li>GMDSS, weather, emergencies, anchoring, port state</li>
-          <li>Bulk, tanker and container lanes for your ship type</li>
-        </ul>
-      </div>
-    </div>
-    <div class="note" style="margin-left:0;max-width:none">
-      <b style="color:var(--ink)">What that means for you.</b> You pay once, today, at the price it costs while it is being built — and every chapter lands in your account as it is finished, at no extra cost, for the whole two years. If you would rather wait until it is complete, that is a fair choice: it will be priced as a finished course by then.
-    </div>
-  </div>
-</section>
-
-<!-- CURRICULUM -->
-<section id="curriculum">
-  <div class="wrap">
-    <div class="eyebrow kicker">The full voyage</div>
-    <h2>19 chapters. 112 lessons.</h2>
-    <p class="sub">The complete plan, exactly as it sits in the app — including what is still in production. Nothing here is padding: every chapter is one part of the same single voyage.</p>
-    <div class="voyage">
-      <div class="ch"><div class="no">00</div><div><div class="t">Introduction: how this mentorship works</div><div class="c">4 lessons <span class="pill out">Out now</span></div></div></div>
-      <div class="ch"><div class="no">01</div><div><div class="t">Foundations: the ground you stand on</div><div class="c">7 lessons <span class="pill out">Out now</span></div></div></div>
-      <div class="ch"><div class="no">02</div><div><div class="t">The bridge and your instruments</div><div class="c">9 lessons <span class="pill part">5 out now</span></div></div></div>
-      <div class="ch"><div class="no">03</div><div><div class="t">How your ship handles</div><div class="c">6 lessons <span class="pill prod">In production</span></div></div></div>
-      <div class="ch"><div class="no">04</div><div><div class="t">The bridge team</div><div class="c">4 lessons <span class="pill prod">In production</span></div></div></div>
-      <div class="ch"><div class="no">05</div><div><div class="t">Preparation prior to departure</div><div class="c">9 lessons <span class="pill prod">In production</span></div></div></div>
-      <div class="ch"><div class="no">06</div><div><div class="t">During departure</div><div class="c">6 lessons <span class="pill prod">In production</span></div></div></div>
-      <div class="ch"><div class="no">07</div><div><div class="t">Knowing where you are</div><div class="c">6 lessons <span class="pill prod">In production</span></div></div></div>
-      <div class="ch"><div class="no">08</div><div><div class="t">The bridge watch: coastal · open sea · ocean</div><div class="c">10 lessons <span class="pill prod">In production</span></div></div></div>
-      <div class="ch"><div class="no">09</div><div><div class="t">GMDSS for the OOW</div><div class="c">7 lessons <span class="pill prod">In production</span></div></div></div>
-      <div class="ch"><div class="no">10</div><div><div class="t">Weather on your watch</div><div class="c">3 lessons <span class="pill prod">In production</span></div></div></div>
-      <div class="ch"><div class="no">11</div><div><div class="t">Emergencies on your watch</div><div class="c">8 lessons <span class="pill prod">In production</span></div></div></div>
-      <div class="ch"><div class="no">12</div><div><div class="t">Anchoring and the anchor watch</div><div class="c">3 lessons <span class="pill prod">In production</span></div></div></div>
-      <div class="ch"><div class="no">13</div><div><div class="t">Arrival preparation</div><div class="c">7 lessons <span class="pill prod">In production</span></div></div></div>
-      <div class="ch"><div class="no">14</div><div><div class="t">Arrival: pilot, stations, alongside</div><div class="c">5 lessons <span class="pill prod">In production</span></div></div></div>
-      <div class="ch"><div class="no">15</div><div><div class="t">When they come aboard</div><div class="c">6 lessons <span class="pill prod">In production</span></div></div></div>
-      <div class="ch lane"><div class="no">LB</div><div><div class="t">Bulk carrier lane</div><div class="c">4 lessons <span class="pill prod">In production</span></div></div></div>
-      <div class="ch lane"><div class="no">LT</div><div><div class="t">Tanker lane</div><div class="c">4 lessons <span class="pill prod">In production</span></div></div></div>
-      <div class="ch lane"><div class="no">LC</div><div><div class="t">Container lane</div><div class="c">4 lessons <span class="pill prod">In production</span></div></div></div>
-    </div>
-    <p class="sub" style="margin-top:22px;font-size:14.5px">The three lanes at the end are the same voyage seen from your own deck — what changes when the cargo is grain, crude or boxes.</p>
-  </div>
-</section>
-
-<!-- GALLERY -->
-<section style="background:var(--navy2)">
-  <div class="wrap">
-    <div class="eyebrow kicker">From the course</div>
-    <h2>Filmed for the bridge, not the classroom.</h2>
-    <p class="sub">Frames from chapters released and in production — the rehearsal you get to have before it is your watch.</p>
-    <div class="gal">
-      <figure><img src="img/g-00.1.webp" alt="Welcome aboard" width="1400" height="788" loading="lazy" decoding="async" /><figcaption>00 · Welcome aboard</figcaption></figure>
-      <figure><img src="img/g-02.1.webp" alt="A tour of the bridge" width="1400" height="788" loading="lazy" decoding="async" /><figcaption>02 · The bridge and your instruments</figcaption></figure>
-      <figure><img src="img/g-03.1.webp" alt="Charts and the manoeuvring booklet" width="1400" height="788" loading="lazy" decoding="async" /><figcaption>03 · How your ship handles</figcaption></figure>
-      <figure><img src="img/g-05.1.webp" alt="Preparation prior to departure" width="1400" height="788" loading="lazy" decoding="async" /><figcaption>05 · Preparation prior to departure</figcaption></figure>
-      <figure><img src="img/g-07.1.webp" alt="Knowing where you are" width="1400" height="788" loading="lazy" decoding="async" /><figcaption>07 · Knowing where you are</figcaption></figure>
-      <figure><img src="img/g-08.1.webp" alt="Handing over the bridge watch at night" width="1400" height="788" loading="lazy" decoding="async" /><figcaption>08 · The bridge watch</figcaption></figure>
-      <figure><img src="img/g-11.1.webp" alt="Emergencies on your watch" width="1400" height="788" loading="lazy" decoding="async" /><figcaption>11 · Emergencies on your watch</figcaption></figure>
-      <figure><img src="img/g-14.1.webp" alt="Arrival: pilot, stations, alongside" width="1400" height="788" loading="lazy" decoding="async" /><figcaption>14 · Arrival: pilot and stations</figcaption></figure>
     </div>
   </div>
 </section>
@@ -457,7 +845,7 @@
   </div>
 </section>
 
-<!-- OFFLINE -->
+<!-- BUILT FOR A SHIP -->
 <section style="background:var(--navy2)">
   <div class="wrap">
     <div class="eyebrow kicker">Built for a ship</div>
@@ -471,20 +859,20 @@
   </div>
 </section>
 
-<!-- PRICING -->
+<!-- ENROL — the price appears here, after the course has made its own case -->
 <section id="enrol">
   <div class="wrap pricing">
     <div class="eyebrow kicker center">Enrol</div>
     <h2 style="margin-bottom:.35em">One payment. No subscription.</h2>
+    <p class="sub" style="margin:0 auto 18px">You are enrolling in a course that is still being made — which is the only reason it costs what it does. Every remaining chapter lands in your account as it is finished, at no extra cost, for the whole two years.</p>
     <div class="pricebox">
       <div><span class="amt">&#8369;3,250</span><span class="was">&#8369;17,000</span></div>
       <p style="color:var(--muted);font-size:14px;margin:10px 0 0">The price while the course is being built.</p>
       <ul class="incl">
-        <li>16 lessons watchable today — 2 h 18 min</li>
+        <li>18 lessons watchable today — 2 h 32 min</li>
         <li>Every remaining chapter as it is finished</li>
         <li>Two years of access from the day you enrol</li>
         <li>Bulk, tanker and container lanes for your ship</li>
-        <li>Offline download on the Android app</li>
         <li>Videos in the Android app (or iPhone Safari); notes and progress on the web too</li>
       </ul>
       <a class="btn gold lg block" href="https://app.seamanapp.com/#/courses/88a59975-14d7-4acb-8a33-ae366d1893ed?pay=paymongo">Enrol now &mdash; &#8369;3,250</a>
@@ -504,9 +892,9 @@
     <div class="eyebrow kicker">How to start</div>
     <h2>Three steps to your first watch</h2>
     <div class="steps">
-      <div class="step"><h3>Enrol for &#8369;3,250</h3><p>Scan the QR Ph code with GCash, Maya or your bank app, and create your free Seaman&nbsp;App account with the same email.</p></div>
+      <div class="step"><h3>Enrol</h3><p>Scan the QR Ph code with GCash, Maya or your bank app, and create your free Seaman&nbsp;App account with the same email.</p></div>
       <div class="step"><h3>Open the course</h3><p>Install the Seaman&nbsp;App on Android and sign in — that is where the videos play. On an iPhone, watch in Safari at app.seamanapp.com.</p></div>
-      <div class="step"><h3>Learn at sea</h3><p>Start with the 16 lessons that are out. Download them in port and study them on passage, offline. New chapters appear as they are finished.</p></div>
+      <div class="step"><h3>Learn at sea</h3><p>Start with the 18 lessons that are out. Download them in port and study them on passage, offline. New chapters appear as they are finished.</p></div>
     </div>
   </div>
 </section>
@@ -516,7 +904,7 @@
   <div class="wrap" style="max-width:760px">
     <div class="eyebrow kicker">Questions</div>
     <h2>Good to know</h2>
-    <details open><summary>How much of the course is finished?</summary><p>Sixteen lessons — about two hours and twenty minutes — are complete and watchable the moment you enrol: the introduction, the whole Foundations chapter, and five of the nine lessons on the bridge and its instruments. The other sixteen chapters are in production and appear in your account as each one is finished, at no extra cost. That unfinished state is the reason the price is ₱3,250 rather than ₱17,000.</p></details>
+    <details open><summary>How much of the course is finished?</summary><p>18 lessons — about 2 hours 32 minutes — are complete and watchable the moment you enrol: the introduction, the whole Foundations chapter, five of the nine lessons on the bridge and its instruments, and two lessons from the ship-handling chapter, which are free to watch on this page. The other chapters are in production and appear in your account as each one is finished, at no extra cost. That unfinished state is the reason for the price.</p></details>
     <details><summary>When will the rest be released?</summary><p>Chapters are filmed and released in voyage order, and we publish each one the week it is finished rather than promising a date we might miss. Your two years of access begins the day you enrol and comfortably covers the build.</p></details>
     <details><summary>Is this a certificate or STCW course?</summary><p>No. It's honest peer-to-peer mentorship from a serving officer. It confers no certificate and no endorsement, and it doesn't replace your company's SMS or the officer teaching you onboard. It's the conversation the certificates assume you already had.</p></details>
     <details><summary>How long do I keep access?</summary><p>Two years from the day you enrol — one payment, no subscription. Everything released in that window is yours to watch and re-watch as often as you like.</p></details>
@@ -531,7 +919,7 @@
   <div class="wrap">
     <div class="foot-cta">
       <h2 style="margin-top:0">Sail your first voyage the right way</h2>
-      <p class="sub" style="margin:0 auto 22px">16 lessons out now, 19 chapters as they land. One voyage, last line to first line. <b style="color:var(--gold-soft)">&#8369;3,250</b> <span style="text-decoration:line-through;color:var(--muted)">&#8369;17,000</span>.</p>
+      <p class="sub" style="margin:0 auto 22px">18 lessons out now, 19 chapters as they land. One voyage, last line to first line.</p>
       <a class="btn gold lg" href="https://app.seamanapp.com/#/courses/88a59975-14d7-4acb-8a33-ae366d1893ed?pay=paymongo">Enrol now — ₱3,250</a>
     </div>
     <div class="foot-links">
@@ -546,6 +934,21 @@
   </div>
 </footer>
 
+<script>
+// Free previews: the Stream iframe is created on tap, so a visitor on ship wifi
+// does not download two players just because the chapter is open.
+document.querySelectorAll('.player .play').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var box = btn.parentNode, uid = btn.getAttribute('data-uid');
+    var f = document.createElement('iframe');
+    f.src = 'https://customer-drchklawh6o3436b.cloudflarestream.com/' + uid + '/iframe?autoplay=true&preload=true';
+    f.allow = 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen';
+    f.allowFullscreen = true; f.title = btn.getAttribute('aria-label') || 'Free lesson';
+    box.replaceChild(f, btn);
+  });
+});
+</script>
+
 <script type="application/ld+json">
 {
   "@context":"https://schema.org",
@@ -556,18 +959,8 @@
   "image":"https://course.seamanapp.com/img/cover.webp",
   "inLanguage":"en",
   "provider":{"@type":"Organization","name":"Simplified Maritime","url":"https://seamanapp.com"},
-  "offers":{
-    "@type":"Offer",
-    "price":"3250",
-    "priceCurrency":"PHP",
-    "availability":"https://schema.org/InStock",
-    "url":"https://course.seamanapp.com/#enrol"
-  },
-  "hasCourseInstance":{
-    "@type":"CourseInstance",
-    "courseMode":"online",
-    "courseWorkload":"PT2H18M"
-  }
+  "offers":{"@type":"Offer","price":"3250","priceCurrency":"PHP","availability":"https://schema.org/InStock","url":"https://course.seamanapp.com/#enrol"},
+  "hasCourseInstance":{"@type":"CourseInstance","courseMode":"online","courseWorkload":"PT2H32M"}
 }
 </script>
 
