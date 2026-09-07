@@ -269,6 +269,7 @@
   var host = location.hostname;
   var isPortToPort = host === 'course.seamanapp.com' || /^\/course\/port-to-port\/?$/.test(path);
   var isClub = /^\/club\/?$/.test(path);
+  var isOtherHalf = /^\/course\/the-other-half\/?$/.test(path);
 
   if (isClub) {
     window.smPixel.track('ViewContent', {
@@ -280,10 +281,18 @@
       content_name: 'Port to Port', content_type: 'product',
       content_ids: ['port-to-port'], currency: 'PHP', value: 3250,
     });
+  } else if (isOtherHalf) {
+    // Sold only through the Seaman Pro subscription; the value is the web
+    // (PayPal) monthly price, the one number this page can state.
+    window.smPixel.track('ViewContent', {
+      content_name: 'The Other Half', content_type: 'product',
+      content_ids: ['the-other-half'], currency: 'USD', value: 9.99,
+    });
   }
 })();
 </script>
 <!-- meta-pixel:end -->
+
 </head>
 <body>
 
@@ -645,26 +654,36 @@
     <p class="lead section-lead">
       Be straight with you: the club is taught by Filipino officers for Filipino
       crews, and some lessons slip into Taglish the way a real handover does. If
-      English is what you need, we built a course for exactly that —
-      <b style="color:var(--ink)">Port to Port</b>, one full voyage in English, in
-      the order it actually happens: preparation, departure, the watch, arrival.
+      English is what you need, we built two courses for exactly that —
+      <b style="color:var(--ink)">Port to Port</b>, one full voyage in English in
+      the order it actually happens, and <b style="color:var(--ink)">The Other Half</b>,
+      a Third Officer's job outside the watch. Both come with one subscription, Seaman Pro.
     </p>
     <div class="grid g2">
       <div class="card">
         <h3>Port to Port — the full navigation course</h3>
         <p>Last line to first line, taught in English by a serving Second Officer.
-           19 chapters, taught in English end to end, with the same offline-at-sea
-           study and two years of access.</p>
+           99 of 112 lessons out now, 8 of them free, with the same offline-at-sea
+           study. Included in Seaman Pro, or own it outright for two years.</p>
         <p style="margin-top:14px">
           <a class="btn gold" href="https://course.seamanapp.com/">See Port to Port →</a>
         </p>
       </div>
       <div class="card">
-        <h3>Or take both</h3>
-        <p>They are different jobs. Port to Port teaches you to run a voyage; the
-           Navigators Club teaches you to hold the rank — the paperwork, the
-           inspections, the handover and the routine that come with it. Officers
-           who want the whole picture buy both.</p>
+        <h3>The Other Half — the job outside the watch</h3>
+        <p>Port documents, crew change, the muster list, drills, requisitions, the
+           bonded store, the inspector at the gangway — one ship, one month, in
+           English, with the real forms on screen. All 46 lessons out now.</p>
+        <p style="margin-top:14px">
+          <a class="btn ghost" href="https://seamanapp.com/course/the-other-half/">See The Other Half →</a>
+        </p>
+      </div>
+      <div class="card">
+        <h3>Or take both worlds</h3>
+        <p>They are different jobs. The English courses teach you to run a voyage
+           and to carry the third officer's file; the Navigators Club teaches you
+           to hold the rank in Taglish, with a crew around you. Officers who want
+           the whole picture take both.</p>
       </div>
     </div>
   </div>

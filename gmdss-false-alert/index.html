@@ -188,6 +188,7 @@
   var host = location.hostname;
   var isPortToPort = host === 'course.seamanapp.com' || /^\/course\/port-to-port\/?$/.test(path);
   var isClub = /^\/club\/?$/.test(path);
+  var isOtherHalf = /^\/course\/the-other-half\/?$/.test(path);
 
   if (isClub) {
     window.smPixel.track('ViewContent', {
@@ -198,6 +199,13 @@
     window.smPixel.track('ViewContent', {
       content_name: 'Port to Port', content_type: 'product',
       content_ids: ['port-to-port'], currency: 'PHP', value: 3250,
+    });
+  } else if (isOtherHalf) {
+    // Sold only through the Seaman Pro subscription; the value is the web
+    // (PayPal) monthly price, the one number this page can state.
+    window.smPixel.track('ViewContent', {
+      content_name: 'The Other Half', content_type: 'product',
+      content_ids: ['the-other-half'], currency: 'USD', value: 9.99,
     });
   }
 })();

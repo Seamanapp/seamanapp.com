@@ -349,6 +349,7 @@
   var host = location.hostname;
   var isPortToPort = host === 'course.seamanapp.com' || /^\/course\/port-to-port\/?$/.test(path);
   var isClub = /^\/club\/?$/.test(path);
+  var isOtherHalf = /^\/course\/the-other-half\/?$/.test(path);
 
   if (isClub) {
     window.smPixel.track('ViewContent', {
@@ -359,6 +360,13 @@
     window.smPixel.track('ViewContent', {
       content_name: 'Port to Port', content_type: 'product',
       content_ids: ['port-to-port'], currency: 'PHP', value: 3250,
+    });
+  } else if (isOtherHalf) {
+    // Sold only through the Seaman Pro subscription; the value is the web
+    // (PayPal) monthly price, the one number this page can state.
+    window.smPixel.track('ViewContent', {
+      content_name: 'The Other Half', content_type: 'product',
+      content_ids: ['the-other-half'], currency: 'USD', value: 9.99,
     });
   }
 })();
@@ -536,15 +544,17 @@
 <!-- LEARN -->
 <section class="band" id="learn"><div class="wrap">
   <div class="sec-head reveal"><div class="num">05 — LEARN</div><h2>Grow from cadet to master</h2>
-    <p>Courses taught by working mentors, plus field guides you can read at sea.</p></div>
+    <p>Courses taught by working mentors, plus field guides you can read at sea. The English courses are one subscription — <b>Seaman Pro</b>, monthly or annual, no free trial: the free preview lessons are the taster.</p></div>
   <div class="learn">
     <div class="lc reveal"><h3>Navigators Club</h3>
       <p>Mentor-led courses and a community of working seafarers, built to bridge the gap between the book and the bridge — plus offline field guides, no connection needed.</p>
       <a class="btn ghost" style="margin-top:20px;align-self:flex-start" href="https://app.seamanapp.com" target="_blank" rel="noopener">Explore the club →</a></div>
     <div class="lc gold reveal"><h3>Port to Port</h3>
-      <p>The complete watchkeeping mentorship — 19 chapters from the ground you stand on to arrival alongside, released a chapter a week. Browse every lesson free; enrol to watch.</p>
-      <div class="price">$50 <s>$300</s></div>
+      <p>The complete watchkeeping mentorship in English — one voyage, last line to first line. 99 of 112 lessons out now, 8 of them free. Included in Seaman Pro, or own it outright for ₱3,250.</p>
       <a class="btn gold" style="margin-top:12px;align-self:flex-start" href="https://course.seamanapp.com" target="_blank" rel="noopener">View the course →</a></div>
+    <div class="lc gold reveal"><h3>The Other Half</h3>
+      <p>A Third Officer's job outside the watch — port documents, crew change, drills, requisitions, the inspector at the gangway. All 46 lessons out now, in English. Included in Seaman Pro.</p>
+      <a class="btn gold" style="margin-top:12px;align-self:flex-start" href="https://seamanapp.com/course/the-other-half/" target="_blank" rel="noopener">View the course →</a></div>
   </div>
 </div></section>
 
@@ -583,6 +593,7 @@
   <nav aria-label="Footer">
     <a href="https://app.seamanapp.com" target="_blank" rel="noopener">Web app</a>
     <a href="https://course.seamanapp.com" target="_blank" rel="noopener">Port to Port</a>
+    <a href="https://seamanapp.com/course/the-other-half/" target="_blank" rel="noopener">The Other Half</a>
     <a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a>
     <a href="/guidelines.html">Guidelines</a><a href="/delete-account.html">Delete account</a>
     <a href="mailto:admin@seamanapp.com">Contact</a>
