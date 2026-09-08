@@ -125,7 +125,7 @@ function must(html, pairs) {
 }
 
 /* ─────────────────────────── Seaman Pro copy ─────────────────────────── */
-const PRO_PRICE_LINE = 'Monthly or annual. On the web it is <b>$9.99 a month</b> or <b>$99.90 a year</b> through PayPal; in the Android app it is billed by Google Play, priced for your country.';
+const PRO_PRICE_LINE = 'One monthly plan, cancel anytime. On the web it is <b>$9.99 a month</b> through PayPal; in the Android app it is billed by Google Play, priced for your country.';
 const PRO_INCLUDES = (other) => `<li>Port to Port and The Other Half — every English course, every lesson</li>
         <li>Every course we add to the library while you subscribe</li>
         <li>Two devices, downloads for the passage, the Pro navigation tools</li>
