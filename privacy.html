@@ -50,9 +50,10 @@
         <li>The <strong>profile</strong> you choose to write: name, nationality, rank, headline and summary — and, if you fill in the optional CV fields for a manning-ready profile, your phone number, date and place of birth, height/weight, civil status, languages, and availability date.</li>
         <li>The <strong>career records</strong> you add: certificates and their scans, sea-service history, achievements, and countries visited.</li>
         <li>A <strong>profile photo</strong>, if you add one.</li>
-        <li>Basic <strong>app-usage data</strong> needed to run the app and keep it working (e.g. sync status, crash diagnostics) — no advertising SDKs, no ad tracking.</li>
+        <li>Basic <strong>app-usage data</strong> needed to run the app and keep it working (e.g. sync status, crash diagnostics).</li>
+        <li>On Android, your device's <strong>advertising ID</strong> and three app events — the app opened, an account was created, a purchase was made — sent to Meta so we can tell which of our ads led to an install (see <a href="#ads">Advertising &amp; measurement</a>). No name, email, rank or record ever goes with it, and you can reset or delete the advertising ID in Android settings at any time.</li>
       </ul>
-      <p class="note">We only ever hold what you enter or what the app genuinely needs to function — there's no hidden tracking or third-party ad networks.</p>
+      <p class="note">We only ever hold what you enter or what the app genuinely needs to function. The one third party that measures anything is Meta, for our own ads, and only as described above — no ad network shows ads inside the app.</p>
     </section>
 
     <section class="lg gold" id="verify">
@@ -68,7 +69,14 @@
 
     <section class="lg" id="purchases">
       <h2><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18" stroke-linecap="round"/></svg> Purchases</h2>
-      <p>If you buy <strong>Seaman Pro</strong> or the <strong>Navigators Club</strong>, we store a purchase/subscription record (which product, its status and renewal date) so we can unlock those features for your account. Payment itself is handled by <strong>Google Play</strong> — we don't receive or store your card details, and we don't share your purchase data with third parties.</p>
+      <p>If you buy <strong>Seaman Pro</strong> or the <strong>Navigators Club</strong>, we store a purchase/subscription record (which product, its status and renewal date) so we can unlock those features for your account. Payment itself is handled by <strong>Google Play</strong> — we don't receive or store your card details. The only purchase fact shared outside is a "purchase happened" event with its price, sent to Meta for ad measurement as described under <a href="#ads">Advertising &amp; measurement</a> — never the product, your name or your account.</p>
+    </section>
+
+    <section class="lg" id="ads">
+      <h2><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-7-7 18-2-8z"/></svg> Advertising &amp; measurement</h2>
+      <p>We advertise this app on Meta (Facebook and Instagram). Our public web pages carry Meta's measurement pixel, which sets cookies in your browser and tells Meta that a browser visited that page. If you buy something, our server also tells Meta that a purchase happened and what it was worth, so we can see which advert actually produced a sale and stop paying for the ones that do not. That message includes your email address and mobile number in a one-way hashed form that cannot be turned back into the original, together with the click identifier Meta itself put in the link you followed. It <strong>never</strong> includes your certificates, sea service, identity documents, rest hours, or any other career record.</p>
+      <p>The Android app includes Meta's measurement SDK. It sends Meta your device's <strong>advertising ID</strong> and three events — the app opened, an account was created, a purchase was made (with its price) — so we can tell which advert led to an install. Nothing you enter in the app is sent with them. You can reset or delete the advertising ID in Android settings (Google → Ads), or limit ad measurement in your Meta ad preferences; the app works exactly the same either way.</p>
+      <p>We also give Meta a list of our members' email addresses, again one-way hashed, for two purposes: so we can <strong>stop</strong> showing join-the-club adverts to people who have already joined, and so Meta can look for new people who resemble our existing members. Meta cannot read the hashed list, and we never send them your records — only the address itself. You can opt out at any time by emailing us, and it changes nothing about your account.</p>
     </section>
 
     <section class="lg" id="location">
