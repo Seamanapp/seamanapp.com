@@ -403,6 +403,10 @@
   var SB = 'https://iegxzjflqqoxxarfomnv.supabase.co';
   var ANON = 'sb_publishable_we44OUTEJHf3kacz0Opi4w_TBWkj0Q2';
   var JOIN_FN = SB + '/functions/v1/club-join';
+  // The Messenger identity token the bot put in this link (?mc=...). Opaque
+  // here; forwarded so the webhook can link the buyer to their chat AFTER the
+  // money lands. Absent when the person did not come from the bot.
+  var MC = (param('mc') || '').slice(0, 64);
   var PAY_FN = SB + '/functions/v1/paymongo-create';
 
   var forms = document.getElementById('forms');
@@ -725,7 +729,8 @@
         code: codeInput.value.trim() || undefined,
         club: CLUB_SLUG,
         fbp: fb.fbp || undefined, fbc: fb.fbc || undefined,
-        source_url: srcUrl || undefined
+        source_url: srcUrl || undefined,
+        mc: MC || undefined
       })
     })
       .then(function (r) { return r.json(); })
@@ -773,6 +778,7 @@
       // The invite code has to survive the round trip to Google and back.
       sessionStorage.setItem('nc_code', codeInput.value.trim());
       sessionStorage.setItem('nc_club', CLUB_SLUG);
+      sessionStorage.setItem('nc_mc', MC);
     } catch (e) { return fail('Please allow site storage, or use your email instead.'); }
 
     crypto.subtle.digest('SHA-256', new TextEncoder().encode(v))
@@ -845,7 +851,8 @@
               // is worth exactly as much as anyone else's.
               fbp: ((window.smPixel && window.smPixel.ids()) || {}).fbp || undefined,
               fbc: ((window.smPixel && window.smPixel.ids()) || {}).fbc || undefined,
-              source_url: (window.smPixel && window.smPixel.sourceUrl()) || undefined
+              source_url: (window.smPixel && window.smPixel.sourceUrl()) || undefined,
+              mc: stashed('nc_mc') || undefined
             })
           }).then(function (r) { return r.json(); }).then(handle);
         })
