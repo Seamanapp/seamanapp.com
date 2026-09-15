@@ -293,6 +293,10 @@
         <span class="tick" aria-hidden="true">✓</span>
         <span>Code <b id="codeshown"></b> applied<span id="savedline"></span></span>
       </p>
+      <p class="offer-code" id="promobadge" hidden>
+        <span class="tick" aria-hidden="true">✓</span>
+        <span><b>Launch offer — 50% off</b> until <span id="promountil"></span> · <span id="promoslots"></span></span>
+      </p>
     </div>
 
     <div id="qrpanel" hidden>
@@ -495,7 +499,41 @@
       })
       .catch(function () { /* the price simply stays as rendered */ return null; });
   }
+  // THE LAUNCH OFFER. A buyer who came from the Messenger bot carries a signed
+  // token (?mc=); if the server offered that person 50% off and the offer is
+  // still inside its 24 hours with launch slots left, the page shows the promo
+  // price and the deadline BEFORE they commit. Read-only quote; the checkout
+  // re-derives the price from the same row through the verified token, so the
+  // number here and the number on the QR cannot disagree.
+  var promoBadge = document.getElementById('promobadge');
+  function manila(iso) {
+    try {
+      var d = new Date(iso);
+      return d.toLocaleString('en-PH', { timeZone: 'Asia/Manila', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true });
+    } catch (e) { return iso; }
+  }
+  function promoQuote() {
+    if (!MC || !CLUB) return Promise.resolve(false);
+    return fetch(SB + '/rest/v1/rpc/mc_promo_quote', {
+      method: 'POST',
+      headers: { apikey: ANON, Authorization: 'Bearer ' + ANON, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_mc: MC, p_club: CLUB })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!(j && j.ok && j.amount_centavos)) return false;
+        amountEl.textContent = peso(j.amount_centavos / 100);
+        wasEl.textContent = peso(LIST_PHP);
+        wasEl.hidden = false;
+        document.getElementById('promountil').textContent = manila(j.expires_at);
+        document.getElementById('promoslots').textContent = j.slots_left === 1 ? '1 slot left' : j.slots_left + ' slots left';
+        promoBadge.hidden = false;
+        return true;
+      })
+      .catch(function () { return false; });
+  }
   function quote(code) {
+    if (!promoBadge.hidden) return;   // the offer is the price; a code cannot stack on it (the checkout refuses too)
     if (!code || !CLUB) { resetPrice(); return; }
     fetch(SB + '/rest/v1/rpc/coupon_quote', {
       method: 'POST',
@@ -554,7 +592,9 @@
   }
   // The quote is keyed on the club, so it waits for the club.
   loadClub().then(function (club) {
-    if (club && pre) quote(pre.trim());
+    if (!club) return;
+    // The offer, if any, is the price; a code is tried only when there is no offer.
+    promoQuote().then(function (promo) { if (!promo && pre) quote(pre.trim()); });
   });
   codeInput.addEventListener('change', function () { quote(codeInput.value.trim()); });
   codeInput.addEventListener('blur', function () { quote(codeInput.value.trim()); });
