@@ -26,7 +26,11 @@ const CLOSE = '<!-- meta-pixel:end -->';
 const body = readFileSync('assets/pixel.js', 'utf8');
 const block = `${OPEN}\n<script>\n${body.trim()}\n</script>\n${CLOSE}\n`;
 
-const pages = globSync('**/index.html', { exclude: (p) => p.includes('node_modules') || p.includes('.git') });
+// budget/ is a private family finance tool that keeps everything on-device;
+// it must never carry tracking.
+const pages = globSync('**/index.html', {
+  exclude: (p) => p.includes('node_modules') || p.includes('.git') || p.startsWith('budget'),
+});
 
 let changed = 0, stale = [];
 for (const file of pages.sort()) {
