@@ -117,7 +117,7 @@ nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-to
   display:flex;justify-content:center;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:10}
 nav.tabs .in{display:flex;max-width:880px;width:100%}
 nav.tabs button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;
-  font-size:11px;font-weight:600;color:var(--muted);padding:6px 2px;min-height:52px;border-radius:10px}
+  font-size:10.5px;font-weight:600;color:var(--muted);padding:6px 0;min-height:52px;min-width:0;border-radius:10px}
 nav.tabs button svg{width:22px;height:22px}
 nav.tabs button[aria-selected="true"]{color:var(--brand);background:var(--brand-soft)}
 .steps{list-style:none;margin:0;padding:0}
@@ -182,6 +182,8 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Debts</button>
     <button role="tab" data-tab="plan" aria-selected="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4h11l-1 4h6v9H9l1-4H4"/></svg>Roadmap</button>
+    <button role="tab" data-tab="goals" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></svg>Goals</button>
     <button role="tab" data-tab="settings" aria-selected="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Setup</button>
   </div>
@@ -233,6 +235,16 @@ function defaultBudget(){
   ];
 }
 
+// Big-ticket dreams, saved for in cash once the foundation is built. Targets
+// start empty — the family prices their own.
+function defaultDreams(){
+  return [
+    {id:uid(),kind:'house',emoji:'🏠',name:'House',target:0,saved:0,date:'',source:'family',status:'saving',price:0,dpPct:20},
+    {id:uid(),kind:'solar',emoji:'☀️',name:'Solar power system',target:0,saved:0,date:'',source:'family',status:'saving',billSave:0},
+    {id:uid(),kind:'ai',emoji:'🖥️',name:'Full AI workstation',target:0,saved:0,date:'',source:'business',status:'saving'}
+  ];
+}
+
 function freshState(){
   return {
     v:1,
@@ -257,6 +269,7 @@ function freshState(){
     funds:{emergency:0, education:0, retirement:0},
     goals:{education:500000, retirement:0},
     protect:{},                        // checklist ticks
+    dreams:defaultDreams(),            // {id,kind,emoji,name,target,saved,date:'YYYY-MM',source,status,...}
     started:todayISO()
   };
 }
@@ -368,6 +381,13 @@ function simulate(strategy, extra){
   return {months:ok?month:Infinity, interest:interest, debts:ds, ok:ok};
 }
 
+function monthsBetween(a,b){ return (+b.slice(0,4)-+a.slice(0,4))*12+(+b.slice(5,7)-+a.slice(5,7)); }
+function dreamDone(d){ return d.status==='bought' || (num(d.target)>0 && num(d.saved)>=num(d.target)); }
+function openDreams(){ return (S.dreams||[]).filter(function(d){ return !dreamDone(d); }); }
+// Next goal a sweep should feed: first unfinished one in the family's priority order.
+function nextDream(){ return openDreams()[0]||null; }
+function dreamLabel(d){ return (d.emoji?d.emoji+' ':'')+d.name; }
+
 /* ----------------------------------------------------- roadmap (steps) */
 
 var PROTECT=[
@@ -419,11 +439,17 @@ function steps(){
     {key:'future', title:'Kids\' education + retirement', fund:'education',
       why:'Invest ~15% of income for retirement (SSS, PERA, Pag-IBIG MP2, index funds) and build college funds for both boys.',
       done: edu>=eduGoal, progress:pct(edu,eduGoal), target:eduGoal, have:edu,
-      detail: 'Education '+money(edu)+' of '+money(eduGoal)+' · Retirement '+money(S.funds.retirement)}
+      detail: 'Education '+money(edu)+' of '+money(eduGoal)+' · Retirement '+money(S.funds.retirement)},
+    {key:'dreams', title:'Dream goals', fund:'dreams',
+      why:'The house, the solar system, the AI workstation — paid with saved cash (the house with a sensible Pag-IBIG or bank loan), never with credit cards or installments. Runs side by side with step 7.',
+      done: S.dreams.length>0 && !openDreams().length,
+      progress: pct(sum(S.dreams,function(d){return d.status==='bought'?num(d.target):Math.min(num(d.saved),num(d.target));}), sum(S.dreams,function(d){return num(d.target);})),
+      detail: S.dreams.filter(dreamDone).length+' of '+S.dreams.length+' funded'+(nextDream()?' · next: '+dreamLabel(nextDream()):'')}
   ];
   var cur=list.findIndex(function(s){return !s.done;});
-  // Steps are sequential; "setup" and "protect" can be done in parallel with money steps.
-  list.forEach(function(s,i){ s.state = s.done?'done':(i===cur?'now':'later'); });
+  // Steps are sequential, except the last two: once the family is protected,
+  // investing for the future and saving for dreams happen side by side.
+  list.forEach(function(s,i){ s.state = s.done?'done':(i===cur||(s.key==='dreams'&&list[cur]&&list[cur].key==='future')?'now':'later'); });
   return {list:list, current: cur<0?null:list[cur], index:cur};
 }
 // Where money swept out of the holding tank should go right now.
@@ -437,6 +463,13 @@ function currentMoneyStep(){
 
 var tab='home';
 var V={};
+
+function sweepTargetName(step){
+  if(step.fund==='debt') return 'debt';
+  if(step.fund==='emergency') return 'emergency fund';
+  if(step.fund==='dreams'){ var d=nextDream(); return d?dreamLabel(d):'dream goals'; }
+  return 'education fund';
+}
 
 V.home=function(){
   var st=steps(), sal=salary(), hold=holding(), drawn=drawnThisMonth(), cm=thisMonth();
@@ -459,7 +492,7 @@ V.home=function(){
 
   var now=st.current;
   h+='<div class="card"><div class="hero">'+ring(now?now.progress:100)+'<div style="min-width:0">'+
-    '<small>Step '+(now?st.index+1:7)+' of 7 · you are here</small><h2>'+esc(now?now.title:'Financial foundation built 🎉')+'</h2>'+
+    '<small>Step '+(now?st.index+1:st.list.length)+' of '+st.list.length+' · you are here</small><h2>'+esc(now?now.title:'Financial foundation built 🎉')+'</h2>'+
     '<p class="muted" style="margin:2px 0 0">'+esc(now?now.detail:'Keep investing, keep giving, keep the tank full.')+'</p></div></div>'+
     '<div class="row" style="margin-top:10px"><button data-go="plan">See the full roadmap</button></div></div>';
 
@@ -479,7 +512,7 @@ V.home=function(){
     '<div class="h">Family share of all business income, waiting to be paid out</div></div>'+
     '<div class="muted" style="font-size:13px">Income this month: <b class="num">'+money(monthIncome)+'</b> · family share <b class="num">'+money(splitOf(monthIncome).family)+'</b></div>'+
     (surplus>0.5&&step
-      ? '<div class="note good">'+money(surplus)+' above this month + a one-month buffer. Put it to work on <b>'+esc(step.title)+'</b>.</div><button class="primary" data-act="sweep" data-amt="'+Math.floor(surplus)+'">Sweep '+money(Math.floor(surplus))+' → '+esc(step.fund==='debt'?'debt':step.fund==='emergency'?'emergency fund':'education fund')+'</button>'
+      ? '<div class="note good">'+money(surplus)+' above this month + a one-month buffer. Put it to work on <b>'+esc(step.title)+'</b>.</div><button class="primary" data-act="sweep" data-amt="'+Math.floor(surplus)+'">Sweep '+money(Math.floor(surplus))+' → '+esc(sweepTargetName(step))+'</button>'
       : '<p class="muted" style="font-size:13px">Surplus above one month of salary gets swept to your current step.</p><button data-act="sweep" '+(hold<=0?'disabled':'')+'>Sweep money to a goal</button>')+
     '</div>';
   h+='</div><div style="height:14px"></div>';
@@ -501,6 +534,17 @@ V.home=function(){
     h+='<div style="margin:10px 0"><div class="row between"><span>'+esc(x.b.name)+'</span><span class="num">'+money(x.s)+' <small>/ '+money(x.p)+'</small></span></div>'+barHTML(x.p>0?p:100,cls)+'</div>';
   });
   h+='</div>';
+
+  if(S.dreams.length){
+    h+='<div class="card"><div class="row between"><h2>Dream goals</h2><button data-go="goals">Open goals</button></div>'+
+      (foundationDone()?'':'<p class="muted" style="font-size:13px">Family-funded dreams start after step 5 — keep them in sight, they\'re the reason for the discipline.</p>')+
+      S.dreams.map(function(d){
+        var t=num(d.target);
+        return '<div style="margin:10px 0"><div class="row between"><span>'+esc(dreamLabel(d))+'</span><span class="num">'+
+          (d.status==='bought'?'<span class="pill good">Bought</span>':t>0?money(d.saved)+' <small>/ '+money(t)+'</small>':'<small>Set a target</small>')+'</span></div>'+
+          barHTML(d.status==='bought'?100:pct(num(d.saved),t),dreamDone(d)?'good':'')+'</div>';
+      }).join('')+'</div>';
+  }
 
   h+='<div class="card"><h2>How money flows</h2>'+
     '<ol style="margin:6px 0 0;padding-left:20px">'+
@@ -683,7 +727,7 @@ function schedule(strategy,extra){
 
 V.plan=function(){
   var st=steps(), ess=essentials();
-  var h='<div class="card"><h2>The roadmap</h2><p class="muted">Seven steps from "we owe money" to "our family is protected and building for the future". Do them in order — each one makes the next one safe.</p>'+
+  var h='<div class="card"><h2>The roadmap</h2><p class="muted">Eight steps from "we owe money" to "our family is protected, building for the future, and buying its dreams with cash". Do them in order — each one makes the next one safe.</p>'+
     '<ol class="steps">'+st.list.map(function(s,i){
       var cls=s.state==='done'?'bar good':'bar';
       return '<li class="'+s.state+'"><div class="n">'+(s.state==='done'?'✓':i+1)+'</div><div class="body">'+
@@ -720,6 +764,80 @@ function fundInput(k,label,hint){
     '<div class="h">'+esc(hint)+'</div></label>';
 }
 
+// Steps 2–5 (starter fund, no debt, one month ahead, full emergency fund).
+function foundationDone(){ var l=steps().list; return ['starter','debt','buffer','full'].every(function(k){ return l.find(function(s){return s.key===k;}).done; }); }
+
+V.goals=function(){
+  var sal=salary(), left=Math.max(0,leftover()), fd=foundationDone(), cm=thisMonth();
+  var h='<div class="card"><div class="row between"><h2>Dream goals</h2><button class="primary" data-act="dream">+ Add a goal</button></div>'+
+    '<p class="muted">Big things the family is working toward. Each one gets its own savings pot, a price, and a date. Buy with cash — a dream bought on installments becomes the next debt.</p>'+
+    (fd
+      ? '<div class="note good">Foundation built. Your budget leaves <b>'+money(left)+'/month</b> — split it between step 7 (education + retirement) and these goals, in the order below.</div>'
+      : '<div class="note warn"><b>Family-funded goals start after step 5</b> (debt-free + full emergency fund). Set the prices and dates now so you know what you\'re working toward. A goal the <b>business</b> needs (like the AI workstation) can be saved from the reinvest share today.</div>')+
+    '</div>';
+  if(!S.dreams.length) h+='<div class="card"><p class="muted">No goals yet.</p></div>';
+  S.dreams.forEach(function(d,i){
+    var t=num(d.target), sv=num(d.saved), rem=Math.max(0,t-sv), done=dreamDone(d);
+    var mLeft=d.date?monthsBetween(cm,d.date):null;
+    h+='<div class="card"><div class="row between"><h2>'+esc(dreamLabel(d))+'</h2><div class="row" style="gap:4px">'+
+      (d.status==='bought'?'<span class="pill good">Bought 🎉</span>':done?'<span class="pill good">Fully saved</span>':'')+
+      '<span class="pill'+(d.source==='business'?' warn':'')+'">'+(d.source==='business'?'Business-funded':'Family-funded')+'</span></div></div>';
+    if(t<=0) h+='<div class="note">Set a target price to start tracking. '+esc(dreamHint(d))+'</div>';
+    else{
+      h+='<div class="row between" style="margin:8px 0 4px"><span class="num"><b>'+money(sv)+'</b> saved of '+money(t)+'</span><span class="num">'+Math.round(pct(sv,t))+'%</span></div>'+
+        barHTML(d.status==='bought'?100:pct(sv,t),done?'good':'');
+      if(!done){
+        var bits=[];
+        if(mLeft!=null) bits.push(mLeft>0?'Target '+monthLabel(d.date,true)+': save <b>'+money(Math.ceil(rem/mLeft/100)*100)+'/month</b>':'Target date '+monthLabel(d.date,true)+' has passed — pick a new one');
+        if(fd&&left>0&&d.source!=='business') bits.push('At your full leftover of '+money(left)+'/mo: ~'+Math.ceil(rem/left)+' months');
+        if(bits.length) h+='<p style="font-size:14px;margin-top:8px">'+bits.join('<br>')+'</p>';
+      }
+    }
+    h+=dreamExtra(d, sal);
+    h+='<div class="row" style="margin-top:10px">'+
+      (d.status!=='bought'?'<button class="primary" data-act="dreamadd" data-id="'+d.id+'">+ Add savings</button>':'')+
+      (done&&d.status!=='bought'?'<button data-act="dreambought" data-id="'+d.id+'">Mark as bought</button>':'')+
+      '<button data-act="dream" data-id="'+d.id+'">Edit</button><span class="spacer"></span>'+
+      '<button class="icon" data-act="dreammove" data-dir="-1" data-id="'+d.id+'" '+(i===0?'disabled':'')+' aria-label="Higher priority">▲</button>'+
+      '<button class="icon" data-act="dreammove" data-dir="1" data-id="'+d.id+'" '+(i===S.dreams.length-1?'disabled':'')+' aria-label="Lower priority">▼</button></div></div>';
+  });
+  h+='<div class="card"><h2>Rules for dream goals</h2><ul style="margin:6px 0 0;padding-left:20px">'+
+    '<li><b>One at a time, top to bottom.</b> Use ▲▼ to set the order. Focus beats spreading ₱1,000 across five pots.</li>'+
+    '<li><b>Never raid the emergency fund</b> for a dream. If a dream costs the safety net, it waits.</li>'+
+    '<li><b>Cash, not credit.</b> No 0% installments — they tie up future salary and sneak debt back in.</li>'+
+    '<li><b>Business-funded goals</b> must earn their keep: buy only when the business needs it and it pays for itself.</li>'+
+    '<li><b>Celebrate each one.</b> Mark it bought, take a family photo. That\'s what all the budgeting was for.</li></ul></div>';
+  return h;
+};
+function dreamHint(d){
+  if(d.kind==='house') return 'Enter the house price in Edit — the target becomes the down payment plus closing costs.';
+  if(d.kind==='solar') return 'Get 2–3 installer quotes for a grid-tie system sized to your Meralco/co-op bill (with or without batteries).';
+  if(d.kind==='ai') return 'List the parts (GPU, CPU, RAM, storage, PSU, UPS, monitor) and price them in Edit.';
+  return '';
+}
+function dreamExtra(d, sal){
+  var h='';
+  if(d.kind==='house'){
+    var price=num(d.price), dp=num(d.dpPct)||20;
+    if(price>0) h+='<div class="note">House price <b>'+money(price)+'</b> · '+dp+'% down = '+money(price*dp/100)+' + ~7% for transfer tax, fees & move-in = '+money(price*0.07)+'. '+
+      'Loan left: <b>'+money(price*(1-dp/100))+'</b>.</div>';
+    h+='<p class="muted" style="font-size:13px">Keep the monthly amortization at or below <b>'+money(sal*0.25)+'</b> (25% of your salary) and the term 15–20 years. Pag-IBIG housing loans are usually cheaper than bank loans — keep contributions active. Buy only after steps 1–5: a house doesn\'t fix a shaky foundation, it tests it.</p>';
+  }
+  if(d.kind==='solar'){
+    var bs=num(d.billSave), t=num(d.target);
+    if(bs>0&&t>0) h+='<div class="note good">Saves ~'+money(bs)+'/month on electricity → pays for itself in about <b>'+(t/(bs*12)).toFixed(1)+' years</b>, then it\'s free power.</div>';
+    else h+='<p class="muted" style="font-size:13px">Add the expected monthly bill savings in Edit to see the payback period.</p>';
+    h+='<p class="muted" style="font-size:13px">Once installed, lower the Electricity line in the Budget by the savings — that money then flows to the next goal. Ask about net-metering with your distribution utility.</p>';
+  }
+  if(d.kind==='ai'){
+    h+='<p class="muted" style="font-size:13px">'+(d.source==='business'
+      ?'A tool for the business: save it from the business reinvest share, not the family salary. Pay cash, keep the official receipt — a registered business can claim it as an asset and depreciate it. Buy when the work it will do can pay it back.'
+      :'Funded by the family: it waits its turn behind the foundation and the goals above it.')+
+      ' Add a UPS/AVR to protect it from brownouts.</p>';
+  }
+  return h;
+}
+
 V.settings=function(){
   var h='<div class="card"><h2>Family</h2><div class="scroll"><table><tbody>'+S.family.map(function(f){
     return '<tr><td><input aria-label="Name" data-edit="family" data-id="'+f.id+'" data-f="name" value="'+esc(f.name)+'"></td>'+
@@ -738,7 +856,8 @@ V.settings=function(){
     '<label class="f"><span>Theme</span><select id="themeSel"><option value="">Match device</option><option value="light">Light</option><option value="dark">Dark</option></select></label>'+
     '</div></div>';
 
-  var mv=S.moves.slice().sort(function(a,b){return b.date.localeCompare(a.date);}).slice(0,30);
+  // Newest first; same-day transfers keep their entry order, latest on top.
+  var mv=S.moves.map(function(m,i){return {m:m,i:i};}).sort(function(a,b){return b.m.date.localeCompare(a.m.date)||b.i-a.i;}).map(function(x){return x.m;}).slice(0,30);
   h+='<div class="card"><h2>Transfers log</h2>'+(mv.length?'<div class="scroll"><table><tbody>'+mv.map(function(m){
     return '<tr><td class="num" style="white-space:nowrap">'+esc(shortDate(m.date))+'</td><td>'+esc(m.note||m.kind)+'</td><td class="r num">'+money(m.amount)+'</td>'+
       '<td class="r"><button class="icon danger" data-act="undo" data-id="'+m.id+'" aria-label="Undo">Undo</button></td></tr>';
@@ -837,11 +956,13 @@ ACT.sweep=function(el){
   var step=currentMoneyStep(), h=Math.max(0,holding());
   var opts=[['emergency','Emergency fund'],['education','Kids\' education fund'],['retirement','Retirement']];
   activeDebts().forEach(function(d){ opts.push(['debt:'+d.id,'Debt → '+d.name]); });
+  openDreams().forEach(function(d){ opts.push(['dream:'+d.id,'Goal → '+dreamLabel(d)]); });
   var def='emergency';
   if(step&&step.fund==='debt'){
     var ord=activeDebts().slice().sort(S.strategy==='avalanche'?function(a,b){return num(b.rate)-num(a.rate);}:function(a,b){return num(a.balance)-num(b.balance);});
     if(ord[0]) def='debt:'+ord[0].id;
-  } else if(step) def=step.fund;
+  } else if(step&&step.fund==='dreams'){ var nd=nextDream(); def=nd?'dream:'+nd.id:'emergency'; }
+  else if(step) def=step.fund;
   openDialog('Sweep from holding tank',
     field('amount','Amount','inputmode="decimal" required',el&&el.dataset.amt?el.dataset.amt:'')+
     selectField('to','Send to',opts,def)+
@@ -850,6 +971,8 @@ ACT.sweep=function(el){
       var note;
       if(v.to.indexOf('debt:')===0){ var d=S.debts.find(function(x){return x.id===v.to.slice(5);}); if(!d) return false;
         d.balance=Math.max(0,num(d.balance)-a); note='Sweep → '+d.name; if(d.balance<=0.5) toast('🎉 '+d.name+' is PAID OFF!'); }
+      else if(v.to.indexOf('dream:')===0){ var g=S.dreams.find(function(x){return x.id===v.to.slice(6);}); if(!g) return false;
+        g.saved=num(g.saved)+a; note='Sweep → '+dreamLabel(g); }
       else { S.funds[v.to]=num(S.funds[v.to])+a; note='Sweep → '+(opts.find(function(o){return o[0]===v.to;})||[0,v.to])[1]; }
       S.moves.push({id:uid(),date:todayISO(),kind:'sweep',to:v.to,amount:a,note:note}); }, 'Sweep');
 };
@@ -858,8 +981,57 @@ ACT.undo=function(el){
   if(!confirm('Undo "'+(m.note||m.kind)+'" ('+money(m.amount)+')?')) return;
   if(m.kind==='debtpay'||(m.kind==='sweep'&&String(m.to).indexOf('debt:')===0)){
     var id=m.kind==='debtpay'?m.to:String(m.to).slice(5), d=S.debts.find(function(x){return x.id===id;}); if(d) d.balance=num(d.balance)+num(m.amount);
+  } else if(m.kind==='dreamadd'||(m.kind==='sweep'&&String(m.to).indexOf('dream:')===0)){
+    var g=S.dreams.find(function(x){return x.id===String(m.to).slice(6);}); if(g) g.saved=Math.max(0,num(g.saved)-num(m.amount));
   } else if(m.kind==='sweep'){ S.funds[m.to]=Math.max(0,num(S.funds[m.to])-num(m.amount)); }
   S.moves=S.moves.filter(function(x){return x!==m;}); save(); render();
+};
+ACT.dream=function(el){
+  var id=el&&el.dataset.id, d=id?S.dreams.find(function(x){return x.id===id;}):null;
+  var kind=d?d.kind:'other';
+  openDialog(d?'Edit goal':'Add a goal',
+    '<div class="grid" style="grid-template-columns:70px 1fr">'+field('emoji','Icon','maxlength="4"',d?d.emoji:'⭐')+field('name','Goal','required placeholder="e.g. Family car, Business van"',d?d.name:'')+'</div>'+
+    (kind==='house'
+      ? '<div class="grid g2">'+field('price','House price','inputmode="decimal"',d.price||'')+field('dpPct','Down payment %','inputmode="decimal"',d.dpPct||20)+'</div>'+
+        '<p class="muted" style="font-size:13px">Leave "Target" blank to use down payment + 7% closing costs.</p>'
+      : '')+
+    '<div class="grid g2">'+field('target','Target amount','inputmode="decimal"'+(kind==='house'?'':' required'),d&&num(d.target)?d.target:'')+
+      field('saved','Saved so far','inputmode="decimal"',d?d.saved:0)+'</div>'+
+    '<div class="grid g2">'+field('date','Target month (optional)','type="month"',d?d.date:'')+
+      selectField('source','Funded by',[['family','Family (after step 5)'],['business','Business reinvest share']],d?d.source:'family')+'</div>'+
+    (kind==='solar'?field('billSave','Expected electricity savings per month','inputmode="decimal"',d.billSave||''):'')+
+    (d&&d.status==='bought'?'<label class="check"><input type="checkbox" name="unbuy"><span>Not bought yet (undo "bought")</span></label>':'')+
+    (d?'<button type="button" class="danger" data-del="dreams" data-id="'+d.id+'">Delete this goal</button>':''),
+    function(v){
+      var o={emoji:v.emoji,name:v.name||'Goal',target:num(v.target),saved:num(v.saved),date:v.date||'',source:v.source};
+      if(kind==='house'){ o.price=num(v.price); o.dpPct=num(v.dpPct)||20; if(!o.target&&o.price) o.target=Math.round(o.price*(o.dpPct+7)/100); }
+      if(kind==='solar') o.billSave=num(v.billSave);
+      if(v.unbuy) o.status='saving';
+      if(d) Object.assign(d,o); else S.dreams.push(Object.assign({id:uid(),kind:'other',status:'saving'},o));
+    });
+};
+ACT.dreamadd=function(el){
+  var d=S.dreams.find(function(x){return x.id===el.dataset.id;}); if(!d) return;
+  var h=Math.max(0,holding()), rem=Math.max(0,num(d.target)-num(d.saved));
+  openDialog('Add savings · '+dreamLabel(d),
+    field('amount','Amount','inputmode="decimal" required',rem&&d.date?Math.ceil(rem/Math.max(1,monthsBetween(thisMonth(),d.date))/100)*100:'')+
+    selectField('from','From',[['tank','Holding tank (has '+money(h)+')'],['business','Business reinvest money'],['other','Other savings / gift / windfall']],d.source==='business'?'business':'tank')+
+    (!foundationDone()&&d.source!=='business'?'<div class="note warn">Your foundation isn\'t built yet — money for this goal would pay off debt or grow the emergency fund faster. Sure?</div>':''),
+    function(v){ var a=num(v.amount); if(a<=0) return false;
+      d.saved=num(d.saved)+a;
+      S.moves.push({id:uid(),date:todayISO(),kind:v.from==='tank'?'sweep':'dreamadd',to:'dream:'+d.id,amount:a,
+        note:(v.from==='tank'?'Sweep':v.from==='business'?'Business money':'Other savings')+' → '+dreamLabel(d)});
+      toast(dreamDone(d)?'🎉 '+d.name+' is fully saved!':money(d.saved)+' saved for '+d.name); }, 'Add');
+};
+ACT.dreambought=function(el){
+  var d=S.dreams.find(function(x){return x.id===el.dataset.id;}); if(!d) return;
+  if(!confirm('Mark "'+d.name+'" as bought? 🎉')) return;
+  d.status='bought'; save(); render(); toast('Congratulations! 🎉');
+};
+ACT.dreammove=function(el){
+  var i=S.dreams.findIndex(function(x){return x.id===el.dataset.id;}), j=i+(+el.dataset.dir);
+  if(i<0||j<0||j>=S.dreams.length) return;
+  var t=S.dreams[i]; S.dreams[i]=S.dreams[j]; S.dreams[j]=t; save(); render();
 };
 ACT.addcat=function(){
   var groups=[]; S.budget.forEach(function(b){ if(groups.indexOf(b.group)<0) groups.push(b.group); });
@@ -900,6 +1072,11 @@ ACT.sample=function(){
     {id:uid(),name:'Borrowed from Tita',balance:20000,start:20000,rate:0,min:1000}
   ];
   S.funds.emergency=15000; S.holdingStart=0;
+  S.dreams.forEach(function(d){
+    if(d.kind==='house'){ d.price=3500000; d.dpPct=20; d.target=945000; d.date=addMonths(cm,60); }
+    if(d.kind==='solar'){ d.target=320000; d.billSave=3000; d.date=addMonths(cm,36); }
+    if(d.kind==='ai'){ d.target=250000; d.saved=40000; d.date=addMonths(cm,12); }
+  });
   // The family has been paying itself the salary each past month.
   var sal=suggestedSalary();
   for(var i=6;i>=1;i--){ var mk=addMonths(cm,-i); S.moves.push({id:uid(),date:mk+'-28',kind:'draw',amount:sal,note:'Salary for '+monthLabel(mk,true)+' (sample)'}); }
@@ -946,6 +1123,7 @@ document.addEventListener('click',function(e){
     var coll=el.dataset.del;
     if(coll==='budget'&&S.spend.some(function(s){return s.catId===el.dataset.id;})&&!confirm('This category has logged spending. Delete anyway?')) return;
     if(coll==='debts'&&!confirm('Delete this debt?')) return;
+    if(coll==='dreams'&&!confirm('Delete this goal and its saved amount?')) return;
     S[coll]=S[coll].filter(function(x){return x.id!==el.dataset.id;});
     if(dlg.open) dlg.close();
     save(); render();
