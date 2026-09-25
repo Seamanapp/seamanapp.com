@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark system theme -> the WebView reports prefers-color-scheme: dark. -->
+    <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
+        <item name="android:colorPrimary">#0f6e66</item>
+        <item name="android:colorPrimaryDark">#0b2e2a</item>
+        <item name="android:colorAccent">#3cbfb0</item>
+        <item name="android:statusBarColor">#0b2e2a</item>
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+</resources>

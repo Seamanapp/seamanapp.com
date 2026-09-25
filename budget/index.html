@@ -1045,12 +1045,15 @@ ACT.addcat=function(){
 ACT.addfam=function(){ S.family.push({id:uid(),name:'',age:''}); save(); render(); };
 ACT.addbiz=function(){ S.businesses.push('Business '+(S.businesses.length+1)); save(); render(); };
 ACT.export=function(){
+  // Inside the Android app the WebView can't download blobs; hand the JSON to
+  // the native side, which opens the system "save as" picker.
+  if(window.AndroidBridge){ AndroidBridge.saveFile('family-budget-backup-'+todayISO()+'.json', JSON.stringify(S,null,2)); return; }
   var blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
   var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='family-budget-backup-'+todayISO()+'.json';
   document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },500);
 };
 ACT.import=function(){ document.getElementById('importFile').click(); };
-ACT.print=function(){ window.print(); };
+ACT.print=function(){ if(window.AndroidBridge) AndroidBridge.print(); else window.print(); };
 ACT.reset=function(){ if(confirm('Erase ALL data on this device? Export a backup first if you might need it.')){ S=freshState(); save(); tab='home'; render(); } };
 ACT.sample=function(){
   // Illustrative numbers only, so the family can see how every screen works.
@@ -1131,6 +1134,12 @@ document.addEventListener('click',function(e){
 });
 
 function go(t){ tab=t; render(); window.scrollTo(0,0); }
+// Android Back button: close a dialog, then return to Home, then exit.
+window.__appBack=function(){
+  if(dlg.open){ dlg.close(); return true; }
+  if(tab!=='home'){ go('home'); return true; }
+  return false;
+};
 function applyTheme(v){ if(v) document.documentElement.setAttribute('data-theme',v); else document.documentElement.removeAttribute('data-theme'); }
 
 function render(){
