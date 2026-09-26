@@ -295,7 +295,7 @@
       </p>
       <p class="offer-code" id="promobadge" hidden>
         <span class="tick" aria-hidden="true">✓</span>
-        <span><b>Launch offer — 50% off</b> until <span id="promountil"></span> · <span id="promoslots"></span></span>
+        <span><b>Your offer — 50% off</b> until <span id="promountil"></span> · <span id="promoslots"></span></span>
       </p>
     </div>
 
@@ -499,9 +499,9 @@
       })
       .catch(function () { /* the price simply stays as rendered */ return null; });
   }
-  // THE LAUNCH OFFER. A buyer who came from the Messenger bot carries a signed
+  // THE 50% OFFER. A buyer who came from the Messenger bot carries a signed
   // token (?mc=); if the server offered that person 50% off and the offer is
-  // still inside its 24 hours with launch slots left, the page shows the promo
+  // still inside its 24 hours with slots left, the page shows the promo
   // price and the deadline BEFORE they commit. Read-only quote; the checkout
   // re-derives the price from the same row through the verified token, so the
   // number here and the number on the QR cannot disagree.
