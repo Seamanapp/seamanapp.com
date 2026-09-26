@@ -526,7 +526,7 @@
         wasEl.textContent = peso(LIST_PHP);
         wasEl.hidden = false;
         document.getElementById('promountil').textContent = manila(j.expires_at);
-        document.getElementById('promoslots').textContent = j.slots_left === 1 ? '1 slot left' : j.slots_left + ' slots left';
+        document.getElementById('promoslots').textContent = 'limited slots';
         promoBadge.hidden = false;
         return true;
       })
