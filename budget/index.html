@@ -1188,7 +1188,7 @@ ACT.debt=function(el){
   var groups=debtGroups().map(function(g){return g.name;});
   var sched=d&&d.schedule?Object.keys(d.schedule).sort().map(function(k){return k+' '+d.schedule[k];}).join('\n'):'';
   openDialog(d?'Edit debt':'Add debt',
-    field('name','Name','required placeholder="e.g. Home Credit, SLoan 3, Ate Bebe"',d?d.name:'')+
+    field('name','Name','required placeholder="e.g. Home Credit, SLoan 3, Tita"',d?d.name:'')+
     field('group','Group','list="dgList" placeholder="e.g. SLoan, BillEase, Family"',d?d.group:'')+'<datalist id="dgList">'+groups.map(function(g){return '<option value="'+esc(g)+'">';}).join('')+'</datalist>'+
     '<div class="grid g2">'+field('balance','Balance left','inputmode="decimal" required',d?d.balance:'')+
       field('min','Monthly payment','inputmode="decimal" placeholder="0 if none"',d?d.min:'')+'</div>'+
