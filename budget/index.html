@@ -34,6 +34,8 @@
   --bad:#c0392b; --bad-soft:#fae3df; --gold:#c8911b;
   --bar:#e9e5dc; --shadow:0 1px 2px rgba(0,0,0,.05),0 8px 24px -16px rgba(0,0,0,.25);
   --radius:14px;
+  /* categorical slots (validated palette, fixed order) + neutral "other" */
+  --c1:#2a78d6; --c2:#eb6834; --c3:#1baf7a; --c4:#eda100; --c5:#e87ba4; --c6:#008300; --c7:#4a3aa7; --c0:#9c988f;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -42,6 +44,7 @@
     --good:#4cc47f; --good-soft:#15301f; --warn:#f0b04a; --warn-soft:#3a2c12;
     --bad:#ff7a6b; --bad-soft:#3b1d19; --gold:#f0c35a;
     --bar:#24302d; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -16px rgba(0,0,0,.6);
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#008300; --c7:#9085e9; --c0:#6d6b66;
   }
 }
 :root[data-theme="dark"]{
@@ -50,6 +53,7 @@
   --good:#4cc47f; --good-soft:#15301f; --warn:#f0b04a; --warn-soft:#3a2c12;
   --bad:#ff7a6b; --bad-soft:#3b1d19; --gold:#f0c35a;
   --bar:#24302d; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -16px rgba(0,0,0,.6);
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#008300; --c7:#9085e9; --c0:#6d6b66;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -72,8 +76,7 @@ main{padding:16px}
 .grid{display:grid;gap:12px}
 .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
-@media (max-width:620px){.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:420px){.g2.stack,.g3{grid-template-columns:1fr}}
+@media (max-width:420px){.g2.stack{grid-template-columns:1fr} .g3{gap:8px} .g3 .stat{padding:10px 8px} .g3 .stat .v,.g3 .v{font-size:17px} .g3 .stat .k{font-size:10.5px}}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
 .stat .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .stat .v{font-size:20px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
@@ -102,7 +105,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .spacer{flex:1}
 label.f{display:block;font-size:13px;color:var(--muted);margin-bottom:8px}
 label.f > span{display:block;margin-bottom:3px}
-input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;
   padding:8px 10px;width:100%;min-height:40px}
 input[type=checkbox]{width:20px;height:20px;min-height:0;accent-color:var(--brand)}
 table{width:100%;border-collapse:collapse;font-size:14px}
@@ -154,6 +157,100 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 .check{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line)}
 .check:last-child{border-bottom:0}
 .check input{margin-top:2px;flex:none}
+/* visual layer */
+.big{font-size:22px;line-height:1}
+.k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.card.tight{padding:12px;margin:0}
+.card.tight .v{margin:4px 0 8px}
+button.sm{min-height:34px;padding:6px 12px;font-size:14px}
+button.stat{display:block;text-align:left;width:100%;font-weight:400;cursor:pointer}
+button.stat .bar{margin:6px 0 4px;height:6px}
+.hero .icon{font-size:22px;padding:2px 12px}
+.dots{display:flex;gap:6px;margin-top:12px}
+.dots i{flex:1;height:6px;border-radius:99px;background:var(--bar)}
+.dots i.done{background:var(--good)} .dots i.now{background:var(--brand)}
+.flow{display:flex;align-items:center;gap:2px;margin:0 0 14px}
+.flow .node{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 4px;text-align:center;display:flex;flex-direction:column;gap:2px;box-shadow:var(--shadow)}
+.flow .node b{font-size:14px} .flow .node small{font-size:11px;color:var(--muted)}
+.flow .arr{color:var(--muted);font-weight:700}
+.starts button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 6px}
+details.info{margin:4px 2px 16px}
+details.info summary{font-size:14px;list-style:none;padding:6px 0}
+details.info summary::-webkit-details-marker{display:none}
+.info-b{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px}
+.info-b ul,.info-b ol{margin:0;padding-left:20px}
+details.why summary{font-size:12px;font-weight:600;color:var(--muted)}
+details.why p{font-size:14px;color:var(--muted)}
+.chart-svg{width:100%;height:auto;display:block;overflow:visible}
+.chart-svg .axis{stroke:var(--line);stroke-width:1}
+.chart-svg .tl{font-size:10px;fill:var(--muted)}
+.chart-svg .tv{font-size:10px;fill:var(--ink);font-weight:600}
+.chart-svg .ref{stroke:var(--good);stroke-width:1.5;stroke-dasharray:4 3}
+.chart-svg .tr{font-size:10px;fill:var(--good);font-weight:600}
+.chart-svg .area{fill:var(--brand);opacity:.14}
+.chart-svg .aline{fill:none;stroke:var(--brand);stroke-width:2;stroke-linejoin:round}
+.chart-svg .xh{stroke:var(--muted);stroke-width:1}
+.chart-svg .xd{fill:var(--brand);stroke:var(--card);stroke-width:2}
+.chart-svg g[data-tip]:hover path{opacity:.8}
+.stack{display:flex;gap:2px;height:22px;border-radius:6px;overflow:hidden;margin:8px 0 12px}
+.stack i{min-width:4px;display:block}
+.legend .lg{display:grid;grid-template-columns:14px 1fr auto 44px;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line);font-size:14px}
+.legend .lg:last-child{border-bottom:0}
+.legend .lp{text-align:right;color:var(--muted);font-size:12px}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px}
+.dues{display:flex;flex-direction:column;gap:8px}
+.due{display:grid;grid-template-columns:44px 1fr auto auto;gap:10px;align-items:center}
+.dd{background:var(--brand-soft);color:var(--brand);border-radius:10px;text-align:center;padding:4px 0;line-height:1.1}
+.dd b{display:block;font-size:18px} .dd span{font-size:10px;text-transform:uppercase;font-weight:700}
+.dd.soon{background:var(--warn-soft);color:var(--warn)}
+.dn{min-width:0} .dn b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .dn small{color:var(--muted);font-size:12px}
+.da{font-weight:700}
+details.dueg summary{list-style:none;cursor:pointer}
+details.dueg summary::-webkit-details-marker{display:none}
+.chev{color:var(--muted);font-size:20px;width:44px;text-align:center;transition:transform .2s}
+details.dueg[open] .chev{transform:rotate(90deg)}
+.due.sub{margin-top:6px} .due.sub .dn b{font-weight:500}
+.dn small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--bg);padding:4px;border-radius:12px}
+.seg button{border:0;background:none;display:flex;flex-direction:column;align-items:center;font-size:14px;padding:8px 4px}
+.seg button small{font-weight:400;font-size:11px;color:var(--muted)}
+.seg button[aria-checked="true"]{background:var(--card);box-shadow:var(--shadow);color:var(--brand)}
+.bigdate{text-align:center;margin:12px 0 4px} .bigdate small{display:block;color:var(--muted);font-size:12px}
+.bigdate b{font-size:28px;color:var(--brand)}
+details.grp{padding:12px 16px}
+details.grp summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;font-weight:700;color:var(--ink)}
+details.grp summary::-webkit-details-marker{display:none}
+details.grp summary::after{content:'›';color:var(--muted);transition:transform .2s;font-size:20px;line-height:1}
+details.grp[open] summary::after{transform:rotate(90deg)}
+details.grp .gn{flex:1;min-width:0} details.grp .gn small{background:var(--bar);border-radius:99px;padding:0 7px;font-size:11px;color:var(--muted)}
+details.grp > .bar{margin:10px 0 4px;height:6px}
+.drow{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.drow:last-child{border-bottom:0}
+.drow.done{opacity:.55}
+.dl{min-width:0} .dl b{display:block} .dl small{display:block;color:var(--muted);font-size:12px}
+.dl .dnote{font-style:italic}
+.dr{font-weight:600} .da2{display:flex;gap:4px}
+.brow{display:grid;grid-template-columns:1fr 96px auto auto;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.brow:last-child{border-bottom:0}
+.brow .bname{border-color:transparent;background:transparent;padding:6px 4px;min-height:34px}
+.brow .bname:focus{background:var(--bg);border-color:var(--line)}
+.brow small{display:block;padding-left:4px;font-size:12px}
+.brow .amt{text-align:right;min-height:36px;padding:6px 8px}
+.need{display:flex;flex-direction:column;align-items:center;font-size:9px;color:var(--muted);text-transform:uppercase;gap:1px}
+.need input{width:18px;height:18px}
+details.dueg summary{color:var(--ink)}
+.hb{display:grid;grid-template-columns:minmax(0,34%) 1fr 52px;gap:8px;align-items:center;margin:7px 0;font-size:13px}
+.hl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ht{position:relative;height:14px;background:var(--bar);border-radius:4px}
+.ht i{display:block;height:100%;border-radius:4px}
+.ht em{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);border-radius:2px}
+.hv{text-align:right;font-weight:600}
+.range{margin:10px 0 4px} .rbar{position:relative;height:10px;border-radius:99px;background:linear-gradient(90deg,var(--warn),var(--good));margin-bottom:4px}
+.rbar .mk{position:absolute;top:-5px;width:4px;height:20px;margin-left:-2px;background:var(--ink);border-radius:2px}
+#tip{position:fixed;z-index:40;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:6px 9px;border-radius:8px;
+  max-width:240px;opacity:0;transition:opacity .12s;font-variant-numeric:tabular-nums}
+#tip.show{opacity:1}
 @media print{nav.tabs,button,.noprint{display:none!important} body{padding:0} .card{box-shadow:none;break-inside:avoid}}
 </style>
 </head>
@@ -191,6 +288,8 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 
 <dialog id="dlg"><form method="dialog" id="dlgForm"></form></dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="tip" role="tooltip"></div>
+<input type="file" id="importFile" accept="application/json,.json" class="hidden" aria-hidden="true">
 
 <script>
 (function(){
@@ -337,7 +436,27 @@ function suggestedSalary(){
 function salary(){ return S.salary.method==='manual' ? num(S.salary.manual) : suggestedSalary(); }
 
 function budgetTotal(filter){ return sum(S.budget.filter(filter||function(){return true;}), function(b){return num(b.amount);}); }
-function debtMins(){ return sum(activeDebts(), function(d){return num(d.min);}); }
+// A debt pays either a fixed monthly installment (min) or, for BNPL-style
+// bills like SPayLater, an amount that differs per month (schedule).
+function minFor(d, mk){ return d.schedule ? num(d.schedule[mk]) : num(d.min); }
+// Next unpaid due date: this month if the day hasn't passed and it hasn't been
+// paid yet, otherwise next month.
+function nextDue(d){
+  var t=todayISO(), cm=thisMonth();
+  var mk=(+t.slice(8,10) <= (+d.due||1)) ? cm : addMonths(cm,1);
+  var paid=S.moves.some(function(m){ return m.kind==='debtpay' && m.to===d.id && monthKey(m.date)===mk; });
+  if(paid) mk=addMonths(mk,1);
+  var amt=Math.min(minFor(d,mk), num(d.balance));
+  return {mk:mk, date:mk+'-'+pad(Math.min(+d.due||1, daysIn(mk))), amount:amt};
+}
+function daysIn(mk){ return new Date(+mk.slice(0,4), +mk.slice(5,7), 0).getDate(); }
+function debtMins(){ return sum(activeDebts(), function(d){ return nextDue(d).amount; }); }
+// Stable group order = first appearance in the debt list; colour follows the group.
+function debtGroups(){
+  var order=[], by={};
+  S.debts.forEach(function(d){ var g=d.group||'Other debts'; if(!by[g]){ by[g]=[]; order.push(g); } by[g].push(d); });
+  return order.map(function(g,i){ return {name:g, slot:i<7?i+1:0, debts:by[g], total:sum(by[g],function(d){return Math.max(0,num(d.balance));})}; });
+}
 function essentials(){ return budgetTotal(function(b){return b.essential;}) + debtMins(); }
 function activeDebts(){ return S.debts.filter(function(d){return num(d.balance)>0.5;}); }
 function totalDebt(){ return sum(S.debts, function(d){return Math.max(0,num(d.balance));}); }
@@ -362,23 +481,44 @@ function spentThisMonth(catId){
 // debt gets its minimum, then the rest of the money (extra + minimums freed by
 // debts already killed) goes to the target debt: smallest balance first
 // (snowball) or highest rate first (avalanche).
+//
+// The monthly debt budget stays FIXED at next month's minimums + extra: when a
+// debt dies (or a PayLater bill shrinks) its money rolls onto the next target.
+// Month m of the simulation is calendar month thisMonth()+m.
 function simulate(strategy, extra){
-  var ds=activeDebts().map(function(d){return {id:d.id,name:d.name,bal:num(d.balance),rate:num(d.rate),min:num(d.min),paidOff:null,interest:0};});
-  if(!ds.length) return {months:0, interest:0, debts:[], ok:true};
-  var budget=sum(ds,function(d){return d.min;})+extra, month=0, interest=0;
+  var cm=thisMonth();
+  var ds=activeDebts().map(function(d){return {id:d.id,name:d.name,src:d,bal:num(d.balance),rate:num(d.rate),paidOff:null,interest:0};});
+  if(!ds.length) return {months:0, interest:0, debts:[], ok:true, timeline:[]};
+  var budget=sum(ds,function(d){return minFor(d.src,addMonths(cm,1));})+extra, month=0, interest=0, timeline=[];
   while(ds.some(function(d){return d.bal>0.5;}) && month<600){
     month++;
-    var avail=budget;
+    var mk=addMonths(cm,month), paid=0;
+    var mins=sum(ds,function(d){return d.bal>0.5?Math.min(minFor(d.src,mk),d.bal):0;});
+    var avail=Math.max(budget,mins);
     ds.forEach(function(d){ if(d.bal>0.5){ var i=d.bal*d.rate/1200; d.bal+=i; d.interest+=i; interest+=i; } });
-    ds.forEach(function(d){ if(d.bal>0.5){ var p=Math.min(d.min,d.bal,avail); d.bal-=p; avail-=p; } });
+    ds.forEach(function(d){ if(d.bal>0.5){ var p=Math.min(minFor(d.src,mk),d.bal,avail); d.bal-=p; avail-=p; paid+=p; } });
     var order=ds.filter(function(d){return d.bal>0.5;}).sort(strategy==='avalanche'
       ? function(a,b){return b.rate-a.rate||a.bal-b.bal;}
       : function(a,b){return a.bal-b.bal||b.rate-a.rate;});
-    for(var k=0;k<order.length&&avail>0.005;k++){ var p2=Math.min(order[k].bal,avail); order[k].bal-=p2; avail-=p2; }
-    ds.forEach(function(d){ if(d.bal<=0.5&&d.paidOff==null){ d.bal=0; d.paidOff=month; } });
+    var focus=order[0]?order[0].name:'';
+    for(var k=0;k<order.length&&avail>0.005;k++){ var p2=Math.min(order[k].bal,avail); order[k].bal-=p2; avail-=p2; paid+=p2; }
+    var freed=[];
+    ds.forEach(function(d){ if(d.bal<=0.5&&d.paidOff==null){ d.bal=0; d.paidOff=month; freed.push(d.name); } });
+    timeline.push({mk:mk, paid:paid, bal:sum(ds,function(d){return d.bal;}), focus:focus, freed:freed});
   }
   var ok=!ds.some(function(d){return d.bal>0.5;});
-  return {months:ok?month:Infinity, interest:interest, debts:ds, ok:ok};
+  return {months:ok?month:Infinity, interest:interest, debts:ds, ok:ok, timeline:timeline};
+}
+// What the contracts alone demand each month (no snowball roll-over): shows
+// when the installment load drops as loans and PayLater bills finish.
+function contractual(n){
+  var cm=thisMonth(), ds=activeDebts().map(function(d){return {src:d,bal:num(d.balance),rate:num(d.rate)};}), out=[];
+  for(var m=1;m<=n;m++){
+    var mk=addMonths(cm,m), paid=0;
+    ds.forEach(function(d){ if(d.bal>0.5){ d.bal+=d.bal*d.rate/1200; var p=Math.min(minFor(d.src,mk),d.bal); d.bal-=p; paid+=p; } });
+    out.push({mk:mk, v:paid});
+  }
+  return out;
 }
 
 function monthsBetween(a,b){ return (+b.slice(0,4)-+a.slice(0,4))*12+(+b.slice(5,7)-+a.slice(5,7)); }
@@ -462,7 +602,83 @@ function currentMoneyStep(){
 /* ---------------------------------------------------------------- views */
 
 var tab='home';
+var openGroups={};   // debt groups the user expanded/collapsed, kept across re-renders
 var V={};
+
+function sweepTargetName(step){
+  if(step.fund==='debt') return 'debt';
+  if(step.fund==='emergency') return 'emergency fund';
+  if(step.fund==='dreams'){ var d=nextDream(); return d?dreamLabel(d):'dream goals'; }
+  return 'education fund';
+}
+
+/* ------------------------------------------------------------ charts */
+
+function slotColor(slot){ return 'var(--c'+(slot||0)+')'; }
+function info(summary, body){ return '<details class="info"><summary>ⓘ '+summary+'</summary><div class="info-b">'+body+'</div></details>'; }
+function tile(k,v,h,extra){ return '<div class="stat"'+(extra||'')+'><div class="k">'+k+'</div><div class="v">'+v+'</div>'+(h?'<div class="h">'+h+'</div>':'')+'</div>'; }
+
+// Proportional stacked bar; every segment keeps a sliver so small debts show.
+function stackBar(parts){
+  var tot=sum(parts,function(p){return p.v;})||1;
+  return '<div class="stack" role="img" aria-label="Share of total">'+parts.filter(function(p){return p.v>0;}).map(function(p){
+    return '<i style="flex:'+p.v+' 1 0;background:'+p.color+'" data-tip="'+esc(p.label+' · '+money(p.v)+' · '+(p.v/tot*100).toFixed(1)+'%')+'"></i>';
+  }).join('')+'</div>';
+}
+function legend(parts){
+  var tot=sum(parts,function(p){return p.v;})||1;
+  return '<div class="legend">'+parts.map(function(p){
+    return '<div class="lg"><span class="sw" style="background:'+p.color+'"></span><span class="ln">'+esc(p.label)+'</span><span class="lv num">'+money(p.v)+'</span><span class="lp num">'+(p.v/tot*100).toFixed(p.v/tot<0.01?1:0)+'%</span></div>';
+  }).join('')+'</div>';
+}
+function shortMoney(v){
+  if(v>=1e6) return S.currency+(v/1e6).toFixed(v>=1e7?0:1).replace(/\.0$/,'')+'M';
+  if(v>=1e3) return S.currency+Math.round(v/1e3)+'k';
+  return S.currency+Math.round(v);
+}
+function barPath(x,y,w,h,r){ r=Math.min(r,h,w/2); return 'M'+x+','+(y+h)+'V'+(y+r)+'Q'+x+','+y+' '+(x+r)+','+y+'H'+(x+w-r)+'Q'+(x+w)+','+y+' '+(x+w)+','+(y+r)+'V'+(y+h)+'Z'; }
+
+// Column chart: one series, rounded data-ends on the baseline, hover tips,
+// values labelled only on the first and last column.
+function barChart(pts, opts){
+  opts=opts||{};
+  var W=320,H=150,pt=18,pb=20,n=pts.length||1,slot=W/n,bw=Math.min(26,slot*0.62);
+  var max=Math.max.apply(null,pts.map(function(p){return p.v;}).concat([opts.ref||0,1]));
+  var y=function(v){return pt+(H-pt-pb)*(1-v/max);};
+  var g='<line x1="0" x2="'+W+'" y1="'+(H-pb)+'" y2="'+(H-pb)+'" class="axis"/>';
+  pts.forEach(function(p,i){
+    var cx=slot*i+slot/2, top=y(p.v), h=Math.max(p.v>0?2:0,H-pb-top);
+    g+='<g data-tip="'+esc(p.tip||p.label+': '+money(p.v))+'"><rect x="'+(slot*i)+'" y="0" width="'+slot+'" height="'+H+'" fill="transparent"/>'+
+      (h>0?'<path d="'+barPath(cx-bw/2,H-pb-h,bw,h,4)+'" fill="'+(p.color||'var(--brand)')+'"/>':'')+
+      '<text x="'+cx+'" y="'+(H-6)+'" text-anchor="middle" class="tl">'+esc(p.label)+'</text>'+
+      ((i===0||i===n-1)&&p.v>0?'<text x="'+cx+'" y="'+(H-pb-h-5)+'" text-anchor="middle" class="tv">'+shortMoney(p.v)+'</text>':'')+'</g>';
+  });
+  if(opts.ref) g+='<line x1="0" x2="'+W+'" y1="'+y(opts.ref)+'" y2="'+y(opts.ref)+'" class="ref"/><text x="'+W+'" y="'+(y(opts.ref)-4)+'" text-anchor="end" class="tr">'+esc(opts.refLabel||'')+'</text>';
+  return '<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(opts.aria||'Column chart')+'">'+g+'</svg>';
+}
+
+// Area chart with a crosshair: the series is stashed on the element and the
+// pointer handler below finds the nearest point.
+function areaChart(pts, aria){
+  var W=320,H=150,pt=16,pb=20,n=pts.length;
+  if(n<2) return '';
+  var max=Math.max.apply(null,pts.map(function(p){return p.v;}).concat([1]));
+  var xs=pts.map(function(p,i){return +(i/(n-1)*W).toFixed(1);}), ys=pts.map(function(p){return +(pt+(H-pt-pb)*(1-p.v/max)).toFixed(1);});
+  var line=xs.map(function(x,i){return (i?'L':'M')+x+','+ys[i];}).join('');
+  var mid=Math.floor((n-1)/2);
+  return '<div class="lc" data-xs="'+xs.join(',')+'" data-ys="'+ys.join(',')+'" data-tips="'+esc(JSON.stringify(pts.map(function(p){return p.tip;})))+'">'+
+    '<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(aria)+'">'+
+    '<path d="'+line+'L'+W+','+(H-pb)+'L0,'+(H-pb)+'Z" class="area"/><path d="'+line+'" class="aline"/>'+
+    '<line x1="0" x2="'+W+'" y1="'+(H-pb)+'" y2="'+(H-pb)+'" class="axis"/>'+
+    '<text x="2" y="'+(pt-4)+'" class="tv" text-anchor="start">'+shortMoney(max)+'</text>'+
+    '<text x="0" y="'+(H-5)+'" class="tl" text-anchor="start">'+esc(pts[0].label)+'</text>'+
+    (n>4?'<text x="'+xs[mid]+'" y="'+(H-5)+'" class="tl" text-anchor="middle">'+esc(pts[mid].label)+'</text>':'')+
+    '<text x="'+W+'" y="'+(H-5)+'" class="tl" text-anchor="end">'+esc(pts[n-1].label)+'</text>'+
+    '<line class="xh" x1="0" x2="0" y1="'+pt+'" y2="'+(H-pb)+'" visibility="hidden"/><circle class="xd" r="4.5" cx="0" cy="0" visibility="hidden"/>'+
+    '</svg></div>';
+}
+
+/* ---------------------------------------------------------------- views */
 
 function sweepTargetName(step){
   if(step.fund==='debt') return 'debt';
@@ -482,53 +698,55 @@ V.home=function(){
   var h='';
 
   if(!S.incomes.length && !S.debts.length && budgetTotal()===0){
-    h+='<div class="card"><h2>Welcome 👋</h2><p>This plan is built for a family whose income comes from businesses, not a payslip. Start here:</p>'+
-      '<ol><li><b>Income</b> — log what each business brought in for the last few months.</li>'+
-      '<li><b>Budget</b> — fill in what the family really spends each month.</li>'+
-      '<li><b>Debts</b> — list every debt with its balance, interest rate and minimum payment.</li></ol>'+
-      '<p class="muted">Everything stays on this phone/computer only. Use Setup → Export backup now and then.</p>'+
-      '<div class="row"><button class="primary" data-go="income">Start with income</button><button data-act="sample">Explore with sample numbers</button></div></div>';
+    h+='<div class="card"><h2>Welcome 👋 Let\'s set up</h2><div class="grid g3 starts">'+
+      '<button data-go="income"><span class="big">💼</span>Log income</button>'+
+      '<button data-go="budget"><span class="big">🧾</span>Fill budget</button>'+
+      '<button data-go="debts"><span class="big">📉</span>List debts</button></div>'+
+      '<div class="row" style="margin-top:10px"><button class="link" data-act="sample">or explore with sample numbers</button></div></div>';
   }
 
   var now=st.current;
   h+='<div class="card"><div class="hero">'+ring(now?now.progress:100)+'<div style="min-width:0">'+
-    '<small>Step '+(now?st.index+1:st.list.length)+' of '+st.list.length+' · you are here</small><h2>'+esc(now?now.title:'Financial foundation built 🎉')+'</h2>'+
-    '<p class="muted" style="margin:2px 0 0">'+esc(now?now.detail:'Keep investing, keep giving, keep the tank full.')+'</p></div></div>'+
-    '<div class="row" style="margin-top:10px"><button data-go="plan">See the full roadmap</button></div></div>';
+    '<small>Step '+(now?st.index+1:st.list.length)+' of '+st.list.length+'</small><h2>'+esc(now?now.title:'Foundation built 🎉')+'</h2>'+
+    '<div class="muted num" style="font-size:14px">'+esc(now?now.detail:'')+'</div></div>'+
+    '<button class="icon" data-go="plan" aria-label="Open roadmap" style="margin-left:auto">›</button></div>'+
+    '<div class="dots" aria-hidden="true">'+st.list.map(function(s){return '<i class="'+s.state+'"></i>';}).join('')+'</div></div>';
 
-  h+='<div class="grid g2 stack">';
-  h+='<div class="card" style="margin:0"><h2>Family salary · '+monthLabel(cm,true)+'</h2>'+
-    '<div class="stat" style="border:0;padding:0;margin:6px 0"><div class="v">'+money(sal)+'<small> / month</small></div>'+
-    '<div class="h">'+(S.salary.method==='manual'?'Set manually':S.salary.method==='avg80'?'80% of recent average':'Based on your leanest recent month')+'</div></div>'+
-    (drawn>=sal&&sal>0
-      ? '<div class="note good">✓ Salary for this month paid out ('+money(drawn)+').</div>'
-      : '<div class="note'+(hold<sal-drawn?' warn':'')+'">'+(drawn>0?'Paid so far: '+money(drawn)+'. ':'')+
-        (hold>=sal-drawn&&sal>0?'The tank can cover it — transfer '+money(sal-drawn)+' to the family spending account.':'Tank has '+money(Math.max(0,hold))+'. '+(sal>0?'Pay what you can; spend less until more comes in.':'Log income to calculate a salary.'))+'</div>'+
-        '<button class="primary" data-act="draw" '+(sal<=0||hold<=0?'disabled':'')+'>Pay ourselves the salary</button>')+
-    '</div>';
+  // The money flow as a picture: income → tank → salary → current step.
+  h+='<div class="flow">'+
+    '<div class="node"><span class="big">💼</span><b class="num">'+shortMoney(splitOf(monthIncome).family)+'</b><small>in this month</small></div><span class="arr">›</span>'+
+    '<div class="node"><span class="big">🛢️</span><b class="num">'+shortMoney(Math.max(0,hold))+'</b><small>tank</small></div><span class="arr">›</span>'+
+    '<div class="node"><span class="big">👪</span><b class="num">'+shortMoney(sal)+'</b><small>salary</small></div><span class="arr">›</span>'+
+    '<div class="node"><span class="big">🎯</span><b class="num">'+shortMoney(Math.max(0,leftover()))+'</b><small>to goal</small></div></div>';
 
-  h+='<div class="card" style="margin:0"><h2>Holding tank</h2>'+
-    '<div class="stat" style="border:0;padding:0;margin:6px 0"><div class="v">'+money(hold)+'</div>'+
-    '<div class="h">Family share of all business income, waiting to be paid out</div></div>'+
-    '<div class="muted" style="font-size:13px">Income this month: <b class="num">'+money(monthIncome)+'</b> · family share <b class="num">'+money(splitOf(monthIncome).family)+'</b></div>'+
-    (surplus>0.5&&step
-      ? '<div class="note good">'+money(surplus)+' above this month + a one-month buffer. Put it to work on <b>'+esc(step.title)+'</b>.</div><button class="primary" data-act="sweep" data-amt="'+Math.floor(surplus)+'">Sweep '+money(Math.floor(surplus))+' → '+esc(sweepTargetName(step))+'</button>'
-      : '<p class="muted" style="font-size:13px">Surplus above one month of salary gets swept to your current step.</p><button data-act="sweep" '+(hold<=0?'disabled':'')+'>Sweep money to a goal</button>')+
-    '</div>';
-  h+='</div><div style="height:14px"></div>';
+  var salaryPaid=drawn>=sal&&sal>0;
+  h+='<div class="grid g2">'+
+    '<div class="card tight"><div class="row between"><span class="k">👪 Salary</span>'+(salaryPaid?'<span class="pill good">Paid ✓</span>':sal>0?'<span class="pill warn">Due</span>':'')+'</div>'+
+      '<div class="v num">'+money(sal)+'</div>'+
+      (salaryPaid?'':'<button class="primary sm" data-act="draw" '+(sal<=0||hold<=0?'disabled':'')+'>Pay salary</button>')+'</div>'+
+    '<div class="card tight"><div class="row between"><span class="k">🛢️ Tank</span>'+(surplus>0.5?'<span class="pill good">+'+shortMoney(surplus)+'</span>':'')+'</div>'+
+      '<div class="v num">'+money(hold)+'</div>'+
+      (surplus>0.5&&step?'<button class="primary sm" data-act="sweep" data-amt="'+Math.floor(surplus)+'">Sweep → '+esc(sweepTargetName(step))+'</button>'
+        :'<button class="sm" data-act="sweep" '+(hold<=0?'disabled':'')+'>Sweep</button>')+'</div></div>';
 
+  var td=totalDebt(), tds=totalDebtStart();
   h+='<div class="grid g3" style="margin-bottom:14px">'+
-    '<div class="stat"><div class="k">Total debt</div><div class="v">'+money(totalDebt())+'</div><div class="h">'+
-      (totalDebt()>0.5?(sim.ok?'Debt-free '+monthLabel(addMonths(cm,sim.months),true):'Payments don\'t cover interest'):'Debt-free')+'</div></div>'+
-    '<div class="stat"><div class="k">Emergency fund</div><div class="v">'+money(S.funds.emergency)+'</div><div class="h">'+efMonths.toFixed(1)+' months of essentials</div></div>'+
-    '<div class="stat"><div class="k">Spent this month</div><div class="v">'+money(spent)+'</div><div class="h">of '+money(plan)+' planned</div></div>'+
+    '<button class="stat tap" data-go="debts"><div class="k">📉 Debt</div><div class="v">'+shortMoney(td)+'</div>'+barHTML(pct(tds-td,tds),'good')+
+      '<div class="h">'+(td>0.5?(sim.ok?'free '+monthLabel(addMonths(cm,sim.months)):'set extra →'):'debt-free 🎉')+'</div></button>'+
+    '<button class="stat tap" data-go="plan"><div class="k">🛟 Emergency</div><div class="v">'+shortMoney(num(S.funds.emergency))+'</div>'+barHTML(pct(efMonths,S.efMonths))+'<div class="h">'+efMonths.toFixed(1)+' of '+S.efMonths+' mo</div></button>'+
+    '<button class="stat tap" data-go="budget"><div class="k">🧾 Spent</div><div class="v">'+shortMoney(spent)+'</div>'+barHTML(pct(spent,plan),spent>plan?'bad':'')+'<div class="h">of '+shortMoney(plan)+'</div></button>'+
     '</div>';
 
-  // Category watch: the ones already over / near plan.
+  var due=upcomingDues(14);
+  if(due.length){
+    h+='<div class="card"><div class="row between" style="margin-bottom:10px"><h2>📅 Due in 2 weeks</h2><span class="num"><b>'+money(sum(due,function(x){return x.amount;}))+'</b></span></div>'+dueList(due.slice(0,5))+
+      (due.length>5?'<button class="link" data-go="debts">+'+(due.length-5)+' more</button>':'')+'</div>';
+  }
+
   var hot=S.budget.map(function(b){ var s=spentThisMonth(b.id); return {b:b,s:s,p:num(b.amount)}; })
-    .filter(function(x){return x.s>0;}).sort(function(a,b){return pct(b.s,b.p||1)-pct(a.s,a.p||1);}).slice(0,6);
-  h+='<div class="card"><div class="row between"><h2>This month\'s spending</h2><button class="primary" data-act="spend">+ Log spending</button></div>';
-  if(!hot.length) h+='<p class="muted">Nothing logged yet this month. Log big and frequent expenses so you can see where the salary goes.</p>';
+    .filter(function(x){return x.s>0;}).sort(function(a,b){return pct(b.s,b.p||1)-pct(a.s,a.p||1);}).slice(0,5);
+  h+='<div class="card"><div class="row between"><h2>🧾 Spending</h2><button class="primary sm" data-act="spend">+ Log</button></div>';
+  if(!hot.length) h+='<p class="muted">Nothing logged this month.</p>';
   hot.forEach(function(x){
     var p=pct(x.s,x.p), cls=x.p<=0||x.s>x.p?'bad':p>85?'warn':'good';
     h+='<div style="margin:10px 0"><div class="row between"><span>'+esc(x.b.name)+'</span><span class="num">'+money(x.s)+' <small>/ '+money(x.p)+'</small></span></div>'+barHTML(x.p>0?p:100,cls)+'</div>';
@@ -536,207 +754,252 @@ V.home=function(){
   h+='</div>';
 
   if(S.dreams.length){
-    h+='<div class="card"><div class="row between"><h2>Dream goals</h2><button data-go="goals">Open goals</button></div>'+
-      (foundationDone()?'':'<p class="muted" style="font-size:13px">Family-funded dreams start after step 5 — keep them in sight, they\'re the reason for the discipline.</p>')+
+    h+='<div class="card"><div class="row between"><h2>⭐ Dreams</h2><button class="icon" data-go="goals" aria-label="Open goals">›</button></div>'+
       S.dreams.map(function(d){
         var t=num(d.target);
         return '<div style="margin:10px 0"><div class="row between"><span>'+esc(dreamLabel(d))+'</span><span class="num">'+
-          (d.status==='bought'?'<span class="pill good">Bought</span>':t>0?money(d.saved)+' <small>/ '+money(t)+'</small>':'<small>Set a target</small>')+'</span></div>'+
+          (d.status==='bought'?'<span class="pill good">Bought</span>':t>0?Math.round(pct(num(d.saved),t))+'%':'<small>no target</small>')+'</span></div>'+
           barHTML(d.status==='bought'?100:pct(num(d.saved),t),dreamDone(d)?'good':'')+'</div>';
       }).join('')+'</div>';
   }
-
-  h+='<div class="card"><h2>How money flows</h2>'+
-    '<ol style="margin:6px 0 0;padding-left:20px">'+
-    '<li>Business income comes in → set aside <b>'+S.split.tax+'% for taxes</b> and <b>'+S.split.biz+'% to reinvest</b> in the business.</li>'+
-    '<li>The rest goes to the <b>holding tank</b> (a separate savings account). Never spend straight from sales.</li>'+
-    '<li>Once a month, pay the family a fixed <b>salary</b> from the tank. Budget that salary to zero.</li>'+
-    '<li>Anything left in the budget, and any tank surplus above one month, goes to the <b>current roadmap step</b>.</li></ol></div>';
+  h+=info('How the money moves','<ol><li>Income in → '+S.split.tax+'% tax and '+S.split.biz+'% business reinvest come off first.</li><li>The rest waits in the <b>tank</b> (a separate account).</li><li>Once a month the family gets a fixed <b>salary</b> from the tank.</li><li>Budget leftovers and tank surplus go to the current <b>step</b>.</li></ol>');
   return h;
 };
 
 V.income=function(){
   var byM=incomeByMonth(), cm=thisMonth(), sal=salary(), w=salaryWindow();
   var months=[]; for(var i=11;i>=0;i--) months.push(addMonths(cm,-i));
-  var fam=months.map(function(m){return splitOf(byM[m]||0).family;});
-  var max=Math.max.apply(null, fam.concat([sal,1]));
-  var h='';
-  h+='<div class="card"><div class="row between"><h2>Business income</h2><button class="primary" data-act="income">+ Add income</button></div>'+
-    '<p class="muted">Log money as it comes in (or one total per business per month). The family share is what\'s left after tax and reinvest.</p>'+
-    '<div class="chart-wrap"><div class="chart">'+months.map(function(m,i){
-      var hgt=fam[i]/max*100;
-      return '<div class="col" title="'+monthLabel(m,true)+': '+money(fam[i])+'"><i class="'+(sal>0&&fam[i]<sal?'low':'')+'" style="height:'+hgt+'%"></i><span>'+monthLabel(m).split(' ')[0]+'</span></div>';
-    }).join('')+'</div>'+
-    (sal>0?'<div class="chart-line" style="bottom:calc(18px + '+(sal/max*112)+'px)"><b>salary '+money(sal)+'</b></div>':'')+
-    '</div><p class="muted" style="font-size:12px">Bars = family share per month. Orange months fell short of the salary — that\'s what the holding tank is for.</p></div>';
+  var h='<div class="card"><div class="row between"><h2>💼 Family share by month</h2><button class="primary sm" data-act="income">+ Income</button></div>'+
+    barChart(months.map(function(m){ var v=splitOf(byM[m]||0).family;
+      return {label:monthLabel(m).split(' ')[0].slice(0,1)+(m.slice(5)==='01'?"'"+m.slice(2,4):''), v:v, tip:monthLabel(m,true)+': '+money(v), color:sal>0&&v<sal?'var(--warn)':'var(--brand)'}; }),
+      {ref:sal, refLabel:'salary '+shortMoney(sal), aria:'Family share of income per month'})+
+    '<div class="row" style="gap:14px;font-size:12px"><span><span class="sw" style="background:var(--brand)"></span> above salary</span><span><span class="sw" style="background:var(--warn)"></span> lean month</span></div></div>';
 
-  var tot=sum(w,function(x){return x.family;}), lo=w.length?Math.min.apply(null,w.map(function(x){return x.family;})):0, hi=w.length?Math.max.apply(null,w.map(function(x){return x.family;})):0;
-  h+='<div class="card"><h2>Your family salary</h2>'+
-    '<p class="muted">With no payslip, you create one. Pick how conservative to be — lower is safer.</p>'+
-    '<div class="grid g3" style="margin:10px 0">'+
-      '<div class="stat"><div class="k">Leanest month</div><div class="v">'+money(lo)+'</div></div>'+
-      '<div class="stat"><div class="k">Average</div><div class="v">'+money(w.length?tot/w.length:0)+'</div></div>'+
-      '<div class="stat"><div class="k">Best month</div><div class="v">'+money(hi)+'</div></div></div>'+
-    '<div class="grid g2">'+
-      '<label class="f"><span>Salary method</span><select data-bind="salary.method">'+
-        '<option value="lowest"'+(S.salary.method==='lowest'?' selected':'')+'>Leanest recent month (safest)</option>'+
-        '<option value="avg80"'+(S.salary.method==='avg80'?' selected':'')+'>80% of recent average</option>'+
-        '<option value="manual"'+(S.salary.method==='manual'?' selected':'')+'>I\'ll set it myself</option></select></label>'+
+  var vals=w.map(function(x){return x.family;});
+  var lo=vals.length?Math.min.apply(null,vals):0, hi=vals.length?Math.max.apply(null,vals):0, avg=vals.length?sum(vals)/vals.length:0;
+  h+='<div class="card"><h2>👪 Family salary</h2><div class="v num" style="font-size:30px;margin:4px 0">'+money(sal)+'<small class="muted" style="font-size:14px"> / month</small></div>'+
+    '<div class="range"><div class="rbar"><i style="left:0;width:100%"></i>'+
+      (hi>0?'<b class="mk" style="left:'+pct(sal,hi)+'%" data-tip="Salary '+money(sal)+'"></b>':'')+'</div>'+
+      '<div class="row between num" style="font-size:12px"><span>lean '+shortMoney(lo)+'</span><span>avg '+shortMoney(avg)+'</span><span>best '+shortMoney(hi)+'</span></div></div>'+
+    (sal>0&&sal<essentials()?'<div class="note bad">Below essentials + debt payments ('+money(essentials())+').</div>':'')+
+    '<div class="grid g2" style="margin-top:10px">'+
+      '<label class="f"><span>Method</span><select data-bind="salary.method">'+
+        '<option value="lowest"'+(S.salary.method==='lowest'?' selected':'')+'>Leanest month</option>'+
+        '<option value="avg80"'+(S.salary.method==='avg80'?' selected':'')+'>80% of average</option>'+
+        '<option value="manual"'+(S.salary.method==='manual'?' selected':'')+'>Set myself</option></select></label>'+
       (S.salary.method==='manual'
         ? '<label class="f"><span>Monthly salary</span><input inputmode="decimal" data-bind="salary.manual" data-num value="'+esc(S.salary.manual||'')+'"></label>'
-        : '<label class="f"><span>Look back (months)</span><select data-bind="salary.lookback" data-num>'+[3,6,9,12].map(function(n){return '<option'+(S.salary.lookback==n?' selected':'')+'>'+n+'</option>';}).join('')+'</select></label>')+
+        : '<label class="f"><span>Look back</span><select data-bind="salary.lookback" data-num>'+[3,6,9,12].map(function(n){return '<option value="'+n+'"'+(S.salary.lookback==n?' selected':'')+'>'+n+' months</option>';}).join('')+'</select></label>')+
     '</div>'+
-    '<div class="note"><b>Salary: '+money(sal)+' / month.</b> '+(w.length&&w[0].partial?'Based on this month only — add past months for a better number.':'Based on '+w.length+' month'+(w.length===1?'':'s')+' of history.')+
-    (sal>0&&sal<essentials()?' <br><b style="color:var(--bad)">This is less than your essentials + minimum payments ('+money(essentials())+').</b> Cut costs or grow income first.':'')+'</div>'+
-    '<details><summary>Income split settings</summary><div class="grid g2" style="margin-top:8px">'+
-      '<label class="f"><span>Tax set-aside %</span><input inputmode="decimal" data-bind="split.tax" data-num value="'+S.split.tax+'"></label>'+
-      '<label class="f"><span>Business reinvest %</span><input inputmode="decimal" data-bind="split.biz" data-num value="'+S.split.biz+'"></label></div>'+
-      '<p class="muted" style="font-size:13px">8% is the BIR optional flat rate for many small businesses on gross sales (above ₱250k/yr) — check with your accountant. Reinvest keeps inventory and tools funded without dipping into family money.</p></details>'+
+    info('Tax &amp; reinvest split','<div class="grid g2">'+
+      '<label class="f"><span>Tax %</span><input inputmode="decimal" data-bind="split.tax" data-num value="'+S.split.tax+'"></label>'+
+      '<label class="f"><span>Reinvest %</span><input inputmode="decimal" data-bind="split.biz" data-num value="'+S.split.biz+'"></label></div>'+
+      '<p>8% is the BIR optional flat rate for many small businesses — confirm with your accountant. With no payslip, the salary is the payslip: lower is safer.</p>')+
     '</div>';
 
   var list=S.incomes.slice().sort(function(a,b){return b.date.localeCompare(a.date);});
-  h+='<div class="card"><h2>History</h2>';
-  if(!list.length) h+='<p class="muted">No income logged yet.</p>';
-  else{
-    h+='<div class="scroll"><table><thead><tr><th>Date</th><th>Source</th><th class="r">Amount</th><th class="r">Family</th><th></th></tr></thead><tbody>'+
+  if(list.length){
+    var bySrc={}; S.incomes.forEach(function(i){ if(monthKey(i.date)>=addMonths(cm,-11)) bySrc[i.source]=(bySrc[i.source]||0)+num(i.amount); });
+    var srcParts=Object.keys(bySrc).sort(function(a,b){return bySrc[b]-bySrc[a];}).map(function(k,i){return {label:k,v:bySrc[k],color:slotColor(i<7?i+1:0)};});
+    h+='<div class="card"><h2>🏪 By business · 12 months</h2>'+stackBar(srcParts)+legend(srcParts)+'</div>';
+    h+='<div class="card"><h2>History</h2><div class="scroll"><table><tbody>'+
       list.slice(0,60).map(function(i){
-        return '<tr><td class="num" style="white-space:nowrap">'+esc(shortDate(i.date))+'</td><td>'+esc(i.source)+(i.note?'<br><small>'+esc(i.note)+'</small>':'')+'</td><td class="r num">'+money(i.amount)+'</td><td class="r num">'+money(splitOf(num(i.amount)).family)+'</td>'+
+        return '<tr><td class="num" style="white-space:nowrap">'+esc(shortDate(i.date))+'</td><td>'+esc(i.source)+(i.note?'<br><small>'+esc(i.note)+'</small>':'')+'</td><td class="r num">'+money(i.amount)+'</td>'+
           '<td class="r"><button class="icon danger" data-del="incomes" data-id="'+i.id+'" aria-label="Delete">✕</button></td></tr>';
-      }).join('')+'</tbody></table></div>';
-    var bySrc={}; S.incomes.forEach(function(i){ var k=monthKey(i.date); if(k>=addMonths(cm,-11)) bySrc[i.source]=(bySrc[i.source]||0)+num(i.amount); });
-    h+='<h3 style="margin-top:14px">Last 12 months by business</h3>'+Object.keys(bySrc).sort(function(a,b){return bySrc[b]-bySrc[a];}).map(function(k){
-      return '<div class="row between" style="padding:4px 0"><span>'+esc(k)+'</span><b class="num">'+money(bySrc[k])+'</b></div>';
-    }).join('');
+      }).join('')+'</tbody></table></div></div>';
   }
-  h+='</div>';
   return h;
 };
 
 V.budget=function(){
   var sal=salary(), mins=debtMins(), plan=budgetTotal(), left=sal-plan-mins;
-  var h='<div class="card"><h2>Monthly budget</h2><p class="muted">Give every peso of the salary a job. Amounts are per month — divide yearly costs (school fees, registration, insurance) by 12.</p>'+
-    '<div class="grid g3" style="margin:10px 0">'+
-    '<div class="stat"><div class="k">Salary</div><div class="v">'+money(sal)+'</div></div>'+
-    '<div class="stat"><div class="k">Planned + minimums</div><div class="v">'+money(plan+mins)+'</div></div>'+
-    '<div class="stat"><div class="k">'+(left>=0?'Left for current step':'Over budget')+'</div><div class="v" style="color:'+(left>=0?'var(--good)':'var(--bad)')+'">'+money(left)+'</div></div></div>'+
-    (left<0?'<div class="note bad">The plan spends more than the salary. Trim wants first, then look at big fixed costs. Don\'t raise the salary to fit — that just borrows from next month.</div>'
-      :left>0?'<div class="note good">'+money(left)+' a month goes to <b>'+esc((currentMoneyStep()||{title:'your goals'}).title)+'</b>.</div>':'')+
+  var groups=[]; S.budget.forEach(function(b){ if(groups.indexOf(b.group)<0) groups.push(b.group); });
+  var gt=groups.map(function(g){ return {g:g, v:budgetTotal(function(b){return b.group===g;}), s:sum(S.budget.filter(function(b){return b.group===g;}),function(b){return spentThisMonth(b.id);})}; });
+  gt.push({g:'Debt payments', v:mins, s:0, debt:true});
+  var max=Math.max.apply(null, gt.map(function(x){return x.v;}).concat([1]));
+
+  var h='<div class="card"><h2>🧾 Where the salary goes</h2>'+
+    '<div class="grid g3" style="margin:8px 0 12px">'+
+      tile('Salary',shortMoney(sal))+tile('Planned',shortMoney(plan+mins))+
+      tile(left>=0?'Left over':'Over',shortMoney(Math.abs(left)),'', ' style="border-color:'+(left>=0?'var(--good)':'var(--bad)')+'"')+'</div>'+
+    gt.filter(function(x){return x.v>0;}).sort(function(a,b){return b.v-a.v;}).map(function(x){
+      return '<div class="hb" data-tip="'+esc(x.g+': '+money(x.v)+' planned'+(x.s?' · '+money(x.s)+' spent':''))+'"><span class="hl">'+esc(x.g)+'</span>'+
+        '<span class="ht"><i style="width:'+(x.v/max*100).toFixed(1)+'%;background:'+(x.debt?'var(--bad)':'var(--brand)')+'"></i>'+
+        (x.s?'<em style="left:'+Math.min(100,x.s/max*100).toFixed(1)+'%"></em>':'')+'</span><span class="hv num">'+shortMoney(x.v)+'</span></div>';
+    }).join('')+
+    (plan===0?'<p class="muted">Fill in the amounts below to see the picture.</p>':'')+
+    (left<0?'<div class="note bad">Spending more than the salary — trim wants first.</div>':'')+
     '</div>';
 
-  var groups=[]; S.budget.forEach(function(b){ if(groups.indexOf(b.group)<0) groups.push(b.group); });
-  h+='<div class="card"><div class="scroll"><table><thead><tr><th>Category</th><th class="r">Plan</th><th class="r">Spent</th><th title="Essential — counts toward emergency fund target">Need</th><th></th></tr></thead><tbody>';
+  // Categories as collapsible group cards, same pattern as the debts.
   groups.forEach(function(g){
-    var items=S.budget.filter(function(b){return b.group===g;});
-    h+='<tr class="group"><td colspan="2">'+esc(g)+'</td><td class="r num">'+money(sum(items,function(b){return num(b.amount);}))+'</td><td colspan="2"></td></tr>';
-    items.forEach(function(b){
-      var s=spentThisMonth(b.id), over=s>num(b.amount)&&s>0;
-      h+='<tr><td><input aria-label="Category name" data-edit="budget" data-id="'+b.id+'" data-f="name" value="'+esc(b.name)+'"></td>'+
-        '<td class="r"><input class="amt num" inputmode="decimal" aria-label="Planned amount" data-edit="budget" data-id="'+b.id+'" data-f="amount" data-num value="'+(num(b.amount)||'')+'" placeholder="0"></td>'+
-        '<td class="r num" style="color:'+(over?'var(--bad)':'inherit')+'">'+(s?money(s):'<small>—</small>')+'</td>'+
-        '<td><input type="checkbox" aria-label="Essential" data-edit="budget" data-id="'+b.id+'" data-f="essential" '+(b.essential?'checked':'')+'></td>'+
-        '<td class="r"><button class="icon danger" data-del="budget" data-id="'+b.id+'" aria-label="Delete category">✕</button></td></tr>';
-    });
+    var items=S.budget.filter(function(b){return b.group===g;}), key='b:'+g;
+    var gv=sum(items,function(b){return num(b.amount);}), gs=sum(items,function(b){return spentThisMonth(b.id);});
+    h+='<details class="card grp" data-g="'+esc(key)+'"'+(openGroups[key]?' open':'')+'><summary><span class="gn">'+esc(g)+' <small>'+items.length+'</small></span>'+
+      '<span class="gt num">'+money(gv)+'</span></summary>'+
+      (gv>0?barHTML(pct(gs,gv),gs>gv?'bad':''):'')+
+      items.map(function(b){
+        var sp=spentThisMonth(b.id), over=sp>num(b.amount)&&sp>0;
+        return '<div class="brow"><div><input class="bname" aria-label="Category name" data-edit="budget" data-id="'+b.id+'" data-f="name" value="'+esc(b.name)+'">'+
+          (sp?'<small class="num" style="color:'+(over?'var(--bad)':'var(--muted)')+'">spent '+money(sp)+'</small>':'')+'</div>'+
+          '<input class="amt num" inputmode="decimal" aria-label="Planned amount for '+esc(b.name)+'" data-edit="budget" data-id="'+b.id+'" data-f="amount" data-num value="'+(num(b.amount)||'')+'" placeholder="0">'+
+          '<label class="need" title="Essential (a need)"><input type="checkbox" aria-label="Essential" data-edit="budget" data-id="'+b.id+'" data-f="essential" '+(b.essential?'checked':'')+'><span>need</span></label>'+
+          '<button class="icon danger" data-del="budget" data-id="'+b.id+'" aria-label="Delete '+esc(b.name)+'">✕</button></div>';
+      }).join('')+'</details>';
   });
-  h+='<tr class="group"><td colspan="2">Debt minimum payments <small>(from Debts)</small></td><td class="r num">'+money(mins)+'</td><td colspan="2"></td></tr>';
-  h+='</tbody></table></div>'+
-    '<div class="row" style="margin-top:10px"><button data-act="addcat">+ Add category</button><button class="primary" data-act="spend">+ Log spending</button></div></div>';
+  h+='<div class="card tight" style="margin-bottom:14px"><div class="row between"><span>Debt payments <small class="muted">(auto from Debts)</small></span><b class="num">'+money(mins)+'</b></div></div>'+
+    '<div class="row" style="margin-bottom:14px"><button data-act="addcat">+ Category</button><button class="primary" data-act="spend">+ Log spending</button></div>';
 
-  var cm=thisMonth(), recent=S.spend.filter(function(s){return monthKey(s.date)===cm;}).sort(function(a,b){return b.date.localeCompare(a.date);});
-  h+='<div class="card"><h2>Spending log · '+monthLabel(cm,true)+'</h2>';
-  if(!recent.length) h+='<p class="muted">Nothing yet.</p>';
-  else h+='<div class="scroll"><table><tbody>'+recent.map(function(s){
-    var c=S.budget.find(function(b){return b.id===s.catId;});
-    return '<tr><td class="num" style="white-space:nowrap">'+esc(shortDate(s.date))+'</td><td>'+esc(c?c.name:'(deleted)')+(s.note?'<br><small>'+esc(s.note)+'</small>':'')+'</td><td class="r num">'+money(s.amount)+'</td>'+
-      '<td class="r"><button class="icon danger" data-del="spend" data-id="'+s.id+'" aria-label="Delete">✕</button></td></tr>';
-  }).join('')+'</tbody></table></div>';
-  h+='</div>';
-
-  h+='<div class="card"><h2>Budget tips for this family</h2><ul style="margin:6px 0 0;padding-left:20px">'+
-    '<li><b>Baby first year:</b> breastfeeding (if possible) saves ₱3,000–₱8,000/month on formula. Use health-center vaccines (free under the government EPI) where you can.</li>'+
-    '<li><b>Kuya\'s school:</b> DepEd public kinder starts at 5. One more year of home learning or daycare can save a full year of private tuition.</li>'+
-    '<li><b>Allowances for Dad and Mom</b> are in the plan on purpose — a budget with zero fun gets abandoned.</li>'+
-    '<li><b>Sinking funds:</b> birthdays, Christmas, school opening in June, and vehicle registration are not emergencies. Budget 1/12th each month.</li>'+
-    '<li><b>Business ≠ family:</b> never pay a supplier from the family account or groceries from the business till.</li></ul></div>';
+  var cm=thisMonth(), recent=S.spend.filter(function(x){return monthKey(x.date)===cm;}).sort(function(a,b){return b.date.localeCompare(a.date);});
+  if(recent.length){
+    h+='<div class="card"><h2>Spending log · '+monthLabel(cm,true)+'</h2><div class="scroll"><table><tbody>'+recent.map(function(x){
+      var c=S.budget.find(function(b){return b.id===x.catId;});
+      return '<tr><td class="num" style="white-space:nowrap">'+esc(shortDate(x.date))+'</td><td>'+esc(c?c.name:'(deleted)')+(x.note?'<br><small>'+esc(x.note)+'</small>':'')+'</td><td class="r num">'+money(x.amount)+'</td>'+
+        '<td class="r"><button class="icon danger" data-del="spend" data-id="'+x.id+'" aria-label="Delete">✕</button></td></tr>';
+    }).join('')+'</tbody></table></div></div>';
+  }
+  h+=info('Budget tips for this family','<ul>'+
+    '<li><b>Baby:</b> breastfeeding (if possible) saves ₱3–8k/month; health-center vaccines are free.</li>'+
+    '<li><b>Kuya:</b> DepEd public kinder starts at 5.</li>'+
+    '<li><b>Allowances</b> for Dad and Mom stay in — a no-fun budget gets abandoned.</li>'+
+    '<li><b>Sinking funds:</b> birthdays, Christmas, June school opening, registration — 1/12 each month.</li>'+
+    '<li><b>Business ≠ family</b> money, always.</li></ul>');
   return h;
 };
+
+// Payments falling due in the next n days, soonest first.
+function upcomingDues(n){
+  var t=new Date(todayISO()+'T00:00:00'), lim=new Date(t.getTime()+n*864e5);
+  return activeDebts().filter(function(d){return d.due;}).map(function(d){ var nd=nextDue(d); return {d:d, date:nd.date, amount:nd.amount}; })
+    .filter(function(x){ var dt=new Date(x.date+'T00:00:00'); return x.amount>0.5 && dt>=t && dt<=lim; })
+    .sort(function(a,b){return a.date.localeCompare(b.date)||b.amount-a.amount;});
+}
+// One row per due date; several payments on the same day fold into one
+// expandable row so a busy 15th doesn't become ten lines.
+function dueList(items){
+  var t=new Date(todayISO()+'T00:00:00'), byDate=[], idx={};
+  items.forEach(function(x){ if(idx[x.date]==null){ idx[x.date]=byDate.length; byDate.push({date:x.date,items:[]}); } byDate[idx[x.date]].items.push(x); });
+  function badge(date){
+    var dt=new Date(date+'T00:00:00'), days=Math.round((dt-t)/864e5);
+    return {days:days, html:'<div class="dd'+(days<=2?' soon':'')+'"><b>'+dt.getDate()+'</b><span>'+monthLabel(date.slice(0,7)).split(' ')[0]+'</span></div>'};
+  }
+  function when(days){ return days===0?'today':days===1?'tomorrow':'in '+days+' days'; }
+  return '<div class="dues">'+byDate.map(function(g){
+    var bd=badge(g.date);
+    if(g.items.length===1){
+      var x=g.items[0];
+      return '<div class="due">'+bd.html+'<div class="dn"><b>'+esc(x.d.name)+'</b><small>'+when(bd.days)+(x.d.group&&x.d.group!==x.d.name?' · '+esc(x.d.group):'')+'</small></div>'+
+        '<div class="da num">'+money(x.amount)+'</div><button class="icon" data-act="pay" data-id="'+x.d.id+'">Pay</button></div>';
+    }
+    return '<details class="dueg"><summary class="due">'+bd.html+'<div class="dn"><b>'+g.items.length+' payments</b><small>'+when(bd.days)+' · '+esc(g.items.map(function(x){return x.d.name;}).join(', '))+'</small></div>'+
+      '<div class="da num">'+money(sum(g.items,function(x){return x.amount;}))+'</div><span class="chev">›</span></summary>'+
+      g.items.map(function(x){ return '<div class="due sub"><span></span><div class="dn"><b>'+esc(x.d.name)+'</b>'+(x.d.group&&x.d.group!==x.d.name?'<small>'+esc(x.d.group)+'</small>':'')+'</div><div class="da num">'+money(x.amount)+'</div><button class="icon" data-act="pay" data-id="'+x.d.id+'">Pay</button></div>'; }).join('')+
+      '</details>';
+  }).join('')+'</div>';
+}
 
 V.debts=function(){
   var extra=extraToDebt(), cm=thisMonth();
   var snow=simulate('snowball',extra), ava=simulate('avalanche',extra);
   var sim=S.strategy==='avalanche'?ava:snow;
-  var h='<div class="card"><div class="row between"><h2>Debts</h2><button class="primary" data-act="debt">+ Add debt</button></div>';
-  if(!S.debts.length) h+='<p class="muted">List every debt: credit cards, personal/salary loans, Home Credit or gadget installments, 5-6 lenders, money owed to relatives, SSS/Pag-IBIG loans, car loan. Leave out a house mortgage if you have one — that comes later.</p>';
-  else{
-    h+='<div class="scroll"><table><thead><tr><th>Debt</th><th class="r">Balance</th><th class="r">Paid off</th><th></th></tr></thead><tbody>';
-    var order=S.debts.slice().sort(function(a,b){ return (num(a.balance)<=0.5)-(num(b.balance)<=0.5) || (S.strategy==='avalanche'?num(b.rate)-num(a.rate):num(a.balance)-num(b.balance)); });
-    order.forEach(function(d){
-      var sd=sim.debts.find(function(x){return x.id===d.id;}), done=num(d.balance)<=0.5;
-      var start=Math.max(num(d.start),num(d.balance));
-      h+='<tr'+(done?' style="opacity:.6"':'')+'><td><b>'+esc(d.name)+'</b><br><small class="num">'+num(d.rate)+'%/yr · min '+money(d.min)+'</small>'+(start>0?barHTML(pct(start-num(d.balance),start),'good'):'')+'</td>'+
-        '<td class="r num">'+money(d.balance)+'</td>'+
-        '<td class="r num">'+(done?'<span class="pill good">Paid</span>':sd&&sd.paidOff?monthLabel(addMonths(cm,sd.paidOff)):'—')+'</td>'+
-        '<td class="r" style="white-space:nowrap">'+(done?'':'<button class="icon" data-act="pay" data-id="'+d.id+'">Pay</button> ')+
-        '<button class="icon" data-act="debt" data-id="'+d.id+'" aria-label="Edit">✎</button></td></tr>';
-    });
-    h+='</tbody><tfoot><tr><td><b>Total</b><br><small class="num">min '+money(debtMins())+'/mo</small></td><td class="r num"><b>'+money(totalDebt())+'</b></td><td colspan="2"></td></tr></tfoot></table></div>';
-  }
-  h+='</div>';
+  var td=totalDebt(), tds=totalDebtStart(), live=activeDebts();
+  var h='';
 
-  if(activeDebts().length){
-    h+='<div class="card"><h2>Payoff plan</h2>'+
-      '<div class="grid g2" style="margin:8px 0">'+
-      '<label class="f"><span>Method</span><select data-bind="strategy">'+
-        '<option value="snowball"'+(S.strategy==='snowball'?' selected':'')+'>Snowball — smallest balance first</option>'+
-        '<option value="avalanche"'+(S.strategy==='avalanche'?' selected':'')+'>Avalanche — highest interest first</option></select></label>'+
-      '<label class="f"><span>Extra per month on top of minimums</span><input inputmode="decimal" data-bind="extraOverride" data-num data-nullable value="'+(S.extraOverride!=null?S.extraOverride:'')+'" placeholder="Auto: '+money(Math.max(0,leftover()))+' from budget"></label></div>'+
-      '<div class="grid g2">'+
-        stratCard('Snowball',snow,S.strategy==='snowball',cm)+stratCard('Avalanche',ava,S.strategy==='avalanche',cm)+'</div>'+
-      (!sim.ok?'<div class="note bad">At this payment level some debts never get paid off — the interest grows faster than the payments. Raise the extra amount, or call the lender to restructure.</div>':'')+
-      (snow.ok&&ava.ok&&Math.abs(snow.interest-ava.interest)>100?'<p class="muted" style="font-size:13px">Avalanche saves '+money(Math.abs(snow.interest-ava.interest))+' in interest'+(snow.interest<ava.interest?' — actually snowball is cheaper here':'')+'. Snowball gives quicker wins, which keeps a busy family motivated. Either works if you stick to it.</p>':'')+
-      '<details><summary>Month-by-month schedule</summary>'+schedule(S.strategy,extra)+'</details></div>';
+  if(!S.debts.length){
+    return '<div class="card" style="text-align:center"><div class="big" style="font-size:44px">📉</div><h2>No debts listed</h2>'+
+      '<p class="muted">Add each loan, installment, PayLater and personal debt — or import a debt file.</p>'+
+      '<div class="row" style="justify-content:center"><button class="primary" data-act="debt">+ Add debt</button><button data-act="import">Import file</button></div></div>';
   }
 
-  h+='<div class="card"><h2>Rules while you\'re in debt</h2><ul style="margin:6px 0 0;padding-left:20px">'+
-    '<li><b>No new debt.</b> Put credit cards away (or cut them). No new installments, no borrowing for the business from personal cards.</li>'+
-    '<li><b>Every windfall goes to debt</b> — a big business month, 13th-month-like bonuses, gifts, sold items.</li>'+
-    '<li><b>5-6 and informal lenders first</b> if their effective rate is huge (often 100%+ a year) — consider avalanche for those.</li>'+
-    '<li><b>Call lenders.</b> Ask for restructuring or lower rates on cards; many banks offer balance conversion at far lower rates.</li>'+
-    '<li><b>Business debt</b> that earns its keep (inventory that sells) can wait until consumer debt is gone — but list it here so you see the full picture.</li></ul></div>';
+  var d30=upcomingDues(30);
+  h+='<div class="card"><div class="row between"><span class="k">Total debt</span><button class="primary sm" data-act="debt">+ Add</button></div>'+
+    '<div class="v num" style="font-size:32px;margin:2px 0 6px">'+money(td)+'</div>'+
+    barHTML(pct(tds-td,tds),'good')+'<div class="row between muted num" style="font-size:12px;margin-top:4px"><span>'+money(tds-td)+' paid off</span><span>'+Math.round(pct(tds-td,tds))+'%</span></div>'+
+    '<div class="grid g3" style="margin-top:12px">'+
+      tile('Due · 30 days',shortMoney(sum(d30,function(x){return x.amount;})),d30.length+' payments')+
+      tile('Debt-free',sim.ok?monthLabel(addMonths(cm,sim.months)):'—',sim.ok?Math.ceil(sim.months/12*10)/10+' yrs':'needs extra')+
+      tile('Debts left',String(live.length),'of '+S.debts.length)+'</div></div>';
+
+  // What we owe, by group: one stacked bar + legend.
+  var groups=debtGroups().filter(function(g){return g.total>0.5;});
+  var parts=[], other=0;
+  groups.forEach(function(g){ if(g.slot) parts.push({label:g.name,v:g.total,color:slotColor(g.slot)}); else other+=g.total; });
+  if(other>0) parts.push({label:'Other',v:other,color:slotColor(0)});
+  h+='<div class="card"><h2>What we owe</h2>'+stackBar(parts)+legend(parts)+'</div>';
+
+  if(d30.length) h+='<div class="card"><div class="row between" style="margin-bottom:10px"><h2>📅 Next 30 days</h2><b class="num">'+money(sum(d30,function(x){return x.amount;}))+'</b></div>'+dueList(d30)+'</div>';
+
+  var load=contractual(12);
+  if(sum(load,function(x){return x.v;})>0){
+    h+='<div class="card"><h2>Monthly installments</h2><p class="muted" style="font-size:13px;margin-top:0">What the contracts require — watch it drop as loans finish.</p>'+
+      barChart(load.map(function(x){ return {label:monthLabel(x.mk).split(' ')[0].slice(0,1), v:x.v, tip:monthLabel(x.mk,true)+': '+money(x.v)}; }),{aria:'Required installments per month'})+'</div>';
+  }
+
+  // Payoff plan: strategy toggle, the extra, and the balance falling to zero.
+  var noPay=live.filter(function(d){ return !d.schedule && num(d.min)<=0; });
+  var tl=[{label:monthLabel(cm),v:td,tip:monthLabel(cm,true)+': '+money(td)}].concat(sim.timeline.slice(0,240).map(function(t){
+    return {label:monthLabel(t.mk), v:t.bal, tip:monthLabel(t.mk,true)+': '+money(t.bal)+' left'+(t.freed.length?' · ✓ '+t.freed.join(', '):'')};
+  }));
+  h+='<div class="card"><h2>Payoff plan</h2>'+
+    '<div class="seg" role="radiogroup" aria-label="Method">'+
+      '<button role="radio" aria-checked="'+(S.strategy!=='avalanche')+'" data-strategy="snowball">⛄ Snowball<small>smallest first</small></button>'+
+      '<button role="radio" aria-checked="'+(S.strategy==='avalanche')+'" data-strategy="avalanche">🏔️ Avalanche<small>highest rate first</small></button></div>'+
+    '<label class="f" style="margin-top:10px"><span>Extra per month on top of required payments</span><input inputmode="decimal" data-bind="extraOverride" data-num data-nullable value="'+(S.extraOverride!=null?S.extraOverride:'')+'" placeholder="Auto from budget: '+money(Math.max(0,leftover()))+'"></label>'+
+    '<div class="bigdate"><small>Debt-free</small><b>'+(sim.ok?monthLabel(addMonths(cm,sim.months),true):'Not yet')+'</b>'+
+      (sim.ok?'<small class="num">'+sim.months+' months'+(sim.interest>1?' · '+money(sim.interest)+' interest':'')+'</small>':'')+'</div>'+
+    areaChart(tl,'Total debt remaining over time')+
+    (!sim.ok?'<div class="note warn">'+(noPay.length?'<b>'+noPay.length+' debts have no monthly payment</b> ('+esc(noPay.slice(0,3).map(function(d){return d.name;}).join(', '))+(noPay.length>3?'…':'')+'). They only shrink with the <b>extra</b> — set it above.':'Payments don\'t cover the interest — raise the extra.')+'</div>':'')+
+    (snow.ok&&ava.ok&&Math.abs(snow.months-ava.months)+Math.abs(snow.interest-ava.interest)>1?'<p class="muted num" style="font-size:13px">⛄ '+monthLabel(addMonths(cm,snow.months))+' · '+shortMoney(snow.interest)+' interest &nbsp;|&nbsp; 🏔️ '+monthLabel(addMonths(cm,ava.months))+' · '+shortMoney(ava.interest)+' interest</p>':'')+
+    (sim.timeline.length?'<details><summary>Month by month</summary>'+scheduleTable(sim)+'</details>':'')+'</div>';
+
+  // Every debt, grouped like the family's own sheet.
+  debtGroups().forEach(function(g){
+    var gs=g.debts.slice().sort(function(a,b){ return (num(a.balance)<=0.5)-(num(b.balance)<=0.5) || (+a.due||0)-(+b.due||0); });
+    var start=sum(g.debts,function(d){return Math.max(num(d.start),num(d.balance));});
+    var isOpen=openGroups[g.name]!=null?openGroups[g.name]:g.debts.length===1;
+    h+='<details class="card grp" data-g="'+esc(g.name)+'"'+(isOpen?' open':'')+'><summary><span class="sw" style="background:'+slotColor(g.slot)+'"></span>'+
+      '<span class="gn">'+esc(g.name)+(g.debts.length>1?' <small>'+g.debts.length+'</small>':'')+'</span><span class="gt num">'+money(g.total)+'</span></summary>'+
+      barHTML(pct(start-g.total,start),'good')+
+      gs.map(function(d){
+        var sd=sim.debts.find(function(x){return x.id===d.id;}), done=num(d.balance)<=0.5, nd=nextDue(d);
+        return '<div class="drow'+(done?' done':'')+'"><div class="dl"><b>'+esc(d.name)+'</b><small class="num">'+
+          (done?'Paid off ✓':[d.due?'due '+ordinal(+d.due):'', nd.amount>0?money(nd.amount)+(d.schedule?' next':'/mo'):'no fixed payment', num(d.rate)>0?num(d.rate)+'%/yr':'', sd&&sd.paidOff?'done '+monthLabel(addMonths(cm,sd.paidOff)):''].filter(Boolean).join(' · '))+
+          '</small>'+(d.note?'<small class="dnote">'+esc(d.note)+'</small>':'')+'</div>'+
+          '<div class="dr num">'+money(d.balance)+'</div>'+
+          '<div class="da2">'+(done?'':'<button class="icon" data-act="pay" data-id="'+d.id+'">Pay</button>')+'<button class="icon" data-act="debt" data-id="'+d.id+'" aria-label="Edit">✎</button></div></div>';
+      }).join('')+'</details>';
+  });
+
+  h+=info('Rules while in debt','<ul>'+
+    '<li><b>No new debt</b> — no new PayLater, installments or loans.</li>'+
+    '<li><b>Every windfall → debt:</b> big business months, gifts, sold items.</li>'+
+    '<li><b>Keep promises to people:</b> agree a small fixed monthly amount with each family member or friend you owe, and add it as their payment.</li>'+
+    '<li><b>Call lenders</b> about restructuring before you miss a payment.</li></ul>');
   return h;
 };
-function stratCard(name,sim,sel,cm){
-  return '<div class="stat" style="'+(sel?'border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)':'')+'"><div class="k">'+name+(sel?' · chosen':'')+'</div>'+
-    '<div class="v">'+(sim.ok?monthLabel(addMonths(cm,sim.months),true):'Never')+'</div>'+
-    '<div class="h">'+(sim.ok?sim.months+' months · ':'')+money(sim.interest)+' interest</div></div>';
-}
-function schedule(strategy,extra){
-  var ds=activeDebts().map(function(d){return {name:d.name,bal:num(d.balance),rate:num(d.rate),min:num(d.min)};});
-  var budget=sum(ds,function(d){return d.min;})+extra, cm=thisMonth(), rows='', m=0;
-  while(ds.some(function(d){return d.bal>0.5;}) && m<120){
-    m++; var avail=budget, paid=0, freed=[];
-    ds.forEach(function(d){ if(d.bal>0.5) d.bal+=d.bal*d.rate/1200; });
-    ds.forEach(function(d){ if(d.bal>0.5){ var p=Math.min(d.min,d.bal,avail); d.bal-=p; avail-=p; paid+=p; } });
-    var order=ds.filter(function(d){return d.bal>0.5;}).sort(strategy==='avalanche'?function(a,b){return b.rate-a.rate||a.bal-b.bal;}:function(a,b){return a.bal-b.bal||b.rate-a.rate;});
-    var target=order[0]?order[0].name:'';
-    for(var k=0;k<order.length&&avail>0.005;k++){ var p2=Math.min(order[k].bal,avail); order[k].bal-=p2; avail-=p2; paid+=p2; }
-    ds.forEach(function(d){ if(d.bal<=0.5&&!d.done){ d.done=true; d.bal=0; freed.push(d.name); } });
-    rows+='<tr><td class="num">'+monthLabel(addMonths(cm,m))+'</td><td>'+esc(target)+(freed.length?' <span class="pill good">✓ '+esc(freed.join(', '))+'</span>':'')+'</td><td class="r num">'+money(paid)+'</td><td class="r num">'+money(sum(ds,function(d){return d.bal;}))+'</td></tr>';
-  }
-  return '<div class="scroll"><table><thead><tr><th>Month</th><th>Focus</th><th class="r">Paid</th><th class="r">Left</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+(m>=120?'<p class="muted">Showing the first 10 years.</p>':'');
+function ordinal(n){ var s=['th','st','nd','rd'], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+function scheduleTable(sim){
+  return '<div class="scroll"><table><thead><tr><th>Month</th><th>Focus</th><th class="r">Pay</th><th class="r">Left</th></tr></thead><tbody>'+
+    sim.timeline.slice(0,120).map(function(t){
+      return '<tr><td class="num">'+monthLabel(t.mk)+'</td><td>'+esc(t.focus)+(t.freed.length?' <span class="pill good">✓ '+esc(t.freed.join(', '))+'</span>':'')+'</td><td class="r num">'+shortMoney(t.paid)+'</td><td class="r num">'+shortMoney(t.bal)+'</td></tr>';
+    }).join('')+'</tbody></table></div>'+(sim.timeline.length>120?'<p class="muted">First 10 years shown.</p>':'');
 }
 
 V.plan=function(){
   var st=steps(), ess=essentials();
-  var h='<div class="card"><h2>The roadmap</h2><p class="muted">Eight steps from "we owe money" to "our family is protected, building for the future, and buying its dreams with cash". Do them in order — each one makes the next one safe.</p>'+
+  var icons=['🧮','🛟','📉','📆','🏦','🛡️','🎓','⭐'];
+  // A path of steps: the current one explains itself, the rest stay one line.
+  var h='<div class="card"><h2>🗺️ The roadmap</h2>'+
     '<ol class="steps">'+st.list.map(function(s,i){
       var cls=s.state==='done'?'bar good':'bar';
-      return '<li class="'+s.state+'"><div class="n">'+(s.state==='done'?'✓':i+1)+'</div><div class="body">'+
-        '<div class="row between"><h3>'+esc(s.title)+'</h3>'+(s.state==='now'?'<span class="pill">Now</span>':s.state==='done'?'<span class="pill good">Done</span>':'')+'</div>'+
-        '<p class="muted" style="font-size:14px">'+esc(s.why)+'</p>'+
-        '<div class="'+cls+'"><i style="width:'+s.progress.toFixed(1)+'%"></i></div><small class="num">'+esc(s.detail)+'</small></div></li>';
+      return '<li class="'+s.state+'"><div class="n">'+(s.state==='done'?'✓':icons[i])+'</div><div class="body">'+
+        '<div class="row between"><h3>'+(i+1)+'. '+esc(s.title)+'</h3>'+(s.state==='now'?'<span class="pill">Now</span>':s.state==='done'?'<span class="pill good">Done</span>':'')+'</div>'+
+        '<div class="'+cls+'" style="margin-top:6px"><i style="width:'+s.progress.toFixed(1)+'%"></i></div><small class="num muted">'+esc(s.detail)+'</small>'+
+        (s.state==='now'?'<p style="font-size:14px;margin-top:6px">'+esc(s.why)+'</p>':'<details class="why"><summary>why</summary><p>'+esc(s.why)+'</p></details>')+
+        '</div></li>';
     }).join('')+'</ol></div>';
 
-  h+='<div class="card"><h2>Savings & funds</h2><p class="muted">Keep each fund in its own account (a digital bank works well). Update balances here when they change.</p>'+
+  h+='<div class="card"><h2>🏦 Savings &amp; funds</h2>'+
     '<div class="grid g3">'+
     fundInput('emergency','Emergency fund','Target '+money(ess*S.efMonths)+' ('+S.efMonths+' mo)')+
     fundInput('education','Kids\' education','Goal '+money(S.goals.education))+
@@ -744,18 +1007,19 @@ V.plan=function(){
     '</div><div class="grid g2" style="margin-top:6px">'+
     '<label class="f"><span>Education goal (both boys)</span><input inputmode="decimal" data-bind="goals.education" data-num value="'+num(S.goals.education)+'"></label>'+
     '<label class="f"><span>Full emergency fund, months</span><select data-bind="efMonths" data-num>'+[3,6,9,12].map(function(n){return '<option'+(S.efMonths==n?' selected':'')+'>'+n+'</option>';}).join('')+'</select></label>'+
-    '</div><p class="muted" style="font-size:13px">Essentials right now: <b class="num">'+money(ess)+'</b>/month (budget lines marked "Need" + debt minimums).</p></div>';
+    '</div><small class="muted num">Essentials: '+money(ess)+'/month (budget "Need" lines + debt payments). Keep each fund in its own account.</small></div>';
 
-  h+='<div class="card"><h2>Protect the family checklist</h2>'+PROTECT.map(function(p){
+  var pd=PROTECT.filter(function(p){return S.protect[p[0]];}).length;
+  h+='<div class="card"><div class="row between"><h2>🛡️ Protect the family</h2><span class="pill'+(pd===PROTECT.length?' good':'')+'">'+pd+'/'+PROTECT.length+'</span></div>'+barHTML(pct(pd,PROTECT.length),'good')+PROTECT.map(function(p){
     return '<label class="check"><input type="checkbox" data-protect="'+p[0]+'" '+(S.protect[p[0]]?'checked':'')+'><span>'+esc(p[1])+'</span></label>';
   }).join('')+'</div>';
 
-  h+='<div class="card"><h2>Milestones by age</h2><ul style="margin:6px 0 0;padding-left:20px">'+
+  h+=info('Milestones by age','<ul>'+
     '<li><b>Baby (now):</b> PSA birth certificate, PhilHealth dependent, vaccination card. Open a kid\'s savings account when the education fund starts.</li>'+
     '<li><b>Kuya at 5 (next year):</b> Kinder. Decide public vs private now and budget it.</li>'+
     '<li><b>Both boys in school (~4 years):</b> school costs double — the emergency fund and debt-free budget must be in place before this.</li>'+
     '<li><b>College (Kuya in ~14 years, Baby in ~18):</b> the education fund has time to grow. Even ₱2,000/month per child invested adds up.</li>'+
-    '<li><b>Dad & Mom at 60 (~28 years):</b> SSS pension alone won\'t be enough. Retirement investing starts at step 7.</li></ul></div>';
+    '<li><b>Dad & Mom at 60 (~28 years):</b> SSS pension alone won\'t be enough. Retirement investing starts at step 7.</li></ul>');
   return h;
 };
 function fundInput(k,label,hint){
@@ -769,17 +1033,18 @@ function foundationDone(){ var l=steps().list; return ['starter','debt','buffer'
 
 V.goals=function(){
   var sal=salary(), left=Math.max(0,leftover()), fd=foundationDone(), cm=thisMonth();
-  var h='<div class="card"><div class="row between"><h2>Dream goals</h2><button class="primary" data-act="dream">+ Add a goal</button></div>'+
-    '<p class="muted">Big things the family is working toward. Each one gets its own savings pot, a price, and a date. Buy with cash — a dream bought on installments becomes the next debt.</p>'+
+  var tt=sum(S.dreams,function(d){return num(d.target);}), ts=sum(S.dreams,function(d){return d.status==='bought'?num(d.target):Math.min(num(d.saved),num(d.target));});
+  var h='<div class="card"><div class="row between"><h2>⭐ Dream goals</h2><button class="primary sm" data-act="dream">+ Goal</button></div>'+
+    (tt>0?'<div class="v num" style="font-size:26px">'+money(ts)+' <small class="muted" style="font-size:14px">of '+money(tt)+'</small></div>'+barHTML(pct(ts,tt),'good'):'')+
     (fd
-      ? '<div class="note good">Foundation built. Your budget leaves <b>'+money(left)+'/month</b> — split it between step 7 (education + retirement) and these goals, in the order below.</div>'
-      : '<div class="note warn"><b>Family-funded goals start after step 5</b> (debt-free + full emergency fund). Set the prices and dates now so you know what you\'re working toward. A goal the <b>business</b> needs (like the AI workstation) can be saved from the reinvest share today.</div>')+
+      ? '<div class="note good">🔓 Unlocked — '+money(left)+'/month available.</div>'
+      : '<div class="note warn">🔒 Family goals unlock after step 5. Business goals can save now.</div>')+
     '</div>';
   if(!S.dreams.length) h+='<div class="card"><p class="muted">No goals yet.</p></div>';
   S.dreams.forEach(function(d,i){
     var t=num(d.target), sv=num(d.saved), rem=Math.max(0,t-sv), done=dreamDone(d);
     var mLeft=d.date?monthsBetween(cm,d.date):null;
-    h+='<div class="card"><div class="row between"><h2>'+esc(dreamLabel(d))+'</h2><div class="row" style="gap:4px">'+
+    h+='<div class="card"><div class="row between"><h2><span class="big">'+esc(d.emoji||'⭐')+'</span> '+esc(d.name)+'</h2><div class="row" style="gap:4px">'+
       (d.status==='bought'?'<span class="pill good">Bought 🎉</span>':done?'<span class="pill good">Fully saved</span>':'')+
       '<span class="pill'+(d.source==='business'?' warn':'')+'">'+(d.source==='business'?'Business-funded':'Family-funded')+'</span></div></div>';
     if(t<=0) h+='<div class="note">Set a target price to start tracking. '+esc(dreamHint(d))+'</div>';
@@ -793,7 +1058,7 @@ V.goals=function(){
         if(bits.length) h+='<p style="font-size:14px;margin-top:8px">'+bits.join('<br>')+'</p>';
       }
     }
-    h+=dreamExtra(d, sal);
+    var ex=dreamExtra(d, sal); if(ex) h+=info('Tips',ex);
     h+='<div class="row" style="margin-top:10px">'+
       (d.status!=='bought'?'<button class="primary" data-act="dreamadd" data-id="'+d.id+'">+ Add savings</button>':'')+
       (done&&d.status!=='bought'?'<button data-act="dreambought" data-id="'+d.id+'">Mark as bought</button>':'')+
@@ -801,12 +1066,12 @@ V.goals=function(){
       '<button class="icon" data-act="dreammove" data-dir="-1" data-id="'+d.id+'" '+(i===0?'disabled':'')+' aria-label="Higher priority">▲</button>'+
       '<button class="icon" data-act="dreammove" data-dir="1" data-id="'+d.id+'" '+(i===S.dreams.length-1?'disabled':'')+' aria-label="Lower priority">▼</button></div></div>';
   });
-  h+='<div class="card"><h2>Rules for dream goals</h2><ul style="margin:6px 0 0;padding-left:20px">'+
+  h+=info('Rules for dream goals','<ul>'+
     '<li><b>One at a time, top to bottom.</b> Use ▲▼ to set the order. Focus beats spreading ₱1,000 across five pots.</li>'+
     '<li><b>Never raid the emergency fund</b> for a dream. If a dream costs the safety net, it waits.</li>'+
     '<li><b>Cash, not credit.</b> No 0% installments — they tie up future salary and sneak debt back in.</li>'+
     '<li><b>Business-funded goals</b> must earn their keep: buy only when the business needs it and it pays for itself.</li>'+
-    '<li><b>Celebrate each one.</b> Mark it bought, take a family photo. That\'s what all the budgeting was for.</li></ul></div>';
+    '<li><b>Celebrate each one.</b> Mark it bought, take a family photo. That\'s what all the budgeting was for.</li></ul>');
   return h;
 };
 function dreamHint(d){
@@ -865,7 +1130,7 @@ V.settings=function(){
 
   h+='<div class="card"><h2>Your data</h2><p class="muted">Saved only in this browser on this device. Nobody else can see it — which also means clearing the browser erases it. Export a backup regularly and keep it somewhere safe (it contains your family\'s finances).</p>'+
     '<div class="row"><button class="primary" data-act="export">Export backup</button><button data-act="import">Import backup</button><button data-act="print">Print</button><span class="spacer"></span><button class="danger" data-act="reset">Erase everything</button></div>'+
-    '<input type="file" id="importFile" accept="application/json,.json" class="hidden"></div>';
+    '</div>';
   h+='<p class="muted" style="font-size:12px;text-align:center">This tool is a planning aid, not financial, tax or legal advice. Rates and rules (BIR, SSS, PhilHealth, Pag-IBIG) change — confirm with the agency or a licensed advisor.</p>';
   return h;
 };
@@ -920,27 +1185,40 @@ ACT.spend=function(){
 };
 ACT.debt=function(el){
   var id=el&&el.dataset.id, d=id?S.debts.find(function(x){return x.id===id;}):null;
+  var groups=debtGroups().map(function(g){return g.name;});
+  var sched=d&&d.schedule?Object.keys(d.schedule).sort().map(function(k){return k+' '+d.schedule[k];}).join('\n'):'';
   openDialog(d?'Edit debt':'Add debt',
-    field('name','Name','required placeholder="e.g. BPI credit card, Home Credit phone"',d?d.name:'')+
-    field('balance','Current balance','inputmode="decimal" required',d?d.balance:'')+
-    field('rate','Interest rate per YEAR (%)','inputmode="decimal" placeholder="Cards ≈ 36; 3%/month = 36"',d?d.rate:'')+
-    field('min','Minimum payment per month','inputmode="decimal" required',d?d.min:'')+
-    '<p class="muted" style="font-size:13px">Monthly rate × 12 = yearly. For 5-6 (20% over a few months), ask what you really pay per month and multiply.</p>'+
+    field('name','Name','required placeholder="e.g. Home Credit, SLoan 3, Ate Bebe"',d?d.name:'')+
+    field('group','Group','list="dgList" placeholder="e.g. SLoan, BillEase, Family"',d?d.group:'')+'<datalist id="dgList">'+groups.map(function(g){return '<option value="'+esc(g)+'">';}).join('')+'</datalist>'+
+    '<div class="grid g2">'+field('balance','Balance left','inputmode="decimal" required',d?d.balance:'')+
+      field('min','Monthly payment','inputmode="decimal" placeholder="0 if none"',d?d.min:'')+'</div>'+
+    '<div class="grid g2">'+field('due','Due day (1–31)','inputmode="numeric" placeholder="e.g. 15"',d?d.due:'')+
+      field('rate','Interest %/year','inputmode="decimal" placeholder="0 if already in the installment"',d?d.rate:'')+'</div>'+
+    '<details'+(sched?' open':'')+'><summary>Amount changes every month?</summary>'+
+      '<label class="f"><span>One line per month: YYYY-MM amount (overrides the monthly payment)</span>'+
+      '<textarea name="schedule" rows="4" placeholder="2026-10 11189.49&#10;2026-11 10529.72">'+esc(sched)+'</textarea></label></details>'+
+    field('note','Note','',d?d.note:'')+
     (d?'<button type="button" class="danger" data-del="debts" data-id="'+d.id+'">Delete this debt</button>':''),
     function(v){
-      var o={name:v.name||'Debt',balance:num(v.balance),rate:num(v.rate),min:num(v.min)};
+      var sc=null;
+      String(v.schedule||'').split(/\n/).forEach(function(line){
+        var m=line.trim().match(/^(\d{4})-(\d{1,2})\s+([\d,.]+)/); if(!m) return;
+        sc=sc||{}; sc[m[1]+'-'+pad(+m[2])]=num(m[3]);
+      });
+      var o={name:v.name||'Debt',group:(v.group||'').trim(),balance:num(v.balance),rate:num(v.rate),min:num(v.min),due:Math.min(31,Math.max(0,Math.round(num(v.due))))||'',schedule:sc,note:v.note||''};
       if(d){ Object.assign(d,o); if(o.balance>num(d.start)) d.start=o.balance; }
       else S.debts.push(Object.assign({id:uid(),start:o.balance},o));
     });
 };
 ACT.pay=function(el){
   var d=S.debts.find(function(x){return x.id===el.dataset.id;}); if(!d) return;
-  openDialog('Record payment · '+d.name,
-    field('amount','Amount paid','inputmode="decimal" required',d.min)+
-    field('date','Date','type="date"',todayISO())+
-    '<p class="muted" style="font-size:13px">Paid from the family budget (minimums or leftover). The interest part isn\'t tracked — update the balance from your statement monthly with ✎.</p>',
+  var nd=nextDue(d);
+  openDialog('Pay · '+d.name,
+    '<div class="bigdate" style="margin-top:0"><small>Balance</small><b class="num">'+money(d.balance)+'</b></div>'+
+    field('amount','Amount paid','inputmode="decimal" required',nd.amount>0?Math.round(nd.amount*100)/100:'')+
+    field('date','Date','type="date"',todayISO()),
     function(v){ var a=num(v.amount); if(a<=0) return false;
-      d.balance=Math.max(0,num(d.balance)-a);
+      d.balance=Math.max(0,Math.round((num(d.balance)-a)*100)/100);
       S.moves.push({id:uid(),date:v.date||todayISO(),kind:'debtpay',to:d.id,amount:a,note:'Payment → '+d.name});
       toast(d.balance<=0.5?'🎉 '+d.name+' is PAID OFF!':'Balance now '+money(d.balance)); }, 'Record');
 };
@@ -1069,10 +1347,10 @@ ACT.sample=function(){
     'Eating out & food delivery':1500,'Family outings':1000,'Dad personal allowance':1000,'Mom personal allowance':1000,'Subscriptions (Netflix, Spotify, etc.)':300};
   S.budget.forEach(function(x){ if(amounts[x.name]!=null) x.amount=amounts[x.name]; });
   S.debts=[
-    {id:uid(),name:'Credit card A',balance:58000,start:58000,rate:36,min:2900},
-    {id:uid(),name:'Appliance installment',balance:14000,start:14000,rate:24,min:2000},
-    {id:uid(),name:'Personal loan (bank)',balance:120000,start:120000,rate:22,min:5200},
-    {id:uid(),name:'Borrowed from Tita',balance:20000,start:20000,rate:0,min:1000}
+    {id:uid(),group:'Cards',name:'Credit card A',balance:58000,start:58000,rate:36,min:2900,due:12},
+    {id:uid(),group:'Installments',name:'Appliance installment',balance:14000,start:14000,rate:0,min:2000,due:5},
+    {id:uid(),group:'Bank',name:'Personal loan (bank)',balance:120000,start:120000,rate:22,min:5200,due:20},
+    {id:uid(),group:'Family',name:'Borrowed from Tita',balance:20000,start:20000,rate:0,min:1000,due:30}
   ];
   S.funds.emergency=15000; S.holdingStart=0;
   S.dreams.forEach(function(d){
@@ -1095,7 +1373,16 @@ document.addEventListener('change',function(e){
   var el=e.target;
   if(el.id==='importFile'&&el.files[0]){
     var r=new FileReader(); r.onload=function(){
-      try{ var d=JSON.parse(r.result); if(!d||!Array.isArray(d.budget)) throw 0; S=Object.assign(freshState(),d); save(); render(); toast('Backup restored'); }
+      try{
+        var d=JSON.parse(r.result);
+        if(d&&d.kind==='family-budget-debts'&&Array.isArray(d.debts)){
+          // A debt list only: replaces the debts, leaves income/budget/goals alone.
+          if(S.debts.length&&!confirm('Replace your '+S.debts.length+' debts with the '+d.debts.length+' in this file?')) return;
+          S.debts=d.debts.map(function(x){ return Object.assign({id:uid(),rate:0,min:0,due:'',schedule:null,note:'',group:''},x,{start:Math.max(num(x.start),num(x.balance))}); });
+          save(); tab='debts'; render(); toast(d.debts.length+' debts imported'); return;
+        }
+        if(!d||!Array.isArray(d.budget)) throw 0; S=Object.assign(freshState(),d); save(); render(); toast('Backup restored');
+      }
       catch(err){ toast('That file is not a valid backup'); }
     }; r.readAsText(el.files[0]); el.value=''; return;
   }
@@ -1119,6 +1406,7 @@ document.addEventListener('change',function(e){
 document.addEventListener('click',function(e){
   var el=e.target.closest('button,[data-go]'); if(!el) return;
   if(el.dataset.tab){ go(el.dataset.tab); return; }
+  if(el.dataset.strategy){ S.strategy=el.dataset.strategy; save(); render(); return; }
   if(el.dataset.go){ go(el.dataset.go); return; }
   if(el.dataset.act&&ACT[el.dataset.act]){ e.preventDefault(); ACT[el.dataset.act](el); return; }
   if(el.dataset.delbiz!=null){ S.businesses.splice(+el.dataset.delbiz,1); save(); render(); return; }
@@ -1134,6 +1422,37 @@ document.addEventListener('click',function(e){
 });
 
 function go(t){ tab=t; render(); window.scrollTo(0,0); }
+
+// Tooltips: hover on desktop, tap on phones. Line charts get a crosshair.
+var tipEl=document.getElementById('tip'), tipT;
+function showTip(text,x,y){
+  tipEl.textContent=text; tipEl.classList.add('show');
+  var w=tipEl.offsetWidth, hgt=tipEl.offsetHeight;
+  tipEl.style.left=Math.max(8,Math.min(window.innerWidth-w-8,x-w/2))+'px';
+  tipEl.style.top=Math.max(8,y-hgt-14)+'px';
+  clearTimeout(tipT); tipT=setTimeout(hideTip,3000);
+}
+function hideTip(){ tipEl.classList.remove('show'); document.querySelectorAll('.lc .xh,.lc .xd').forEach(function(e){e.setAttribute('visibility','hidden');}); }
+function onPoint(e){
+  var lc=e.target.closest&&e.target.closest('.lc');
+  if(lc){
+    var svg=lc.querySelector('svg'), r=svg.getBoundingClientRect(), xs=lc.dataset.xs.split(',').map(Number), ys=lc.dataset.ys.split(',').map(Number);
+    var vx=(e.clientX-r.left)/r.width*320, i=0;
+    for(var k=1;k<xs.length;k++) if(Math.abs(xs[k]-vx)<Math.abs(xs[i]-vx)) i=k;
+    var xh=lc.querySelector('.xh'), xd=lc.querySelector('.xd');
+    xh.setAttribute('x1',xs[i]); xh.setAttribute('x2',xs[i]); xh.setAttribute('visibility','visible');
+    xd.setAttribute('cx',xs[i]); xd.setAttribute('cy',ys[i]); xd.setAttribute('visibility','visible');
+    showTip(JSON.parse(lc.dataset.tips)[i], r.left+xs[i]/320*r.width, r.top+ys[i]/320*r.width);
+    return;
+  }
+  var t=e.target.closest&&e.target.closest('[data-tip]');
+  if(t) showTip(t.getAttribute('data-tip'), e.clientX, e.clientY); else if(e.type==='pointerdown') hideTip();
+}
+document.addEventListener('toggle',function(e){ var g=e.target.dataset&&e.target.dataset.g; if(g!=null) openGroups[g]=e.target.open; },true);
+document.addEventListener('pointermove',function(e){ if(e.pointerType==='mouse') onPoint(e); });
+document.addEventListener('pointerdown',onPoint);
+document.addEventListener('pointerleave',hideTip);
+window.addEventListener('scroll',hideTip,{passive:true});
 // Android Back button: close a dialog, then return to Home, then exit.
 window.__appBack=function(){
   if(dlg.open){ dlg.close(); return true; }
