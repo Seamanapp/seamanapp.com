@@ -295,7 +295,7 @@
       </p>
       <p class="offer-code" id="promobadge" hidden>
         <span class="tick" aria-hidden="true">✓</span>
-        <span><b>Launch offer — 50% off</b> until <span id="promountil"></span> · <span id="promoslots"></span></span>
+        <span><b>Your offer — 50% off</b> until <span id="promountil"></span> · <span id="promoslots"></span></span>
       </p>
     </div>
 
@@ -410,7 +410,17 @@
   // The Messenger identity token the bot put in this link (?mc=...). Opaque
   // here; forwarded so the webhook can link the buyer to their chat AFTER the
   // money lands. Absent when the person did not come from the bot.
+  // This block's own copy: param() in the pixel block above is out of reach here.
+  // Without it this whole script threw on its first line (live 2026-09-15 →
+  // 2026-09-28): no sign-in, no checkout, no QR for anyone on this page.
+  function param(name) {
+    try { return new URLSearchParams(location.search).get(name) || ''; }
+    catch (e) { return ''; }
+  }
   var MC = (param('mc') || '').slice(0, 64);
+  // The landing page's own 24-hour offer (signed start time), saved by
+  // seamanapp.com/club/. Used only when there is no Messenger offer.
+  var WP = ''; try { WP = (localStorage.getItem('nc_wp') || '').slice(0, 80); } catch (e) {}
   var PAY_FN = SB + '/functions/v1/paymongo-create';
 
   var forms = document.getElementById('forms');
@@ -499,9 +509,9 @@
       })
       .catch(function () { /* the price simply stays as rendered */ return null; });
   }
-  // THE LAUNCH OFFER. A buyer who came from the Messenger bot carries a signed
+  // THE 50% OFFER. A buyer who came from the Messenger bot carries a signed
   // token (?mc=); if the server offered that person 50% off and the offer is
-  // still inside its 24 hours with launch slots left, the page shows the promo
+  // still inside its 24 hours with slots left, the page shows the promo
   // price and the deadline BEFORE they commit. Read-only quote; the checkout
   // re-derives the price from the same row through the verified token, so the
   // number here and the number on the QR cannot disagree.
@@ -512,7 +522,28 @@
       return d.toLocaleString('en-PH', { timeZone: 'Asia/Manila', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true });
     } catch (e) { return iso; }
   }
+  function webQuote() {
+    return fetch(SB + '/functions/v1/web-offer', {
+      method: 'POST',
+      headers: { apikey: ANON, 'Content-Type': 'application/json' },
+      body: JSON.stringify(WP ? { token: WP } : {})
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (o) {
+        if (!(o && o.ok && o.amount_centavos)) { WP = ''; return false; }
+        WP = o.token; try { localStorage.setItem('nc_wp', o.token); } catch (e) {}
+        amountEl.textContent = peso(o.amount_centavos / 100);
+        wasEl.textContent = peso(LIST_PHP);
+        wasEl.hidden = false;
+        document.getElementById('promountil').textContent = manila(o.expires_at);
+        document.getElementById('promoslots').textContent = 'limited slots';
+        promoBadge.hidden = false;
+        return true;
+      })
+      .catch(function () { return false; });
+  }
   function promoQuote() {
+    if (!MC && CLUB) return webQuote();
     if (!MC || !CLUB) return Promise.resolve(false);
     return fetch(SB + '/rest/v1/rpc/mc_promo_quote', {
       method: 'POST',
@@ -526,7 +557,7 @@
         wasEl.textContent = peso(LIST_PHP);
         wasEl.hidden = false;
         document.getElementById('promountil').textContent = manila(j.expires_at);
-        document.getElementById('promoslots').textContent = j.slots_left === 1 ? '1 slot left' : j.slots_left + ' slots left';
+        document.getElementById('promoslots').textContent = 'limited slots';
         promoBadge.hidden = false;
         return true;
       })
@@ -770,7 +801,8 @@
         club: CLUB_SLUG,
         fbp: fb.fbp || undefined, fbc: fb.fbc || undefined,
         source_url: srcUrl || undefined,
-        mc: MC || undefined
+        mc: MC || undefined,
+        wp: (!MC && WP) || undefined
       })
     })
       .then(function (r) { return r.json(); })
@@ -892,7 +924,8 @@
               fbp: ((window.smPixel && window.smPixel.ids()) || {}).fbp || undefined,
               fbc: ((window.smPixel && window.smPixel.ids()) || {}).fbc || undefined,
               source_url: (window.smPixel && window.smPixel.sourceUrl()) || undefined,
-              mc: stashed('nc_mc') || undefined
+              mc: stashed('nc_mc') || undefined,
+              wp: (!stashed('nc_mc') && (function () { try { return localStorage.getItem('nc_wp') || ''; } catch (e) { return ''; } })()) || undefined
             })
           }).then(function (r) { return r.json(); }).then(handle);
         })
