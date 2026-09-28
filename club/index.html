@@ -178,6 +178,65 @@
     .brand span.brandname{display:none}
     .price-line b{font-size:28px}
   }
+
+  /* ── Third Officer lesson list (same look as the Port to Port page) ── */
+  .chapters{display:grid;gap:10px;margin-top:26px}
+  details.chapter{border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025);overflow:hidden}
+  details.chapter[open]{border-color:rgba(246,181,0,.35)}
+  details.chapter>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:96px auto 1fr 28px;gap:14px;align-items:center;padding:12px 16px 12px 12px;font-weight:400}
+  details.chapter>summary::-webkit-details-marker{display:none}
+  details.chapter>summary::after{content:none}
+  details.chapter>summary::before,details.chapter[open]>summary::before{content:none;display:none}
+  details.chapter{padding:0}
+  details.chapter p{margin:0}
+  .chthumb{width:96px;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#0a1f3a;border:1px solid var(--line)}
+  .chthumb img,.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .chno{font-family:"Space Grotesk";font-weight:700;color:var(--gold);font-size:15px;min-width:30px}
+  .chtitle b{display:block;font-size:16px;line-height:1.25}
+  .chmeta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--muted);font-size:12.5px;margin-top:4px}
+  .chev{color:var(--muted);font-size:26px;line-height:1;transition:transform .2s ease;justify-self:end}
+  details.chapter[open] .chev{transform:rotate(90deg)}
+  ul.lessons{list-style:none;margin:0;padding:6px 12px 12px;display:grid;gap:6px;border-top:1px solid var(--line)}
+  li.lesson .row{display:grid;grid-template-columns:72px 1fr auto;gap:12px;align-items:center;padding:8px 6px;border-radius:12px}
+  .thumb{width:72px;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:#0a1f3a;border:1px solid var(--line)}
+  li.lesson .t b{display:block;font-size:14.5px;font-weight:600;line-height:1.3}
+  li.lesson .meta{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+  .tag{font-size:11px;font-weight:700;letter-spacing:.06em;border-radius:999px;padding:3px 9px;white-space:nowrap}
+  .tag.lock{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--line)}
+  .alsocourses{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .alsocourses span{border:1px solid var(--line);border-radius:999px;padding:6px 12px;color:var(--ink);font-size:13.5px;background:rgba(255,255,255,.03)}
+  @media(max-width:820px){
+    details.chapter>summary{grid-template-columns:72px auto 1fr 22px;gap:10px;padding:10px}
+    .chthumb{width:72px}
+    li.lesson .row{grid-template-columns:60px 1fr auto;gap:10px}
+    .thumb{width:60px}
+  }
+  /* ── the personal 24-hour offer ── */
+  .offerbar{display:none;margin:0 auto 18px;max-width:560px;border:1px solid rgba(246,181,0,.45);background:rgba(246,181,0,.08);border-radius:16px;padding:12px 16px}
+  .offerbar.on{display:block}
+  .offerbar b{color:var(--gold)}
+  .offerbar .clock{font-family:"Space Grotesk";font-weight:700;font-size:22px;color:var(--gold);letter-spacing:.04em}
+  .stickyoffer{position:fixed;left:0;right:0;bottom:0;z-index:40;display:none;align-items:center;justify-content:center;gap:14px;padding:10px 16px;background:rgba(4,16,31,.94);border-top:1px solid rgba(246,181,0,.45);backdrop-filter:blur(8px)}
+  .stickyoffer.on{display:flex}
+  .stickyoffer span{font-size:14px}
+  .stickyoffer b{color:var(--gold);font-family:"Space Grotesk"}
+  /* ── welcome pop-up ── */
+  .pop{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(2,8,16,.78)}
+  .pop.on{display:flex}
+  .popcard{position:relative;width:min(560px,calc(100vw - 32px));box-sizing:border-box;max-height:92vh;overflow:auto;background:linear-gradient(180deg,#0c2544,#04101f);border:1px solid rgba(246,181,0,.4);border-radius:22px;padding:26px 22px 22px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  .popcard h3{font-size:clamp(20px,5.5vw,26px);margin:0 0 10px}
+  .popcard .eyebrow{font-size:11.5px;letter-spacing:.14em;line-height:1.5}
+  .popcard .salary{font-family:"Space Grotesk";font-size:clamp(28px,8.5vw,40px);font-weight:700;color:var(--gold);line-height:1.1;margin:6px 0}
+  .popcard .vs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+  .popcard .vs div{border:1px solid var(--line);border-radius:14px;padding:12px;background:rgba(255,255,255,.03)}
+  .popcard .vs small{display:block;color:var(--muted);font-size:12.5px}
+  .popcard .vs strong{font-family:"Space Grotesk";font-size:clamp(18px,5vw,22px)}
+  .popcard .vs div{min-width:0}
+  .proof img{max-width:78%}
+  .proof{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 0 10px}
+  .proof img{height:300px;width:auto;border-radius:12px;border:1px solid var(--line);scroll-snap-align:start;flex:0 0 auto}
+  .popx{position:absolute;right:12px;top:10px;background:none;border:0;color:var(--muted);font-size:28px;cursor:pointer;line-height:1}
+  .fine2{color:var(--muted);font-size:11.5px;line-height:1.45;margin-top:10px}
 </style>
 <!-- meta-pixel:begin (generated by inject_pixel.mjs - edit assets/pixel.js, not this) -->
 <script>
@@ -321,7 +380,7 @@
     </p>
     <div class="cta-row">
       <a class="btn gold lg" href="#join">Join the club</a>
-      <a class="btn ghost lg" href="#free">Watch a lesson free</a>
+      <a class="btn ghost lg" href="#free">See every lesson</a>
     </div>
     <div class="trust">
       <span><b>1,900+</b> seafarers inside</span>
@@ -465,43 +524,198 @@
   </div>
 </section>
 
-<!-- ───────────────────── free lessons ───────────────────── -->
+<!-- ───────────────────── see the lessons ───────────────────── -->
 <section id="free" style="background:linear-gradient(180deg,#071a30,var(--navy))">
-  <div class="wrap">
+  <div class="wrap" style="max-width:860px">
     <p class="eyebrow">See it first</p>
-    <h2 class="big">Watch before you pay.</h2>
+    <h2 class="big">See every lesson before you pay.</h2>
     <p class="lead section-lead">
-      Two full lessons, open to everybody, no sign-up. Judge the teaching for
-      yourself — if it does not tell you something you did not know, do not join.
+      The whole Third Officer Job Familiarization course, chapter by chapter — 39 lessons
+      on the half of the job nobody teaches in school. Open any chapter to see what is inside.
     </p>
-    <div class="grid g2">
-      <article class="vid">
-        <div class="frame">
-          <iframe src="https://customer-drchklawh6o3436b.cloudflarestream.com/da4071510ac4e0a12525d33cf7b67485/iframe"
-                  loading="lazy" allowfullscreen
-                  allow="accelerometer; gyroscope; encrypted-media; picture-in-picture;"
-                  title="El Marinero case study — COLREG Mastery, lesson 1"></iframe>
-        </div>
-        <div class="cap">
-          <h3>El Marinero — the case study</h3>
-          <p>COLREG Mastery, lesson 1. A real collision situation taken apart, so you
-             see how the rules are meant to be read on a live bridge.</p>
-        </div>
-      </article>
-      <article class="vid">
-        <div class="frame">
-          <iframe src="https://customer-drchklawh6o3436b.cloudflarestream.com/4c75be136b433919411c336a3a9b77bf/iframe"
-                  loading="lazy" allowfullscreen
-                  allow="accelerometer; gyroscope; encrypted-media; picture-in-picture;"
-                  title="What are you paid for as a Third Officer?"></iframe>
-        </div>
-        <div class="cap">
-          <h3>What are you paid for as a Third Officer?</h3>
-          <p>Third Officer, lesson 1. The question almost nobody can answer properly —
-             and the answer changes how you work.</p>
-        </div>
-      </article>
+    <div class="chapters">
+  <details class="chapter" open>
+    <summary>
+      <span class="chthumb"><img src="img/lessons/to-01.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">01</span>
+      <span class="chtitle"><b>Live webinar 2026: the job, rebuilt</b><span class="chmeta">2 lessons</span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-01.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Paid for the responsibility, not the duty</b><span class="meta">Lesson 1 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-02.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Diskartes that give you your evenings back</b><span class="meta">Lesson 2 · members only</span></span><span class="tag lock">🔒</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/to-03.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">02</span>
+      <span class="chtitle"><b>Responsibilities of a Third Officer</b><span class="chmeta">2 lessons</span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-03.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Every job the Master will grade you on</b><span class="meta">Lesson 3 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-04.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>The job, simplified</b><span class="meta">Lesson 4 · members only</span></span><span class="tag lock">🔒</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/to-05.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">03</span>
+      <span class="chtitle"><b>What to do during Handover</b><span class="chmeta">2 lessons</span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-05.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>The questions to ask before he leaves</b><span class="meta">Lesson 5 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-06.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>There is no perfect handover</b><span class="meta">Lesson 6 · members only</span></span><span class="tag lock">🔒</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/to-07.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">04</span>
+      <span class="chtitle"><b>What to do during Crewchange</b><span class="chmeta">9 lessons</span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-07.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Crew list first, then the documents</b><span class="meta">Lesson 7 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-08.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Computer tip: make the expiries turn red</b><span class="meta">Lesson 8 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-09.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Writing in another man's seaman's book</b><span class="meta">Lesson 9 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-10.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Sign the articles the day they join</b><span class="meta">Lesson 10 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-11.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Walking the Singapore electronic crew change form</b><span class="meta">Lesson 11 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-12.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Every flag asks the same things</b><span class="meta">Lesson 12 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-13.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Familiarization: the paper the inspector reads first</b><span class="meta">Lesson 13 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-14.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>The muster list shortcut the inspectors accepted</b><span class="meta">Lesson 14 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-15.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>One missed drill, and the certificate goes interim</b><span class="meta">Lesson 15 · members only</span></span><span class="tag lock">🔒</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/to-16.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">05</span>
+      <span class="chtitle"><b>Lunch-break Q&amp;A: crew lists and port files</b><span class="chmeta">1 lesson</span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-16.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Q&amp;A: the crew list you print without a date</b><span class="meta">Lesson 16 · members only</span></span><span class="tag lock">🔒</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/to-17.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">06</span>
+      <span class="chtitle"><b>What to do during Port Formalities</b><span class="chmeta">9 lessons</span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-17.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>The seven FAL forms, and the ones the agent adds</b><span class="meta">Lesson 17 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-18.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Port docs: follow the agent's email</b><span class="meta">Lesson 18 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-19.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Send it as a PDF with the Master's scanned signature</b><span class="meta">Lesson 19 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-20.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>We made it easier!</b><span class="meta">Lesson 20 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-21.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Stamp the date only when the pilot is aboard</b><span class="meta">Lesson 21 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-22.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Everything has a guide</b><span class="meta">Lesson 22 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-23.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Computer tip: formulas that fill a form fast</b><span class="meta">Lesson 23 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-24.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Let your hands learn it</b><span class="meta">Lesson 24 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-25.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Help NavClub grow: leave us a review</b><span class="meta">Lesson 25 · members only</span></span><span class="tag lock">🔒</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/to-26.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">07</span>
+      <span class="chtitle"><b>Additional Notes</b><span class="chmeta">3 lessons</span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-26.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>A sample report for every kind of drill</b><span class="meta">Lesson 26 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-27.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Q&amp;A: preparing the bridge from the checklist</b><span class="meta">Lesson 27 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-28.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Key note: like learning to drive</b><span class="meta">Lesson 28 · members only</span></span><span class="tag lock">🔒</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/to-29.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">08</span>
+      <span class="chtitle"><b>Fire Fighting and Life-Saving Equipment</b><span class="chmeta">3 lessons</span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-29.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>What the safety officer is answerable for</b><span class="meta">Lesson 29 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-30.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>The maintenance plan knows what's due this week</b><span class="meta">Lesson 30 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-31.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Colour the expiries on any form you have</b><span class="meta">Lesson 31 · members only</span></span><span class="tag lock">🔒</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/to-32.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">09</span>
+      <span class="chtitle"><b>How to prepare and raise a Requisition</b><span class="chmeta">1 lesson</span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-32.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Order by IMPA number, or you'll get the wrong one</b><span class="meta">Lesson 32 · members only</span></span><span class="tag lock">🔒</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/to-33.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">10</span>
+      <span class="chtitle"><b>What to prepare during Monthend</b><span class="chmeta">1 lesson</span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-33.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Month-end: start before the month ends</b><span class="meta">Lesson 33 · members only</span></span><span class="tag lock">🔒</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/to-34.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">11</span>
+      <span class="chtitle"><b>Computer Tips</b><span class="chmeta">1 lesson</span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-34.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Computer tip: sort what expires first to the top</b><span class="meta">Lesson 34 · members only</span></span><span class="tag lock">🔒</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/to-35.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">12</span>
+      <span class="chtitle"><b>How to manage Bonded Store</b><span class="chmeta">1 lesson</span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-35.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Nothing leaves the bond store without a signature</b><span class="meta">Lesson 35 · members only</span></span><span class="tag lock">🔒</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/to-36.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">13</span>
+      <span class="chtitle"><b>How to prepare for PSC Inspection</b><span class="chmeta">2 lessons</span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-36.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Walk with the inspector, and never say it's water</b><span class="meta">Lesson 36 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-37.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Expired in the lifeboat, tied open in the galley</b><span class="meta">Lesson 37 · members only</span></span><span class="tag lock">🔒</span></div></li>
+    </ul>
+  </details>
+  <details class="chapter">
+    <summary>
+      <span class="chthumb"><img src="img/lessons/to-38.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span>
+      <span class="chno">14</span>
+      <span class="chtitle"><b>Final Notes</b><span class="chmeta">2 lessons</span></span>
+      <span class="chev">›</span>
+    </summary>
+    <ul class="lessons">
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-38.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Evidence for every item on the list</b><span class="meta">Lesson 38 · members only</span></span><span class="tag lock">🔒</span></div></li>
+      <li class="lesson"><div class="row"><span class="thumb"><img src="img/lessons/to-39.webp" alt="" width="560" height="315" loading="lazy" decoding="async" /></span><span class="t"><b>Q&amp;A: infographics instead of the slides</b><span class="meta">Lesson 39 · members only</span></span><span class="tag lock">🔒</span></div></li>
+    </ul>
+  </details>
     </div>
+    <p class="lead" style="margin-top:22px">Also included in the same one payment:</p>
+    <div class="alsocourses"><span>Second Officer · 11 lessons</span><span>Passage Planning · 5 lessons</span><span>COLREG Mastery · 8 lessons</span><span>Maritime files library</span><span>Members' group chat</span></div>
   </div>
 </section>
 
@@ -694,6 +908,11 @@
   <div class="wrap">
     <p class="eyebrow">Join the Navigators Club</p>
     <p class="codebar" id="codebar">Your code <b id="codebarcode"></b> is applied</p>
+    <div class="offerbar" id="offerbar">
+      <div><b>Your 50% offer</b> — just for you, from the moment you opened this page</div>
+      <div class="clock" data-clock>24:00:00</div>
+      <div style="color:var(--muted);font-size:13px">ends <span data-until></span> · limited slots · then back to ₱6,500</div>
+    </div>
     <h2 class="big" style="margin-left:auto;margin-right:auto">One payment. Everything above. For life.</h2>
     <div class="price-line">
       <b data-price>₱6,500</b>
@@ -739,8 +958,9 @@
          officers — knowledge and preparation, not approved or assessed training. It
          confers no certificate and no endorsement.</p></details>
     <details><summary>What if it is not for me?</summary>
-      <p>Watch the free lessons above first. They are the same teaching, unedited, so
-         you can judge before you spend anything.</p></details>
+      <p>Open the chapters above and read every lesson title, then read the reviews on
+         our Facebook page from members who went through it. If it still does not look
+         like what you need, do not join.</p></details>
   </div>
 </section>
 
@@ -812,6 +1032,87 @@
       document.title = 'Navigators Club — ' + now + ' with your code';
     })
     .catch(function () { /* the page simply keeps its list price */ });
+})();
+</script>
+
+<!-- ───────────────────── welcome pop-up (once a day) ───────────────────── -->
+<div class="pop" id="pop" role="dialog" aria-modal="true" aria-labelledby="poptitle">
+  <div class="popcard">
+    <button class="popx" type="button" data-popclose aria-label="Close">×</button>
+    <p class="eyebrow" style="margin:0 0 6px">Congratulations — you're on the road to Officer</p>
+    <h3 id="poptitle">A Third Officer earns around</h3>
+    <div class="salary">₱180,000 a month*</div>
+    <div class="vs">
+      <div><small>One day of a Third Officer's pay</small><strong>≈ ₱6,000</strong></div>
+      <div><small>Navigators Club — once, for life</small><strong data-popprice>₱6,500</strong></div>
+    </div>
+    <p style="margin:0 0 8px;font-weight:600">From members who made it to Third Officer:</p>
+    <div class="proof">
+      <img src="img/proof/promoted-1.webp" alt="Member message: promotion to 3rd officer approved, thanks to the COLREG videos, webinar and mock interview" loading="lazy" />
+      <img src="img/proof/promoted-2.webp" alt="Member message: Navigators Club was a big help for my promotion, now promoted as 3rd officer onboard" loading="lazy" />
+      <img src="img/proof/review-1.webp" alt="Course reviews: 5.0 from 33 ratings" loading="lazy" />
+      <img src="img/proof/review-2.webp" alt="Five-star review from a member" loading="lazy" />
+    </div>
+    <p style="margin:4px 0 14px;color:var(--muted);font-size:14px">And many more on our
+      <a href="https://www.facebook.com/simplifiedmaritime/reviews" target="_blank" rel="noopener" style="color:var(--cyan)">Facebook reviews</a> — over 300 of them.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a class="btn gold" href="#join" data-popclose>Get my 50% offer</a>
+      <a class="btn ghost" href="#free" data-popclose>See the lessons first</a>
+    </div>
+    <p class="fine2">*Typical monthly pay for a Third Officer in international fleets; it varies by
+      company and ship. Promotion depends on your company, sea time and licence —
+      Navigators Club prepares you for the job; it does not guarantee a promotion or a job.
+      Messages shared with the members' permission; names hidden.</p>
+  </div>
+</div>
+<div class="stickyoffer" id="stickyoffer"><span>Your 50% offer ends in <b data-clock>24:00:00</b></span><a class="btn gold" href="join/" style="padding:10px 16px">Join for <span data-price2>₱3,250</span></a></div>
+
+<script>
+(function () {
+  // THE PERSONAL 24-HOUR OFFER. web-offer signs a start time for this browser;
+  // the deadline shown here is the one the checkout enforces (the signature,
+  // not this page, is the authority). Kept in localStorage so a reload shows
+  // the same clock, and read by the join page at checkout.
+  var SB = 'https://iegxzjflqqoxxarfomnv.supabase.co';
+  var ANON = 'sb_publishable_we44OUTEJHf3kacz0Opi4w_TBWkj0Q2';
+  function peso(c) { return '₱' + (c / 100).toLocaleString('en-PH'); }
+  function manila(iso) { try { return new Date(iso).toLocaleString('en-PH', { timeZone: 'Asia/Manila', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true }); } catch (e) { return iso; } }
+  var saved = ''; try { saved = localStorage.getItem('nc_wp') || ''; } catch (e) {}
+  fetch(SB + '/functions/v1/web-offer', { method: 'POST', headers: { apikey: ANON, 'Content-Type': 'application/json' }, body: JSON.stringify(saved ? { token: saved } : {}) })
+    .then(function (r) { return r.json(); })
+    .then(function (o) {
+      if (!o || !o.ok) return;
+      try { localStorage.setItem('nc_wp', o.token); } catch (e) {}
+      var now = peso(o.amount_centavos), was = peso(o.list_centavos);
+      var ps = document.querySelectorAll('[data-price]'); for (var i = 0; i < ps.length; i++) ps[i].textContent = now;
+      var w = document.querySelector('[data-was]'); if (w) { w.textContent = was; w.hidden = false; }
+      var n = document.querySelector('[data-pricenote]'); if (n) n.textContent = 'one-time · no subscription · your 50% offer';
+      var p2 = document.querySelectorAll('[data-price2],[data-popprice]'); for (var k = 0; k < p2.length; k++) p2[k].textContent = now;
+      var u = document.querySelector('[data-until]'); if (u) u.textContent = manila(o.expires_at);
+      document.getElementById('offerbar').classList.add('on');
+      document.getElementById('stickyoffer').classList.add('on');
+      var end = Date.parse(o.expires_at), clocks = document.querySelectorAll('[data-clock]');
+      function tick() {
+        var s = Math.max(0, Math.floor((end - Date.now()) / 1000));
+        var t = String(Math.floor(s / 3600)).padStart(2, '0') + ':' + String(Math.floor(s / 60) % 60).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+        for (var j = 0; j < clocks.length; j++) clocks[j].textContent = t;
+        if (s === 0) { location.reload(); return; }
+        setTimeout(tick, 1000);
+      }
+      tick();
+    })
+    .catch(function () { /* the page keeps its list price */ });
+
+  // The welcome pop-up: once a day per browser, closable, never blocks the page.
+  var pop = document.getElementById('pop');
+  var seen = ''; try { seen = localStorage.getItem('nc_pop') || ''; } catch (e) {}
+  if (location.hash !== '#nopop' && (!seen || Date.now() - Number(seen) > 86400000)) {
+    setTimeout(function () { pop.classList.add('on'); try { localStorage.setItem('nc_pop', String(Date.now())); } catch (e) {} }, 1200);
+  }
+  var closers = document.querySelectorAll('[data-popclose]');
+  for (var c = 0; c < closers.length; c++) closers[c].addEventListener('click', function () { pop.classList.remove('on'); });
+  pop.addEventListener('click', function (e) { if (e.target === pop) pop.classList.remove('on'); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') pop.classList.remove('on'); });
 })();
 </script>
 </body>
