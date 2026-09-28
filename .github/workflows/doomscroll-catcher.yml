@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: doomscroll-catcher
@@ -31,3 +33,18 @@ jobs:
           name: doomscroll-catcher-apk
           path: doomscroll-catcher/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
+
+      - name: Rename APK
+        run: cp app/build/outputs/apk/release/app-release.apk DoomscrollCatcher.apk
+
+      - name: Publish to the doomscroll-catcher-latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: doomscroll-catcher-latest
+          name: Doomscroll Catcher (latest build)
+          target_commitish: ${{ github.sha }}
+          body: |
+            Latest Doomscroll Catcher build from ${{ github.ref_name }} (${{ github.sha }}).
+            Download DoomscrollCatcher.apk on your phone and open it to install.
+          files: doomscroll-catcher/DoomscrollCatcher.apk
+          make_latest: false
