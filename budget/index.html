@@ -4,7 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#0f3d3a">
+<meta name="theme-color" content="#0f6e66">
+<!-- Installable: "Add to Home Screen" on iPhone (Safari) and Android (Chrome). -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Family Budget">
 <title>Family Freedom Budget</title>
 <!--
   Family Freedom Budget — a get-out-of-debt plan for a family of four living on
@@ -290,6 +298,7 @@ button.icon.on{background:var(--brand);color:var(--brand-ink);border-color:var(-
 .bline{margin:9px 0 0;font-size:14px}
 .bar.thin{height:6px;margin-top:4px}
 .card.tithe{border-left:4px solid var(--c3)}
+.card.install ol{margin:6px 0;padding-left:20px}
 .fam{display:grid;grid-template-columns:40px 1fr 84px auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
 .fam .av{font-size:26px;text-align:center}
 .hb{display:grid;grid-template-columns:minmax(0,34%) 1fr 52px;gap:8px;align-items:center;margin:7px 0;font-size:13px}
@@ -1407,7 +1416,15 @@ function avatar(f){
 }
 
 V.settings=function(){
-  var h='<div class="card"><h2>👨‍👩‍👦‍👦 Our family</h2>'+S.family.map(function(f){
+  var h='';
+  if(!window.AndroidBridge&&!isStandalone()){
+    var ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+    h+='<div class="card install"><h2>📲 Install on this phone</h2>'+(ios
+      ?'<ol><li>Open this page in <b>Safari</b>.</li><li>Tap <b>Share</b> <span aria-hidden="true">⬆︎</span>, then <b>Add to Home Screen</b>.</li><li>Open <b>Family Budget</b> from the Home Screen.</li></ol>'+
+       '<p class="muted" style="font-size:13px">The Home Screen app keeps its own data, separate from Safari — export a backup here and import it there if you already started.</p>'
+      :'<p>Use your browser menu → <b>Install app</b> / <b>Add to Home screen</b>.</p>')+'</div>';
+  }
+  h+='<div class="card"><h2>👨‍👩‍👦‍👦 Our family</h2>'+S.family.map(function(f){
     return '<div class="fam"><span class="av" aria-hidden="true">'+avatar(f)+'</span>'+
       '<input aria-label="Name" data-edit="family" data-id="'+f.id+'" data-f="name" value="'+esc(f.name)+'" placeholder="Name">'+
       '<input aria-label="Age" class="age" data-edit="family" data-id="'+f.id+'" data-f="age" value="'+esc(f.age)+'" placeholder="Age">'+
@@ -1673,6 +1690,14 @@ ACT.export=function(){
   // Inside the Android app the WebView can't download blobs; hand the JSON to
   // the native side, which opens the system "save as" picker.
   if(window.AndroidBridge){ AndroidBridge.saveFile('family-budget-backup-'+todayISO()+'.json', JSON.stringify(S,null,2)); return; }
+  // iPhone (and modern Android browsers): the share sheet can save to Files, Drive, or send it.
+  try{
+    var file=new File([JSON.stringify(S,null,2)],'family-budget-backup-'+todayISO()+'.json',{type:'application/json'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      navigator.share({files:[file],title:'Family Budget backup'}).catch(function(){});
+      return;
+    }
+  }catch(e){}
   var blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
   var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='family-budget-backup-'+todayISO()+'.json';
   document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },500);
@@ -1828,6 +1853,7 @@ window.__appBack=function(){
   if(tab!=='home'){ go('home'); return true; }
   return false;
 };
+function isStandalone(){ return (window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true; }
 function applyTheme(v){ if(v) document.documentElement.setAttribute('data-theme',v); else document.documentElement.removeAttribute('data-theme'); }
 
 function render(){
@@ -1841,6 +1867,9 @@ function render(){
 }
 
 load();
+if('serviceWorker' in navigator && !window.AndroidBridge && /^https?:$/.test(location.protocol)){
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
 try{ applyTheme(localStorage.getItem(KEY+'.theme')||''); }catch(e){}
 render();
 })();
