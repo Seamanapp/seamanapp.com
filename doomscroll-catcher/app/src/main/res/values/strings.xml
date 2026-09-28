@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Doomscroll Catcher</string>
+    <string name="service_description">Notices when you\'ve been scrolling a feed app (Instagram, TikTok, YouTube…) non-stop for too long and interrupts you. It only sees that an app scrolled, never what\'s on screen. Nothing leaves your phone.</string>
+</resources>

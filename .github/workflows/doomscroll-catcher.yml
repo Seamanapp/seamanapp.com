@@ -1,0 +1,33 @@
+name: Doomscroll Catcher APK
+
+on:
+  push:
+    paths:
+      - "doomscroll-catcher/**"
+      - ".github/workflows/doomscroll-catcher.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: doomscroll-catcher
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Test and build APK
+        run: ./gradlew --no-daemon testDebugUnitTest assembleRelease
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: doomscroll-catcher-apk
+          path: doomscroll-catcher/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
