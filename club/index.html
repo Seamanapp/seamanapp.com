@@ -1052,7 +1052,7 @@
 })();
 </script>
 
-<!-- ───────────────────── welcome pop-up (once a day) ───────────────────── -->
+<!-- ───────────────────── welcome pop-up (every new visit) ───────────────────── -->
 <div class="pop" id="pop" role="dialog" aria-modal="true" aria-labelledby="poptitle">
   <div class="popcard">
     <button class="popx" type="button" data-popclose aria-label="Close">×</button>
@@ -1139,9 +1139,11 @@
 
   // The welcome pop-up: once a day per browser, closable, never blocks the page.
   var pop = document.getElementById('pop');
-  var seen = ''; try { seen = localStorage.getItem('nc_pop') || ''; } catch (e) {}
-  if (location.hash !== '#nopop' && (!seen || Date.now() - Number(seen) > 86400000)) {
-    setTimeout(function () { pop.classList.add('on'); try { localStorage.setItem('nc_pop', String(Date.now())); } catch (e) {} }, 1200);
+  // Every new visit (owner, 2026-09-28) — but not again on a reload or while
+  // clicking around the same visit: sessionStorage ends when the tab closes.
+  var seen = ''; try { seen = sessionStorage.getItem('nc_pop') || ''; } catch (e) {}
+  if (location.hash !== '#nopop' && !seen) {
+    setTimeout(function () { pop.classList.add('on'); try { sessionStorage.setItem('nc_pop', '1'); } catch (e) {} }, 1200);
   }
   var closers = document.querySelectorAll('[data-popclose]');
   for (var c = 0; c < closers.length; c++) closers[c].addEventListener('click', function () { pop.classList.remove('on'); });
