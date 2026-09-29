@@ -216,10 +216,6 @@
   .offerbar.on{display:block}
   .offerbar b{color:var(--gold)}
   .offerbar .clock{font-family:"Space Grotesk";font-weight:700;font-size:22px;color:var(--gold);letter-spacing:.04em}
-  .stickyoffer{position:fixed;left:0;right:0;bottom:0;z-index:40;display:none;align-items:center;justify-content:center;gap:14px;padding:10px 16px;background:rgba(4,16,31,.94);border-top:1px solid rgba(246,181,0,.45);backdrop-filter:blur(8px)}
-  .stickyoffer.on{display:flex}
-  .stickyoffer span{font-size:14px}
-  .stickyoffer b{color:var(--gold);font-family:"Space Grotesk"}
   /* ── welcome pop-up ── */
   .pop{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(2,8,16,.78)}
   .pop.on{display:flex}
@@ -1113,7 +1109,6 @@
     <p class="pfine">*Typical pay for a Third Officer in international fleets; it varies by company and ship. We prepare you for the job — we don't guarantee a promotion.</p>
   </div>
 </div>
-<div class="stickyoffer" id="stickyoffer"><span>Your 50% offer ends in <b data-clock>24:00:00</b></span><a class="btn gold" href="join/" style="padding:10px 16px">Join for <span data-price2>₱3,250</span></a></div>
 
 <script>
 (function () {
@@ -1138,7 +1133,6 @@
       var p2 = document.querySelectorAll('[data-price2],[data-popprice]'); for (var k = 0; k < p2.length; k++) p2[k].textContent = now;
       var u = document.querySelector('[data-until]'); if (u) u.textContent = manila(o.expires_at);
       document.getElementById('offerbar').classList.add('on');
-      document.getElementById('stickyoffer').classList.add('on');
       var end = Date.parse(o.expires_at), clocks = document.querySelectorAll('[data-clock]');
       function tick() {
         var s = Math.max(0, Math.floor((end - Date.now()) / 1000));
