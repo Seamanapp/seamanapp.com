@@ -6,6 +6,15 @@
 <title>Join the Navigators Club — Seaman App</title>
 <meta name="robots" content="noindex">
 <meta name="description" content="Create your account and pay for the Navigators Club — one payment, lifetime access.">
+<!-- Staff send this page in Messenger, so it needs its own preview card or the
+     chat shows a bare link. No price here: an offer link's price is personal. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Seaman App · Simplified Maritime">
+<meta property="og:title" content="Join the Navigators Club">
+<meta property="og:description" content="Four courses taught by Filipino officers still sailing. One payment, yours for life. Pay by QR with GCash, Maya or any bank app.">
+<meta property="og:image" content="https://seamanapp.com/club/img/cover-club.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://seamanapp.com/club/img/cover-club.jpg">
 <link rel="icon" href="../img/app-icon.png">
 <style>
   :root{
@@ -546,8 +555,26 @@
       })
       .catch(function () { return false; });
   }
+  // Short offer link (…/club/join/?o=K7P2QM): the code only points at a signed
+  // offer token; web-offer still decides whether that offer is live.
+  function linkToken() {
+    var code = (param('o') || '').trim().toUpperCase();
+    if (!/^[A-HJ-NP-Z2-9]{6}$/.test(code)) return Promise.resolve();
+    return fetch(SB + '/rest/v1/rpc/resolve_offer_link', {
+      method: 'POST',
+      headers: { apikey: ANON, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_code: code })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (t) {
+        if (typeof t === 'string' && /^wp\.[0-9]{10}\.[0-9a-f]{16}\.[0-9a-f]{16}$/.test(t)) {
+          WP = t; try { localStorage.setItem('nc_wp', t); } catch (e) {}
+        }
+      })
+      .catch(function () {});
+  }
   function promoQuote() {
-    if (!MC && CLUB) return webQuote();
+    if (!MC && CLUB) return linkToken().then(webQuote);
     if (!MC || !CLUB) return Promise.resolve(false);
     return fetch(SB + '/rest/v1/rpc/mc_promo_quote', {
       method: 'POST',
