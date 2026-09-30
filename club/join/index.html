@@ -421,6 +421,10 @@
   // The landing page's own 24-hour offer (signed start time), saved by
   // seamanapp.com/club/. Used only when there is no Messenger offer.
   var WP = ''; try { WP = (localStorage.getItem('nc_wp') || '').slice(0, 80); } catch (e) {}
+  // A personal offer link staff send (…/club/join/?wp=<token>) wins over a
+  // stored one. web-offer re-checks the signature; a forged token gets nothing.
+  var WPQ = (param('wp') || '').slice(0, 80);
+  if (/^wp\.[0-9]{10}\.[0-9a-f]{16}\.[0-9a-f]{16}$/.test(WPQ)) { WP = WPQ; try { localStorage.setItem('nc_wp', WPQ); } catch (e) {} }
   var PAY_FN = SB + '/functions/v1/paymongo-create';
 
   var forms = document.getElementById('forms');
