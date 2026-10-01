@@ -315,6 +315,10 @@ button.link.subadd{font-size:13px;padding:2px 18px 8px;display:block}
 .opsched > *{min-width:0}
 .opsched select,.opsched input{min-height:36px;padding:6px 8px;font-size:14px}
 .opsched .when{align-self:center;font-size:13px}
+.card.salary .stat .v{font-size:18px}
+.wline{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.wline .r{text-align:right} .wline .r small{display:block;font-size:11px}
+.paysched{grid-template-columns:44px 1fr 1fr}
 .fam{display:grid;grid-template-columns:40px 1fr 84px auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
 .fam .av{font-size:26px;text-align:center}
 .hb{display:grid;grid-template-columns:minmax(0,34%) 1fr 52px;gap:8px;align-items:center;margin:7px 0;font-size:13px}
@@ -449,6 +453,7 @@ function freshState(){
     efMonths:6,                        // full emergency fund target (irregular income: 6–12)
     starterMonths:1,                   // starter emergency fund, in months of essentials
     holdingStart:0,
+    walletStart:0,                     // business account balance when the app was started
     incomes:[],                        // {id,date,source,amount,note}
     moves:[],                          // {id,date,kind:'draw'|'sweep'|'debtpay'|'fund',to,amount,note}
     budget:defaultBudget(),
@@ -548,6 +553,72 @@ function opexDue(o, b, mk){
   if(f==='once') return o.date&&monthKey(o.date)===mk&&+o.date.slice(8,10)<=last?a:0;
   return Math.min(+o.day||1, daysIn(mk))<=last?a:0;
 }
+// When a cost is actually PAID can differ from how it is set aside: a daily
+// wage set aside every open day but paid every Saturday, or on the 15th and
+// the last day of the month (kinsenas). Weekly/monthly/one-time lines are paid
+// on their own date.
+var PAY_LABEL={same:'same day', week:'weekly', semi:'15th & end of month', month:'monthly'};
+function isoOf(y,m,d){ return y+'-'+pad(m)+'-'+pad(d); }
+function addDays(iso,n){ var d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return isoOf(d.getFullYear(),d.getMonth()+1,d.getDate()); }
+// Next payment date on or after `from` for a line.
+function nextPayDate(o, from){
+  var f=o.freq||'month';
+  var pay=f==='day'?(o.pay||'same'):f;   // non-daily lines pay on their own schedule
+  var y=+from.slice(0,4), m=+from.slice(5,7), d=+from.slice(8,10), dim;
+  if(pay==='same'||pay==='day') return from;
+  if(pay==='week'){ var wd=f==='day'?(o.payWd==null?6:+o.payWd):(o.wd==null?1:+o.wd), x=from; for(var i=0;i<7;i++){ if(new Date(x+'T00:00:00').getDay()===wd) return x; x=addDays(x,1); } }
+  if(pay==='semi'){ dim=daysIn(from.slice(0,7)); if(d<=15) return isoOf(y,m,15); return isoOf(y,m,dim); }
+  if(pay==='once') return o.date&&o.date>=from?o.date:null;
+  var day=f==='day'?(+o.payDay||30):(+o.day||1);
+  dim=daysIn(from.slice(0,7));
+  if(d<=Math.min(day,dim)) return isoOf(y,m,Math.min(day,dim));
+  var nm=addMonths(from.slice(0,7),1); return nm+'-'+pad(Math.min(day,daysIn(nm)));
+}
+// Daily cost set aside on open days in (fromExcl, toIncl].
+function accrueDays(o, b, fromExcl, toIncl){
+  var open=OPEN_DAYS[(b&&b.open)||'all'], n=0, x=addDays(fromExcl,1);
+  while(x<=toIncl){ if(open.indexOf(new Date(x+'T00:00:00').getDay())>=0) n++; x=addDays(x,1); }
+  return n*num(o.amount);
+}
+// Per opex line: set aside so far (in months the business ran) minus paid.
+function opexLineStatus(o, b){
+  var months=flowMonths().filter(function(mk){
+    return S.incomes.some(function(i){return i.source===b.name&&monthKey(i.date)===mk;})||S.bizExp.some(function(e){return e.bizId===b.id&&monthKey(e.date)===mk;});
+  });
+  var aside=sum(months,function(mk){return opexDue(o,b,mk);});
+  var paid=sum(S.bizExp.filter(function(e){return e.itemId===o.id;}),function(e){return num(e.amount);});
+  var t=todayISO(), next=nextPayDate(o,t), nextAmt=num(o.amount), daily=(o.freq||'month')==='day';
+  var lastPaid=S.bizExp.filter(function(e){return e.itemId===o.id;}).map(function(e){return e.date;}).sort().pop()||null;
+  // Already paid on (or ahead of) this payday? Then the next one is the one that matters.
+  if(next&&lastPaid&&lastPaid>=next&&next===t) next=nextPayDate(o,addDays(t,1));
+  if(daily&&next){
+    var pay=o.pay||'same';
+    if(pay!=='same'){ // what builds up from the payday before `next` to `next`
+      var prev=null, x=addDays(next,-1);
+      for(var i=0;i<62;i++){ if(nextPayDate(o,x)===x){ prev=x; break; } x=addDays(x,-1); }
+      nextAmt=accrueDays(o,b,prev||addDays(next,-31),next);
+    }
+  }
+  var reserve=aside-paid;
+  // Daily lines keep setting money aside until payday; enough = what will be there by then.
+  var byPayday=daily&&next?reserve+accrueDays(o,b,t,next):reserve;
+  return {aside:aside, paid:paid, reserve:reserve, next:next, nextAmt:nextAmt, byPayday:byPayday, daily:daily};
+}
+// The business wallet: everything the businesses took in, minus what really
+// left it (expenses paid, tax paid, tithe given, family share moved to the
+// tank). What it should hold is split into what is already spoken for.
+function bizWallet(){
+  var w={sales:0, opex:0, tax:0, tithe:0, reinvest:0, family:0};
+  flowMonths().forEach(function(mk){ var f=monthFlow(mk); w.sales+=f.revenue; w.opex+=f.opex; w.tax+=f.tax; w.tithe+=f.tithe; w.reinvest+=f.reinvest; w.family+=f.family; });
+  w.paidOpex=sum(S.bizExp.filter(function(e){return e.kind!=='tax';}),function(e){return num(e.amount);});
+  w.paidTax=sum(S.bizExp.filter(function(e){return e.kind==='tax';}),function(e){return num(e.amount);});
+  w.given=titheGiven();
+  w.balance=num(S.walletStart)+w.sales-w.paidOpex-w.paidTax-w.given-w.family;
+  w.opexRes=w.opex-w.paidOpex; w.taxRes=w.tax-w.paidTax; w.titheRes=w.tithe-w.given;
+  w.free=w.balance-w.opexRes-w.taxRes-w.titheRes;
+  return w;
+}
+
 // A typical full month, for the summary in Profile (one-time lines excluded).
 function opexMonthly(o, b){
   var a=num(o.amount), f=o.freq||'month';
@@ -567,13 +638,13 @@ function monthFlow(mk, onlyBiz){
   (onlyBiz?[onlyBiz]:bizNames()).forEach(function(name){
     var b=bizByName(name);
     var rev=sum(S.incomes.filter(function(i){return i.source===name&&monthKey(i.date)===mk;}),function(i){return num(i.amount);});
-    var acts=b?S.bizExp.filter(function(e){return e.bizId===b.id&&monthKey(e.date)===mk;}):[];
-    var actual=sum(acts,function(e){return num(e.amount);}), planned=0;
-    // Each line: what was actually paid if logged, otherwise its planned cost so far
-    // (only in months the business was running — it had sales or logged costs).
-    if(b&&(rev>0||acts.length)) b.opex.forEach(function(o){
-      if(!acts.some(function(e){return e.itemId===o.id;})) planned+=opexDue(o,b,mk);
-    });
+    var acts=b?S.bizExp.filter(function(e){return e.bizId===b.id&&e.kind!=='tax'&&monthKey(e.date)===mk;}):[];
+    var planned=0;
+    // Planned lines cost what is set aside for them as days pass (only in months
+    // the business ran); paying them later on the due date draws on that set-aside.
+    if(b&&(rev>0||acts.length)) b.opex.forEach(function(o){ if(num(o.amount)>0) planned+=opexDue(o,b,mk); });
+    // Lines with no plan (or since deleted) count when they're paid.
+    var actual=sum(acts.filter(function(e){ var o=b&&b.opex.find(function(x){return x.id===e.itemId;}); return !o||!(num(o.amount)>0); }),function(e){return num(e.amount);});
     r.revenue+=rev; r.actual=(r.actual||0)+actual; r.planned=(r.planned||0)+planned;
     r.byBiz.push({name:name, biz:b, revenue:rev, opex:actual+planned, actual:actual, planned:planned, est:planned>0, profit:rev-actual-planned});
   });
@@ -667,6 +738,14 @@ function holding(){
   var inflow=sum(flowMonths(),function(mk){return monthFlow(mk).family;});
   var out=sum(S.moves.filter(function(m){return m.kind==='draw'||m.kind==='sweep';}),function(m){return num(m.amount);});
   return num(S.holdingStart)+inflow-out;
+}
+// What the paid-out salary has already been used for this month: budget
+// spending (the tithe comes from income, not here) plus debt payments.
+function salarySpent(mk){
+  mk=mk||thisMonth();
+  var sp=sum(S.spend.filter(function(x){return monthKey(x.date)===mk&&x.catId!=='tithe';}),function(x){return num(x.amount);});
+  var dp=sum(S.moves.filter(function(m){return m.kind==='debtpay'&&monthKey(m.date)===mk;}),function(m){return num(m.amount);});
+  return {spend:sp, debt:dp, total:sp+dp};
 }
 function drawnThisMonth(){ var cm=thisMonth(); return sum(S.moves.filter(function(m){return m.kind==='draw'&&monthKey(m.date)===cm;}),function(m){return num(m.amount);}); }
 function spentThisMonth(catId){
@@ -958,15 +1037,24 @@ V.home=function(){
     '<div class="node"><span class="big">👪</span><b class="num">'+shortMoney(sal)+'</b><small>salary</small></div><span class="arr">›</span>'+
     '<div class="node"><span class="big">🎯</span><b class="num">'+shortMoney(Math.max(0,leftover()))+'</b><small>to goal</small></div></div>';
 
-  var salaryPaid=drawn>=sal&&sal>0;
+  var salDue=Math.max(0,sal-drawn), used=salarySpent(), salLeft=drawn-used.total;
+  h+='<div class="card salary"><div class="row between"><span class="k">👪 Salary · '+monthLabel(cm)+'</span>'+
+      (sal>0&&salDue<0.5?'<span class="pill good">Paid out ✓</span>':sal>0?'<span class="pill warn">Due '+shortMoney(salDue)+'</span>':'')+'</div>'+
+    '<div class="grid g3" style="margin:8px 0">'+
+      tile('Still to pay out',shortMoney(salDue),'of '+shortMoney(sal))+
+      tile('Spent',shortMoney(used.total),used.debt?'incl. '+shortMoney(used.debt)+' debts':'')+
+      tile('Left to spend','<span class="'+(salLeft<0?'neg':'')+'">'+(salLeft<0?'−':'')+shortMoney(Math.abs(salLeft))+'</span>','paid out '+shortMoney(drawn))+'</div>'+
+    (drawn>0?'<div class="bar '+(used.total>drawn?'bad':used.total>drawn*0.85?'warn':'')+'"><i style="width:'+pct(used.total,drawn).toFixed(1)+'%"></i></div>':'')+
+    (salLeft<0&&drawn<sal?'<div class="note warn" style="margin-bottom:0">More was spent than has been paid out — record the salary payout with <b>Pay salary</b>.</div>':'')+
+    (salDue>0.5?'<button class="primary sm" style="margin-top:10px" data-act="draw">Pay salary</button>':'')+'</div>';
   h+='<div class="grid g2">'+
-    '<div class="card tight"><div class="row between"><span class="k">👪 Salary</span>'+(salaryPaid?'<span class="pill good">Paid ✓</span>':sal>0?'<span class="pill warn">Due</span>':'')+'</div>'+
-      '<div class="v num">'+money(sal)+'</div>'+
-      (salaryPaid?'':'<button class="primary sm" data-act="draw" '+(sal<=0||hold<=0?'disabled':'')+'>Pay salary</button>')+'</div>'+
     '<div class="card tight"><div class="row between"><span class="k">🛢️ Tank</span>'+(surplus>0.5?'<span class="pill good">+'+shortMoney(surplus)+'</span>':'')+'</div>'+
       '<div class="v num">'+money(hold)+'</div>'+
       (surplus>0.5&&step?'<button class="primary sm" data-act="sweep" data-amt="'+Math.floor(surplus)+'">Sweep → '+esc(sweepTargetName(step))+'</button>'
-        :'<button class="sm" data-act="sweep" '+(hold<=0?'disabled':'')+'>Sweep</button>')+'</div></div>';
+        :'<button class="sm" data-act="sweep" '+(hold<=0?'disabled':'')+'>Sweep</button>')+'</div>'+
+    '<div class="card tight"><div class="row between"><span class="k">👛 Business</span></div>'+
+      '<div class="v num">'+money(bizWallet().balance)+'</div>'+
+      '<button class="sm" data-go="income">Wallet ›</button></div></div>';
 
   var td=totalDebt(), tds=totalDebtStart();
   h+='<div class="grid g3" style="margin-bottom:14px">'+
@@ -1035,6 +1123,34 @@ V.income=function(){
     :'<p class="muted">No sales logged for '+monthLabel(incMk,true)+'.</p>')+
     '</div>';
 
+  // Business wallet: what the account should hold, and what's spoken for
+  var wal=bizWallet(), wparts=[
+    {label:'Set aside for opex',v:Math.max(0,wal.opexRes),color:slotColor(1)},
+    {label:'Tax to pay',v:Math.max(0,wal.taxRes),color:slotColor(2)},
+    {label:'Tithe to give',v:Math.max(0,wal.titheRes),color:slotColor(3)},
+    {label:'Free (reinvest)',v:Math.max(0,wal.free),color:slotColor(4)}];
+  var lines=[];
+  S.businesses.forEach(function(b){ b.opex.forEach(function(o){ if(num(o.amount)>0){ var st=opexLineStatus(o,b); lines.push({b:b,o:o,st:st}); } }); });
+  lines.sort(function(a,b){ return String(a.st.next||'9').localeCompare(String(b.st.next||'9')); });
+  h+='<div class="card wallet"><div class="row between"><h2>👛 Business wallet</h2><button class="primary sm" data-act="bizexp">Pay expense</button></div>'+
+    '<div class="row between" style="align-items:baseline"><span class="muted">Should have now</span><b class="num" style="font-size:26px">'+money(wal.balance)+'</b></div>'+
+    (wal.balance>0?stackBar(wparts)+legend(wparts):'')+
+    (wal.opexRes<-0.5?'<div class="note bad">Opex paid is '+money(-wal.opexRes)+' more than was set aside — raise those lines in Profile.</div>':'')+
+    (lines.length?'<div class="k" style="margin:10px 0 4px">Opex · set aside vs next payment</div>'+lines.map(function(x){
+      var st=x.st, nd=st.next?new Date(st.next+'T00:00:00'):null, enough=st.byPayday+0.5>=st.nextAmt;
+      return '<div class="wline"><div class="dl"><b>'+esc(x.o.name)+'</b><small>'+esc(x.b.name)+' · '+money(num(x.o.amount))+' '+FREQ_LABEL[x.o.freq||'month']+
+        ((x.o.freq||'month')==='day'?' · paid '+PAY_LABEL[x.o.pay||'same']:'')+'</small>'+
+        (nd?'<small class="num">Next: '+nd.toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric'})+' ≈ '+money(st.nextAmt)+'</small>':'')+'</div>'+
+        '<div class="r num"><b class="'+(st.reserve<-0.5?'neg':'')+'">'+money(st.reserve)+'</b>'+(!st.daily?'<small class="muted">counted on its date</small>':'<small class="'+(enough?'muted':'neg')+'">'+(enough?'on track':'short '+money(st.nextAmt-st.byPayday))+'</small>')+'</div>'+
+        '<button class="icon" data-act="bizexp" data-line="'+x.b.id+'|'+x.o.id+'" data-amt="'+Math.max(0,Math.round(Math.min(st.nextAmt,Math.max(st.reserve,st.nextAmt))))+'">Pay</button></div>';
+    }).join(''):'<p class="muted" style="font-size:13px">Add opex lines to your businesses in Profile to see what to set aside.</p>')+
+    (wal.taxRes>0.5?'<div class="row between" style="margin-top:8px"><span>🧾 Tax set aside '+money(wal.taxRes)+'</span><button class="sm" data-act="bizexp" data-line="tax|tax">Pay tax</button></div>':'')+
+    info('How the wallet works','<ul>'+
+      '<li>All sales go into the business account. Each open day, the cost of daily lines is set aside, even when it\'s paid later (weekly, kinsenas, monthly).</li>'+
+      '<li>The family share moves to the tank; tax and tithe stay until paid/given; what remains is free for reinvesting.</li>'+
+      '<li>If the real account balance differs, set the starting balance in Profile → Family businesses.</li></ul>')+
+    '</div>';
+
   // 2 · Each business side by side
   var rows=f.byBiz.filter(function(x){return x.revenue||x.opex;});
   if(rows.length){
@@ -1089,7 +1205,7 @@ V.income=function(){
   // 4 · History: sales and business expenses together
   var hist=S.incomes.map(function(i){return {date:i.date,label:i.source,note:i.note,amt:num(i.amount),coll:'incomes',id:i.id};})
     .concat(S.bizExp.map(function(e){ var b=S.businesses.find(function(x){return x.id===e.bizId;}), o=b&&b.opex.find(function(x){return x.id===e.itemId;});
-      return {date:e.date,label:(b?b.name:'Business')+' · '+(o?o.name:'expense'),note:e.note,amt:-num(e.amount),coll:'bizExp',id:e.id}; }))
+      return {date:e.date,label:e.kind==='tax'?'🧾 BIR tax payment':(b?b.name:'Business')+' · '+(o?o.name:'expense'),note:e.note,amt:-num(e.amount),coll:'bizExp',id:e.id}; }))
     .sort(function(a,b){return b.date.localeCompare(a.date);});
   if(hist.length){
     h+='<div class="card"><h2>History</h2><div class="scroll"><table><tbody>'+hist.slice(0,80).map(function(x){
@@ -1124,11 +1240,18 @@ V.budget=function(){
     (owed>0.5?'<div class="note warn" style="margin-bottom:0">Set aside, not yet given: <b class="num">'+money(owed)+'</b></div>':'')+
     '</div>';
 
-  h+='<div class="card"><h2>🧾 This month</h2>'+
-    '<div class="grid g3" style="margin:8px 0 4px">'+
-      tile('Salary',shortMoney(sal))+tile('Planned',shortMoney(plan+mins))+
-      tile(left>=0?'Left over':'Over',shortMoney(Math.abs(left)),'', ' style="border-color:'+(left>=0?'var(--good)':'var(--bad)')+'"')+'</div>'+
-    (left<0?'<div class="note bad" style="margin-bottom:0">Planned spending is more than the salary.</div>':'')+'</div>';
+  // Only salary that has actually been paid out is money to distribute.
+  var paidOut=drawnThisMonth(), used=salarySpent(cm), alloc=plan+mins, unalloc=paidOut-alloc, rest=paidOut-used.total;
+  h+='<div class="card"><h2>💵 Salary to distribute · '+monthLabel(cm)+'</h2>'+
+    '<div class="grid g3" style="margin:8px 0">'+
+      tile('Paid out',shortMoney(paidOut),'of '+shortMoney(sal)+' salary')+
+      tile('Spent',shortMoney(used.total),used.debt?'incl. '+shortMoney(used.debt)+' debts':'')+
+      tile('Left','<span class="'+(rest<0?'neg':'')+'">'+(rest<0?'−':'')+shortMoney(Math.abs(rest))+'</span>','',' style="border-color:'+(rest>=0?'var(--good)':'var(--bad)')+'"')+'</div>'+
+    (paidOut>0
+      ? '<div class="bar '+(used.total>paidOut?'bad':'')+'"><i style="width:'+pct(used.total,paidOut).toFixed(1)+'%"></i></div>'+
+        '<div class="row between muted num" style="font-size:12px;margin-top:6px"><span>Allocated '+money(alloc)+'</span><span class="'+(unalloc<0?'neg':'')+'">'+(unalloc>=0?money(unalloc)+' unallocated':money(-unalloc)+' more than paid out')+'</span></div>'
+      : '<div class="note" style="margin-bottom:0">No salary paid out yet this month. Pay it from the tank on <b>Home → Pay salary</b>; that amount is what this budget distributes.</div>')+
+    '</div>';
 
   // Each category: progress bars by default, the editor behind ✎.
   groups.forEach(function(g){
@@ -1558,11 +1681,15 @@ V.settings=function(){
           '<button class="icon danger" data-delopx="'+o.id+'" data-bid="'+b.id+'" aria-label="Delete '+esc(o.name)+'">✕</button></div>'+
           '<div class="opsched"><input class="amt num" inputmode="decimal" aria-label="Amount for '+esc(o.name)+'" data-opx="amount"'+attrs+' value="'+(num(o.amount)||'')+'" placeholder="0">'+
           '<select aria-label="How often" data-opx="freq"'+attrs+'>'+Object.keys(FREQ_LABEL).map(function(k){return '<option value="'+k+'"'+(f===k?' selected':'')+'>'+FREQ_LABEL[k]+'</option>';}).join('')+'</select>'+when+'</div>'+
+          (f==='day'?'<div class="opsched paysched"><span class="muted when">Paid</span><select aria-label="When it is paid" data-opx="pay"'+attrs+'>'+Object.keys(PAY_LABEL).map(function(k){return '<option value="'+k+'"'+((o.pay||'same')===k?' selected':'')+'>'+PAY_LABEL[k]+'</option>';}).join('')+'</select>'+
+            ((o.pay||'same')==='week'?'<select aria-label="Payday" data-opx="payWd"'+attrs+'>'+WEEKDAYS.map(function(w,i){return '<option value="'+i+'"'+((o.payWd==null?6:+o.payWd)===i?' selected':'')+'>every '+w+'</option>';}).join('')+'</select>'
+             :(o.pay||'same')==='month'?'<select aria-label="Payday" data-opx="payDay"'+attrs+'>'+Array.apply(null,{length:31}).map(function(_,i){return '<option value="'+(i+1)+'"'+((+o.payDay||30)===i+1?' selected':'')+'>on the '+ordinal(i+1)+'</option>';}).join('')+'</select>':'<span></span>')+'</div>':'')+
           (f!=='month'&&f!=='once'&&num(o.amount)?'<small class="muted num">≈ '+money(opexMonthly(o,b))+' a month</small>':'')+'</div>';
       }).join('')+
       '<div class="row" style="margin-top:8px"><button class="sm" data-act="addopex" data-biz="'+b.id+'">+ Opex line</button><span class="spacer"></span>'+
       '<button class="sm danger" data-delbiz="'+i+'">Remove business</button></div></details>';
-  }).join('')+'<button data-act="addbiz" style="margin-bottom:14px">+ Add business</button>';
+  }).join('')+'<button data-act="addbiz" style="margin-bottom:14px">+ Add business</button>'+
+    '<div class="card tight" style="margin-bottom:14px"><label class="f" style="margin:0"><span>👛 Business wallet balance when you started using the app</span><input inputmode="decimal" data-bind="walletStart" data-num value="'+(num(S.walletStart)||'')+'" placeholder="0"></label></div>';
 
   h+='<div class="card"><h2>Money settings</h2><div class="grid g2">'+
     '<label class="f"><span>Currency symbol</span><input data-bind="currency" value="'+esc(S.currency)+'"></label>'+
@@ -1624,18 +1751,19 @@ ACT.income=function(){
       var f=monthFlow(incMk); toast(monthLabel(incMk)+': tithe '+money(f.tithe)+' · family share '+money(f.family)); }, 'Add');
 };
 // An actual business expense (opex) for a business, against one of its opex lines.
-ACT.bizexp=function(){
-  if(!S.businesses.length){ toast('Add a business in Profile first'); return; }
+ACT.bizexp=function(el){
   var opts=[]; S.businesses.forEach(function(b){ b.opex.forEach(function(o){ opts.push([b.id+'|'+o.id, b.name+' · '+o.name]); }); });
-  if(!opts.length){ toast('Add opex lines to a business in Profile'); return; }
-  openDialog('Business expense',
+  opts.push(['tax|tax','🧾 BIR tax payment']);
+  var pre=el&&el.dataset.line;
+  openDialog(pre==='tax|tax'?'Pay tax':'Pay a business expense',
     field('date','Date','type="date" required',todayISO())+
-    selectField('line','Business · expense',opts,opts[0][0])+
-    field('amount','Amount paid','inputmode="decimal" required placeholder="0"')+
+    selectField('line','Business · expense',opts,pre||opts[0][0])+
+    field('amount','Amount paid','inputmode="decimal" required placeholder="0"',el&&el.dataset.amt?el.dataset.amt:'')+
     field('note','Note (optional)','')+
-    '<p class="muted" style="font-size:13px">Once a month has logged expenses, those replace the planned opex for that business.</p>',
+    '<p class="muted" style="font-size:13px">Paid from the business wallet. Planned lines draw on what was set aside for them.</p>',
     function(d){ var a=num(d.amount); if(a<=0) return false; var k=d.line.split('|');
-      S.bizExp.push({id:uid(),date:d.date||todayISO(),bizId:k[0],itemId:k[1],amount:a,note:d.note});
+      if(k[0]==='tax') S.bizExp.push({id:uid(),date:d.date||todayISO(),kind:'tax',bizId:null,itemId:null,amount:a,note:d.note});
+      else S.bizExp.push({id:uid(),date:d.date||todayISO(),bizId:k[0],itemId:k[1],amount:a,note:d.note});
       incMk=monthKey(d.date||todayISO()); toast('Expense logged'); }, 'Log');
 };
 ACT.spend=function(el){
@@ -1706,10 +1834,11 @@ ACT.pay=function(el){
       toast(d.balance<=0.5?'🎉 '+d.name+' is PAID OFF!':'Balance now '+money(d.balance)); }, 'Record');
 };
 ACT.draw=function(){
-  var sal=salary(), need=Math.max(0,sal-drawnThisMonth()), h=Math.max(0,holding());
+  var sal=salary(), need=Math.max(0,sal-drawnThisMonth()), h=holding();
   openDialog('Pay the family salary',
-    field('amount','Amount to transfer to the spending account','inputmode="decimal" required',Math.min(need,h))+
-    '<p class="muted" style="font-size:13px">Do the real transfer in your bank app, then record it here. Tank has '+money(h)+'.</p>',
+    field('amount','Amount to transfer to the spending account','inputmode="decimal" required',Math.round(need*100)/100)+
+    '<p class="muted" style="font-size:13px">Still to pay out this month: '+money(need)+'. Do the real transfer in your bank app, then record it here.</p>'+
+    (h<need?'<div class="note warn">The tank shows '+money(Math.max(0,h))+' — log all business sales first, or pay out only what is there.</div>':''),
     function(v){ var a=num(v.amount); if(a<=0) return false;
       S.moves.push({id:uid(),date:todayISO(),kind:'draw',amount:a,note:'Salary for '+monthLabel(thisMonth(),true)}); toast('Salary recorded'); }, 'Record');
 };
@@ -1913,7 +2042,7 @@ document.addEventListener('change',function(e){
   if(el.dataset.opx){
     var bz2=S.businesses.find(function(x){return x.id===el.dataset.bid;}), o=bz2&&bz2.opex.find(function(x){return x.id===el.dataset.oid;}); if(!o) return;
     var fk=el.dataset.opx;
-    o[fk]=fk==='amount'?num(el.value):(fk==='wd'||fk==='day')?+el.value:el.value;
+    o[fk]=fk==='amount'?num(el.value):(fk==='wd'||fk==='day'||fk==='payWd'||fk==='payDay')?+el.value:el.value;
     if(fk==='freq'&&el.value==='once'&&!o.date) o.date=todayISO();
     save(); render(); return;
   }
