@@ -299,6 +299,15 @@ button.icon.on{background:var(--brand);color:var(--brand-ink);border-color:var(-
 .bar.thin{height:6px;margin-top:4px}
 .card.tithe{border-left:4px solid var(--c3)}
 .card.install ol{margin:6px 0;padding-left:20px}
+.subrow{padding-left:18px;position:relative;border-bottom:0}
+.subrow::before{content:'↳';position:absolute;left:2px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px}
+.subrow .bname{font-size:14px}
+.sumamt{display:block;text-align:right;font-weight:700;padding:6px 8px}
+button.link.subadd{font-size:13px;padding:2px 18px 8px;display:block}
+.subs{margin:6px 0 2px 12px;padding-left:10px;border-left:2px solid var(--line)}
+.subl{display:grid;grid-template-columns:minmax(0,40%) 1fr 48px;gap:8px;align-items:center;font-size:12.5px;margin:4px 0}
+.subl > span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.subl .bar.thin{margin-top:0;height:5px} .subl .num{text-align:right}
 .oprow{padding:8px 0;border-bottom:1px solid var(--line)}
 .oprow:last-of-type{border-bottom:0}
 .opsched{display:grid;grid-template-columns:88px 104px 1fr;gap:6px;margin-top:6px}
@@ -397,7 +406,7 @@ function defaultBudget(){
     c('Giving','Church offerings', false), c('Giving','Support for parents / relatives', false),
     c('Wants','Eating out & food delivery', false), c('Wants','Family outings', false),
     c('Wants','Dad personal allowance', false), c('Wants','Mom personal allowance', false),
-    c('Wants','Subscriptions (Netflix, Spotify, etc.)', false)
+    subsLine()
   ];
 }
 
@@ -409,6 +418,11 @@ function defaultDreams(){
     {id:uid(),kind:'solar',emoji:'☀️',name:'Solar power system',target:0,saved:0,date:'',source:'family',status:'saving',billSave:0},
     {id:uid(),kind:'ai',emoji:'🖥️',name:'Full AI workstation',target:0,saved:0,date:'',source:'business',status:'saving'}
   ];
+}
+
+function subsLine(){
+  return {id:uid(),group:'Wants',name:'Subscriptions',amount:0,essential:false,
+    subs:['Netflix','Spotify','YouTube Premium','iCloud / Google One'].map(function(n){return {id:uid(),name:n,amount:0};})};
 }
 
 function freshState(){
@@ -454,6 +468,8 @@ function migrate(){
   S.bizExp=S.bizExp||[];
   S.tithe=S.tithe||{pct:10,base:'profit'};
   S.budget.forEach(function(b){ if(/^church \/ tithes$/i.test(b.name)&&!num(b.amount)) b.name='Church offerings'; });
+  // The old single "Subscriptions (Netflix, Spotify, etc.)" line, if unused, becomes a split line.
+  S.budget.forEach(function(b,i){ if(/^subscriptions \(netflix/i.test(b.name)&&!num(b.amount)&&!hasSubs(b)){ var n=subsLine(); n.id=b.id; n.group=b.group; S.budget[i]=n; } });
 }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast('Could not save in this browser — export a backup.'); } }
 
@@ -590,7 +606,12 @@ function suggestedSalary(){
 }
 function salary(){ return S.salary.method==='manual' ? num(S.salary.manual) : suggestedSalary(); }
 
-function budgetTotal(filter){ return sum(S.budget.filter(filter||function(){return true;}), function(b){return num(b.amount);}); }
+// A budget line may be split into sub-items (Subscriptions → Netflix, Spotify…);
+// then its plan is the sum of the sub-items.
+function hasSubs(b){ return b.subs&&b.subs.length>0; }
+function planOf(b){ return hasSubs(b)?sum(b.subs,function(x){return num(x.amount);}):num(b.amount); }
+function spentSub(subId){ var cm=thisMonth(); return sum(S.spend.filter(function(x){return x.subId===subId&&monthKey(x.date)===cm;}),function(x){return num(x.amount);}); }
+function budgetTotal(filter){ return sum(S.budget.filter(filter||function(){return true;}), planOf); }
 // A debt pays either a fixed monthly installment (min) or, for BNPL-style
 // bills like SPayLater, an amount that differs per month (schedule).
 function minFor(d, mk){ return d.schedule ? num(d.schedule[mk]) : num(d.min); }
@@ -942,7 +963,7 @@ V.home=function(){
       (due.length>5?'<button class="link" data-go="debts">+'+(due.length-5)+' more</button>':'')+'</div>';
   }
 
-  var hot=S.budget.map(function(b){ var s=spentThisMonth(b.id); return {b:b,s:s,p:num(b.amount)}; })
+  var hot=S.budget.map(function(b){ var s=spentThisMonth(b.id); return {b:b,s:s,p:planOf(b)}; })
     .filter(function(x){return x.s>0;}).sort(function(a,b){return pct(b.s,b.p||1)-pct(a.s,a.p||1);}).slice(0,5);
   h+='<div class="card"><div class="row between"><h2>🧾 Spending</h2><button class="primary sm" data-act="spend">+ Log</button></div>';
   if(!hot.length) h+='<p class="muted">Nothing logged this month.</p>';
@@ -1093,7 +1114,7 @@ V.budget=function(){
   // Each category: progress bars by default, the editor behind ✎.
   groups.forEach(function(g){
     var items=S.budget.filter(function(b){return b.group===g;});
-    var gv=sum(items,function(b){return num(b.amount);}), gs=sum(items,function(b){return spentThisMonth(b.id);});
+    var gv=sum(items,planOf), gs=sum(items,function(b){return spentThisMonth(b.id);});
     var over=gs>gv&&gs>0, editing=!!editGroups[g];
     h+='<div class="card bgrp'+(editing?' editing':'')+'"><div class="row between"><b>'+esc(g)+'</b>'+
       '<span class="row" style="gap:8px"><span class="num'+(over?' neg':'')+'">'+money(gs)+' <small class="muted">/ '+money(gv)+'</small></span>'+
@@ -1101,19 +1122,33 @@ V.budget=function(){
       '<div class="bar '+(over?'bad':gs>=gv*0.85&&gv>0?'warn':'')+'" style="margin:8px 0 2px"><i style="width:'+(gv>0?pct(gs,gv):gs>0?100:0).toFixed(1)+'%"></i></div>';
     if(editing){
       h+=items.map(function(b){
-        var sp=spentThisMonth(b.id), ov=sp>num(b.amount)&&sp>0;
+        var sp=spentThisMonth(b.id), ov=sp>planOf(b)&&sp>0, subs=hasSubs(b);
         return '<div class="brow"><div><input class="bname" aria-label="Category name" data-edit="budget" data-id="'+b.id+'" data-f="name" value="'+esc(b.name)+'">'+
           (sp?'<small class="num" style="color:'+(ov?'var(--bad)':'var(--muted)')+'">spent '+money(sp)+'</small>':'')+'</div>'+
-          '<input class="amt num" inputmode="decimal" aria-label="Planned amount for '+esc(b.name)+'" data-edit="budget" data-id="'+b.id+'" data-f="amount" data-num value="'+(num(b.amount)||'')+'" placeholder="0">'+
+          (subs
+            ? '<span class="amt num sumamt" title="Sum of sub-items">'+money(planOf(b))+'</span>'
+            : '<input class="amt num" inputmode="decimal" aria-label="Planned amount for '+esc(b.name)+'" data-edit="budget" data-id="'+b.id+'" data-f="amount" data-num value="'+(num(b.amount)||'')+'" placeholder="0">')+
           '<label class="need" title="Essential (a need)"><input type="checkbox" aria-label="Essential" data-edit="budget" data-id="'+b.id+'" data-f="essential" '+(b.essential?'checked':'')+'><span>need</span></label>'+
-          '<button class="icon danger" data-del="budget" data-id="'+b.id+'" aria-label="Delete '+esc(b.name)+'">✕</button></div>';
+          '<button class="icon danger" data-del="budget" data-id="'+b.id+'" aria-label="Delete '+esc(b.name)+'">✕</button></div>'+
+          (subs?b.subs.map(function(x){
+            return '<div class="brow subrow"><input class="bname" aria-label="Sub-item name" data-sub="name" data-id="'+b.id+'" data-sid="'+x.id+'" value="'+esc(x.name)+'" placeholder="Sub-item">'+
+              '<input class="amt num" inputmode="decimal" aria-label="Amount for '+esc(x.name)+'" data-sub="amount" data-id="'+b.id+'" data-sid="'+x.id+'" value="'+(num(x.amount)||'')+'" placeholder="0">'+
+              '<span></span><button class="icon danger" data-delsub="'+x.id+'" data-id="'+b.id+'" aria-label="Delete '+esc(x.name)+'">✕</button></div>';
+          }).join(''):'')+
+          '<button class="link subadd" data-act="addsub" data-id="'+b.id+'">+ sub-item'+(subs?'':' (split this line)')+'</button>';
       }).join('')+'<div class="row" style="margin-top:8px"><button class="sm" data-act="addcat" data-group="'+esc(g)+'">+ Line</button><span class="spacer"></span><button class="primary sm" data-bedit="'+esc(g)+'">Done</button></div>';
     } else {
-      var shown=items.filter(function(b){return num(b.amount)>0||spentThisMonth(b.id)>0;});
+      var shown=items.filter(function(b){return planOf(b)>0||spentThisMonth(b.id)>0;});
       h+=shown.map(function(b){
-        var sp=spentThisMonth(b.id), pl=num(b.amount), ov=sp>pl;
+        var sp=spentThisMonth(b.id), pl=planOf(b), ov=sp>pl;
         return '<div class="bline"><div class="row between"><span>'+esc(b.name)+'</span><span class="num'+(ov?' neg':'')+'">'+shortMoney(sp)+' <small class="muted">/ '+shortMoney(pl)+'</small></span></div>'+
-          '<div class="bar thin '+(ov?'bad':sp>=pl*0.85?'warn':'')+'"><i style="width:'+(pl>0?pct(sp,pl):100).toFixed(1)+'%"></i></div></div>';
+          '<div class="bar thin '+(ov?'bad':sp>=pl*0.85?'warn':'')+'"><i style="width:'+(pl>0?pct(sp,pl):100).toFixed(1)+'%"></i></div>'+
+          (hasSubs(b)?'<div class="subs">'+b.subs.filter(function(x){return num(x.amount)>0||spentSub(x.id)>0;}).map(function(x){
+            var ss=spentSub(x.id), sa=num(x.amount), so=ss>sa;
+            return '<div class="subl" data-tip="'+esc(x.name+': '+money(ss)+' of '+money(sa))+'"><span>'+esc(x.name)+'</span>'+
+              '<span class="bar thin '+(so?'bad':ss>=sa&&sa>0?'good':'')+'"><i style="width:'+(sa>0?pct(ss,sa):100).toFixed(1)+'%"></i></span>'+
+              '<span class="num'+(so?' neg':'')+'">'+shortMoney(sa)+'</span></div>';
+          }).join('')+'</div>':'')+'</div>';
       }).join('')+(shown.length<items.length?'<small class="muted">'+(items.length-shown.length)+' line'+(items.length-shown.length>1?'s':'')+' not set — tap ✎</small>':'');
     }
     h+='</div>';
@@ -1125,6 +1160,8 @@ V.budget=function(){
   if(recent.length){
     h+='<div class="card"><h2>Spending log · '+monthLabel(cm,true)+'</h2><div class="scroll"><table><tbody>'+recent.map(function(x){
       var c=x.catId==='tithe'?{name:'🙏 Tithe'}:S.budget.find(function(b){return b.id===x.catId;});
+      var sub=c&&x.subId&&c.subs?c.subs.find(function(y){return y.id===x.subId;}):null;
+      if(sub) c={name:c.name+' › '+sub.name};
       return '<tr><td class="num" style="white-space:nowrap">'+esc(shortDate(x.date))+'</td><td>'+esc(c?c.name:'(deleted)')+(x.note?'<br><small>'+esc(x.note)+'</small>':'')+'</td><td class="r num">'+money(x.amount)+'</td>'+
         '<td class="r"><button class="icon danger" data-del="spend" data-id="'+x.id+'" aria-label="Delete">✕</button></td></tr>';
     }).join('')+'</tbody></table></div></div>';
@@ -1583,14 +1620,19 @@ ACT.bizexp=function(){
 };
 ACT.spend=function(el){
   var preset=el&&el.dataset.cat;
-  var opts=[['tithe','🙏 Tithe (from income)']].concat(S.budget.map(function(b){return [b.id,b.group+' · '+b.name];}));
+  var opts=[['tithe','🙏 Tithe (from income)']];
+  S.budget.forEach(function(b){
+    opts.push([b.id,b.group+' · '+b.name]);
+    if(hasSubs(b)) b.subs.forEach(function(x){ opts.push([b.id+'|'+x.id,'   ↳ '+b.name+' › '+x.name]); });
+  });
   openDialog(preset==='tithe'?'Give tithe':'Log spending',
     field('date','Date','type="date" required',todayISO())+
     selectField('catId','Category',opts,preset||(S.budget[0]?S.budget[0].id:'tithe'))+
     field('amount','Amount','inputmode="decimal" required placeholder="0"',preset==='tithe'?Math.max(0,Math.round(titheOwed())):'')+
     field('note','Note (optional)',''),
     function(d){ var a=num(d.amount); if(a<=0){ toast('Enter an amount'); return false; }
-      S.spend.push({id:uid(),date:d.date||todayISO(),catId:d.catId,amount:a,note:d.note}); toast(d.catId==='tithe'?'Tithe recorded 🙏':'Logged'); }, 'Save');
+      var k=String(d.catId).split('|');
+      S.spend.push({id:uid(),date:d.date||todayISO(),catId:k[0],subId:k[1]||null,amount:a,note:d.note}); toast(k[0]==='tithe'?'Tithe recorded 🙏':'Logged'); }, 'Save');
 };
 ACT.tithe=function(){
   var f=monthFlow(thisMonth());
@@ -1742,6 +1784,13 @@ ACT.addcat=function(el){
     '<label class="check"><input type="checkbox" name="essential" checked><span>Essential (a "need", not a "want")</span></label>',
     function(v){ S.budget.push({id:uid(),name:v.name,group:v.group||'Other',amount:num(v.amount),essential:!!v.essential}); });
 };
+ACT.addsub=function(el){
+  var b=S.budget.find(function(x){return x.id===el.dataset.id;}); if(!b) return;
+  b.subs=b.subs||[];
+  // Splitting a line that already had an amount: keep it as the first sub-item.
+  if(!b.subs.length&&num(b.amount)>0) b.subs.push({id:uid(),name:b.name,amount:num(b.amount)});
+  b.subs.push({id:uid(),name:'',amount:0}); save(); render();
+};
 ACT.addfam=function(){ S.family.push({id:uid(),name:'',age:''}); save(); render(); };
 ACT.addbiz=function(){ S.businesses.push(newBiz('Business '+(S.businesses.length+1))); save(); render(); };
 ACT.addopex=function(el){ var b=S.businesses.find(function(x){return x.id===el.dataset.biz;}); if(!b) return; b.opex.push({id:uid(),name:'',amount:0}); save(); render(); };
@@ -1777,8 +1826,9 @@ ACT.sample=function(){
     'Baby clothes & essentials':800,'Preschool tuition & supplies':3000,'Milk, snacks & baon':1500,'Clothes & shoes':500,'Fuel / fare':3500,
     'Vehicle maintenance & registration':800,'PhilHealth (both parents)':1000,'SSS voluntary (both parents)':1400,'Pag-IBIG':400,
     'HMO / life insurance premiums':1500,'Medicines & vitamins':800,'Church / tithes':1000,'Support for parents / relatives':2000,
-    'Eating out & food delivery':1500,'Family outings':1000,'Dad personal allowance':1000,'Mom personal allowance':1000,'Subscriptions (Netflix, Spotify, etc.)':300};
-  S.budget.forEach(function(x){ if(amounts[x.name]!=null) x.amount=amounts[x.name]; });
+    'Eating out & food delivery':1500,'Family outings':1000,'Dad personal allowance':1000,'Mom personal allowance':1000};
+  S.budget.forEach(function(x){ if(amounts[x.name]!=null) x.amount=amounts[x.name];
+    if(hasSubs(x)&&x.name==='Subscriptions') [549,0,159,49].forEach(function(v,i){ if(x.subs[i]) x.subs[i].amount=v; }); });
   S.debts=[
     {id:uid(),group:'Cards',name:'Credit card A',balance:58000,start:58000,rate:36,min:2900,due:12},
     {id:uid(),group:'Installments',name:'Appliance installment',balance:14000,start:14000,rate:0,min:2000,due:5},
@@ -1836,6 +1886,10 @@ document.addEventListener('change',function(e){
     else bz.desc=el.value;
     save(); render(); return;
   }
+  if(el.dataset.sub){
+    var bl=S.budget.find(function(x){return x.id===el.dataset.id;}), sb=bl&&bl.subs&&bl.subs.find(function(x){return x.id===el.dataset.sid;}); if(!sb) return;
+    sb[el.dataset.sub]=el.dataset.sub==='amount'?num(el.value):el.value; save(); render(); return;
+  }
   if(el.dataset.opx){
     var bz2=S.businesses.find(function(x){return x.id===el.dataset.bid;}), o=bz2&&bz2.opex.find(function(x){return x.id===el.dataset.oid;}); if(!o) return;
     var fk=el.dataset.opx;
@@ -1866,6 +1920,13 @@ document.addEventListener('click',function(e){
   if(el.dataset.delbiz!=null){ var bb=S.businesses[+el.dataset.delbiz];
     if(bb&&!confirm('Remove '+bb.name+'? Its logged sales stay in the history.')) return;
     S.businesses.splice(+el.dataset.delbiz,1); save(); render(); return; }
+  if(el.dataset.delsub){
+    var bl2=S.budget.find(function(x){return x.id===el.dataset.id;}); if(!bl2) return;
+    bl2.subs=bl2.subs.filter(function(x){return x.id!==el.dataset.delsub;});
+    // The last sub-item gone: the line goes back to a single amount (their total).
+    if(!bl2.subs.length) bl2.amount=0;
+    save(); render(); return;
+  }
   if(el.dataset.delopx){ var bz3=S.businesses.find(function(x){return x.id===el.dataset.bid;}); if(bz3){ bz3.opex=bz3.opex.filter(function(x){return x.id!==el.dataset.delopx;}); save(); render(); } return; }
   if(el.dataset.del){
     var coll=el.dataset.del;
