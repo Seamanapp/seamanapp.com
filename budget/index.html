@@ -103,7 +103,8 @@ main{padding:16px}
 .bar.good > i{background:var(--good)} .bar.warn > i{background:var(--warn)} .bar.bad > i{background:var(--bad)}
 button,.btn{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--ink);
   padding:9px 14px;border-radius:10px;cursor:pointer;min-height:40px}
-button.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+a.btn{display:inline-block;text-decoration:none}
+a.btn.primary,button.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
 button.danger{color:var(--bad)}
 button.link{border:0;background:none;padding:4px 6px;min-height:0;color:var(--brand)}
 button.icon{padding:4px 9px;min-height:32px;font-size:13px}
@@ -1527,7 +1528,8 @@ V.settings=function(){
     h+='<div class="card install"><h2>📲 Install on this phone</h2>'+(ios
       ?'<ol><li>Open this page in <b>Safari</b>.</li><li>Tap <b>Share</b> <span aria-hidden="true">⬆︎</span>, then <b>Add to Home Screen</b>.</li><li>Open <b>Family Budget</b> from the Home Screen.</li></ol>'+
        '<p class="muted" style="font-size:13px">The Home Screen app keeps its own data, separate from Safari — export a backup here and import it there if you already started.</p>'
-      :'<p>Use your browser menu → <b>Install app</b> / <b>Add to Home screen</b>.</p>')+'</div>';
+      :'<p>Use your browser menu → <b>Install app</b> / <b>Add to Home screen</b>.</p>'+
+       (/Android/i.test(navigator.userAgent)?'<p><a class="btn primary" href="FamilyBudget.apk" download>⬇ Download Android app</a></p><p class="muted" style="font-size:13px">Open the downloaded file and allow "Install unknown apps" when asked.</p>':''))+'</div>';
   }
   h+='<div class="card"><h2>👨‍👩‍👦‍👦 Our family</h2>'+S.family.map(function(f){
     return '<div class="fam"><span class="av" aria-hidden="true">'+avatar(f)+'</span>'+
