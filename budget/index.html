@@ -399,16 +399,23 @@ function defaultBudget(){
     c('Baby (newborn)','Pedia check-ups & vaccines'), c('Baby (newborn)','Baby clothes & essentials'),
     c('Kuya (4 yrs old)','Preschool tuition & supplies'), c('Kuya (4 yrs old)','Milk, snacks & baon'),
     c('Kuya (4 yrs old)','Clothes & shoes'),
+  ].concat(parentLines('Daddy'), parentLines('Mommy'), [
     c('Transport','Fuel / fare'), c('Transport','Vehicle maintenance & registration'),
     c('Health & protection','PhilHealth (both parents)'), c('Health & protection','SSS voluntary (both parents)'),
     c('Health & protection','Pag-IBIG'), c('Health & protection','HMO / life insurance premiums'),
     c('Health & protection','Medicines & vitamins'),
     c('Giving','Church offerings', false), c('Giving','Support for parents / relatives', false),
     c('Wants','Eating out & food delivery', false), c('Wants','Family outings', false),
-    c('Wants','Dad personal allowance', false), c('Wants','Mom personal allowance', false),
     subsLine()
-  ];
+  ]);
 }
+// Dad's and Mom's own categories. Postpartum care is on Mommy's list
+// because Baby is a newborn.
+var PARENT_LINES={
+  Daddy:[['Personal allowance',false],['Haircut & grooming',false],['Clothes & shoes',false],['Own mobile load / data',false],['Health check-ups & medicines',true],['Hobbies / sports',false]],
+  Mommy:[['Personal allowance',false],['Salon & self-care',false],['Clothes & shoes',false],['Own mobile load / data',false],['Postpartum check-ups & vitamins',true]]
+};
+function parentLines(g){ return PARENT_LINES[g].map(function(x){ return {id:uid(),group:g,name:x[0],amount:0,essential:x[1]}; }); }
 
 // Big-ticket dreams, saved for in cash once the foundation is built. Targets
 // start empty — the family prices their own.
@@ -468,6 +475,17 @@ function migrate(){
   S.bizExp=S.bizExp||[];
   S.tithe=S.tithe||{pct:10,base:'profit'};
   S.budget.forEach(function(b){ if(/^church \/ tithes$/i.test(b.name)&&!num(b.amount)) b.name='Church offerings'; });
+  // Daddy and Mommy categories, placed after the kids (before Transport);
+  // the old "Dad/Mom personal allowance" lines move in with their amounts and history.
+  [['Daddy',/^dad personal allowance$/i],['Mommy',/^mom personal allowance$/i]].forEach(function(pg){
+    if(S.budget.some(function(b){return b.group===pg[0];})) return;
+    var lines=parentLines(pg[0]), oldIdx=S.budget.findIndex(function(b){return pg[1].test(b.name);});
+    if(oldIdx>=0){ var old=S.budget.splice(oldIdx,1)[0]; old.group=pg[0]; old.name='Personal allowance'; lines[0]=old; }
+    var at=S.budget.findIndex(function(b){return b.group==='Transport';});
+    if(at<0) at=S.budget.length;
+    if(pg[0]==='Mommy'){ var d=-1; S.budget.forEach(function(b,i){ if(b.group==='Daddy') d=i; }); if(d>=0) at=d+1; }
+    S.budget.splice.apply(S.budget,[at,0].concat(lines));
+  });
   // The old single "Subscriptions (Netflix, Spotify, etc.)" line, if unused, becomes a split line.
   S.budget.forEach(function(b,i){ if(/^subscriptions \(netflix/i.test(b.name)&&!num(b.amount)&&!hasSubs(b)){ var n=subsLine(); n.id=b.id; n.group=b.group; S.budget[i]=n; } });
 }
@@ -1826,7 +1844,7 @@ ACT.sample=function(){
     'Baby clothes & essentials':800,'Preschool tuition & supplies':3000,'Milk, snacks & baon':1500,'Clothes & shoes':500,'Fuel / fare':3500,
     'Vehicle maintenance & registration':800,'PhilHealth (both parents)':1000,'SSS voluntary (both parents)':1400,'Pag-IBIG':400,
     'HMO / life insurance premiums':1500,'Medicines & vitamins':800,'Church / tithes':1000,'Support for parents / relatives':2000,
-    'Eating out & food delivery':1500,'Family outings':1000,'Dad personal allowance':1000,'Mom personal allowance':1000};
+    'Eating out & food delivery':1500,'Family outings':1000,'Personal allowance':1000,'Haircut & grooming':150,'Salon & self-care':500,'Postpartum check-ups & vitamins':1200};
   S.budget.forEach(function(x){ if(amounts[x.name]!=null) x.amount=amounts[x.name];
     if(hasSubs(x)&&x.name==='Subscriptions') [549,0,159,49].forEach(function(v,i){ if(x.subs[i]) x.subs[i].amount=v; }); });
   S.debts=[
