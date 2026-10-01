@@ -6,7 +6,7 @@
  * The family's DATA is never here — it lives in localStorage on the device.
  * Bump VERSION to drop old caches.
  */
-const VERSION = 'ffb-v9';
+const VERSION = 'ffb-v10';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
   './icons/apple-touch-icon.png', './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png'];
 

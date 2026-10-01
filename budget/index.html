@@ -75,9 +75,10 @@ small,.muted{color:var(--muted)}
 .num{font-variant-numeric:tabular-nums}
 header.top{background:var(--brand);color:var(--brand-ink);padding:12px 16px calc(12px);padding-top:max(12px,env(safe-area-inset-top))}
 header.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px}
-header.top h1{font-size:18px;white-space:nowrap}
+header.top h1{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header.top .wrap > div:first-child{min-width:0}
 header.top .sub{opacity:.85;font-size:13px}
-.hdr-step{background:rgba(255,255,255,.18);color:inherit;border:0;border-radius:99px;padding:4px 12px;min-height:32px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%;flex:none}
+.hdr-step{background:rgba(255,255,255,.18);color:inherit;border:0;border-radius:99px;padding:4px 12px;min-height:32px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none}
 .wrap{max-width:880px;margin:0 auto}
 main{padding:16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:0 0 14px;box-shadow:var(--shadow)}
@@ -309,11 +310,21 @@ button.link.subadd{font-size:13px;padding:2px 18px 8px;display:block}
 .subl{display:grid;grid-template-columns:minmax(0,40%) 1fr 48px;gap:8px;align-items:center;font-size:12.5px;margin:4px 0}
 .subl > span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
 .subl .bar.thin{margin-top:0;height:5px} .subl .num{text-align:right}
+.txfilter{display:flex;gap:6px;overflow-x:auto;padding:6px 0 8px}
+.txrow{display:grid;grid-template-columns:28px 1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.txrow:last-child{border-bottom:0}
+.txi{font-size:18px;text-align:center} .txl{min-width:0} .txl b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.txl small{color:var(--muted);font-size:12px} .txrow .pos{color:var(--good)}
+tr.tap{cursor:pointer}
+.orow.total{border-top:2px solid var(--line)}
 .dsave .dsrow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .dsave .dsrow:last-child{border-bottom:0}
 .dsrow small{display:block;color:var(--muted);font-size:12px}
-.dtoday{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font-weight:600;margin-bottom:14px}
-.dtoday span:first-child{flex:1}
+.dtoday{margin-bottom:14px;font-weight:600}
+.dtoday small{font-weight:400}
+.toast.has-undo{pointer-events:auto;display:flex;align-items:center;gap:12px}
+.toast-undo{background:none;border:0;color:var(--brand-soft);font-weight:700;padding:2px 4px;min-height:0;text-decoration:underline}
+.hdr-undo{background:rgba(255,255,255,.18);color:inherit;border:0;border-radius:99px;min-height:32px;padding:2px 12px;font-size:18px}
 .fab{position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom));z-index:15;border-radius:99px;padding:12px 18px;
   background:var(--brand);color:var(--brand-ink);border:0;font-size:16px;box-shadow:0 8px 20px -6px rgba(0,0,0,.45)}
 .bline[data-act]{cursor:pointer;border-radius:8px}
@@ -375,7 +386,8 @@ details.more summary{font-size:14px;margin:4px 0 8px}
       <h1>Family Freedom Budget</h1>
       <div class="sub" id="hdrSub"></div>
     </div>
-    <button class="hdr-step" data-go="plan" id="hdrStep" aria-label="Open roadmap"></button>
+    <div class="row" style="gap:6px;flex:none"><button class="hdr-undo" id="undoBtn" data-act="undo1" aria-label="Undo last change" title="Undo last change" hidden>↶</button>
+    <button class="hdr-step" data-go="plan" id="hdrStep" aria-label="Open roadmap"></button></div>
   </div>
 </header>
 
@@ -566,7 +578,29 @@ function ring(p){
     '<text x="36" y="41" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">'+Math.round(p)+'%</text></svg>';
 }
 var toastT;
-function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove('show');},2600); }
+var toastAt=0;
+function toast(msg){
+  var t=document.getElementById('toast'), fresh=undoFresh&&undoStack.length&&Date.now()-undoStack[undoStack.length-1].at<3000;
+  undoFresh=false;
+  t.innerHTML='<span>'+esc(msg)+'</span>'+(fresh?'<button type="button" class="toast-undo" data-act="undo1">Undo</button>':'');
+  t.classList.toggle('has-undo',!!fresh); t.classList.add('show'); toastAt=Date.now();
+  clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove('show');},fresh?5000:2600);
+}
+// Undo: a snapshot of all data is taken just before each change.
+var undoStack=[], undoFresh=false;
+function checkpoint(label, quiet){
+  undoStack.push({label:label||'change', json:JSON.stringify(S), at:Date.now()});
+  undoFresh=!quiet;
+  if(undoStack.length>40) undoStack.shift();
+  updateUndoBtn();
+}
+function undoLast(){
+  var u=undoStack.pop(); if(!u) return;
+  S=JSON.parse(u.json); save(); if(dlg.open) dlg.close(); render(); updateUndoBtn();
+  var t=document.getElementById('toast'); t.innerHTML='<span>↶ Undone: '+esc(u.label)+'</span>'; t.classList.remove('has-undo'); t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove('show');},2600);
+}
+function updateUndoBtn(){ var b=document.getElementById('undoBtn'); if(b) b.hidden=!undoStack.length; }
 
 /* ------------------------------------------------------------ the maths */
 
@@ -840,6 +874,14 @@ function holding(){
    saved for a little every day until it's due. */
 function dayOfMonth(){ return +todayISO().slice(8,10); }
 // Salary earned so far this month (monthly salary spread over its days).
+// Salary money not yet spoken for: paid out, minus what went to debts,
+// minus each budget line's money (its allocation, or its spending if more).
+function availableMoney(mk){
+  mk=mk||thisMonth();
+  var paid=sum(S.moves.filter(function(m){return m.kind==='draw'&&monthKey(m.date)===mk;}),function(m){return num(m.amount);});
+  var lines=sum(S.budget,function(b){ return Math.max(fundedLine(b,mk), mk===thisMonth()?spentThisMonth(b.id):0); });
+  return paid-salarySpent(mk).debt-lines;
+}
 function salaryEarnedSoFar(){ var cm=thisMonth(); return salary()*dayOfMonth()/daysIn(cm); }
 function salaryDueSoFar(){ return Math.max(0, salaryEarnedSoFar()-drawnThisMonth()); }
 function daysBetween(a,b){ return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/864e5); }
@@ -1177,7 +1219,13 @@ V.home=function(){
     (salLeft<0&&drawn<sal?'<div class="note warn" style="margin-bottom:0">More was spent than has been paid out — record the salary payout with <b>Pay salary</b>.</div>':'')+
     (salDue>0.5||hold>0.5?'<button class="primary sm" style="margin-top:10px" data-act="draw">Pay salary</button>':'')+'</div>';
   var dsv=debtSavings(), dToday=sum(dsv,function(x){return x.today;});
-  if(dsv.length) h+='<button class="card tight dtoday" data-go="budget"><span>💰 Debts to save today</span><b class="num">'+money(dToday)+'</b><span class="muted">›</span></button>';
+  if(dsv.length){
+    var freeH=Math.max(0,availableMoney()), canAllot=Math.min(dToday,freeH);
+    h+='<div class="card tight dtoday"><div class="row between"><span>💰 Debts to save today</span><b class="num">'+money(dToday)+'</b></div>'+
+      '<div class="row between" style="margin-top:6px"><small class="muted num">free salary money '+money(freeH)+'</small><span class="row" style="gap:6px">'+
+      (dToday>0.5?'<button class="primary sm" data-act="allotall" '+(canAllot>0.5?'':'disabled')+'>Allot all'+(canAllot>0.5&&canAllot<dToday-0.5?' '+shortMoney(canAllot):'')+'</button>':'<span class="pill good">✓ up to date</span>')+
+      '<button class="icon" data-go="budget" aria-label="See debts">›</button></span></div></div>';
+  }
   h+='<div class="grid g2">'+
     '<div class="card tight"><div class="row between"><span class="k">🛢️ Tank</span>'+(surplus>0.5?'<span class="pill good">+'+shortMoney(surplus)+'</span>':'')+'</div>'+
       '<div class="v num">'+money(hold)+'</div>'+
@@ -1287,19 +1335,19 @@ V.income=function(){
   // Opex report: daily value of every line, the daily budget building up
   // through the month against sales, and the deficit when sales fall short.
   var rep=opexReport(incMk), olines=[];
-  S.businesses.forEach(function(b){ b.opex.forEach(function(o){ if(num(o.amount)>0) olines.push({b:b,o:o,dv:dailyValue(o,b),mtd:opexDue(o,b,incMk)}); }); });
+  S.businesses.forEach(function(b){ b.opex.forEach(function(o){ if(num(o.amount)>0) olines.push({b:b,o:o,month:accrued(o,b,addDays(incMk+'-01',-1),lastOfMonth(incMk)),mtd:opexDue(o,b,incMk)}); }); });
   if(olines.length){
-    var perDay=sum(olines,function(x){return x.dv;});
+    var monthTot=sum(olines,function(x){return x.month;});
     h+='<div class="card"><h2>📊 Opex report · '+monthLabel(incMk)+'</h2>'+
       '<div class="grid g3" style="margin:8px 0">'+
-        tile('Daily budget',money(perDay),'per open day')+
-        tile('Budget so far',shortMoney(rep.budget),'sales '+shortMoney(rep.sales))+
+        tile('Monthly opex',shortMoney(monthTot),monthLabel(incMk))+
+        tile('Set aside so far',shortMoney(rep.budget),'sales '+shortMoney(rep.sales))+
         tile(rep.deficit>0.5?'Deficit':'Surplus','<span class="'+(rep.deficit>0.5?'neg':'')+'">'+shortMoney(rep.deficit>0.5?rep.deficit:rep.surplus)+'</span>','',' style="border-color:'+(rep.deficit>0.5?'var(--bad)':'var(--good)')+'"')+'</div>'+
       (rep.days.length>1?cumChart(rep.days):'')+
       '<div class="olist">'+olines.map(function(x){
         return '<div class="orow"><span><b>'+esc(x.o.name)+'</b><small>'+money(num(x.o.amount))+PER_LABEL[x.o.freq||'month']+(S.businesses.length>1?' · '+esc(x.b.name):'')+'</small></span>'+
-          '<span class="num">'+money(x.dv)+'<small>/day</small></span><span class="num">'+money(x.mtd)+'<small>this month</small></span></div>';
-      }).join('')+'</div></div>';
+          '<span class="num">'+money(x.month)+'<small>this month</small></span><span class="num">'+money(x.mtd)+'<small>set aside</small></span></div>';
+      }).join('')+'<div class="orow total"><span><b>Total</b></span><span class="num"><b>'+money(monthTot)+'</b></span><span class="num"><b>'+money(rep.budget)+'</b></span></div></div></div>';
   }
 
   // 2 · Each business side by side
@@ -1360,9 +1408,9 @@ V.income=function(){
     .sort(function(a,b){return b.date.localeCompare(a.date);});
   if(hist.length){
     h+='<div class="card"><h2>History</h2><div class="scroll"><table><tbody>'+hist.slice(0,80).map(function(x){
-      return '<tr><td class="num" style="white-space:nowrap">'+esc(shortDate(x.date))+'</td><td>'+esc(x.label)+(x.note?'<br><small>'+esc(x.note)+'</small>':'')+'</td>'+
+      return '<tr class="tap" data-act="edittx" data-coll="'+x.coll+'" data-id="'+x.id+'"><td class="num" style="white-space:nowrap">'+esc(shortDate(x.date))+'</td><td>'+esc(x.label)+(x.note?'<br><small>'+esc(x.note)+'</small>':'')+'</td>'+
         '<td class="r num'+(x.amt<0?' neg':'')+'">'+(x.amt<0?'−':'+')+money(Math.abs(x.amt))+'</td>'+
-        '<td class="r"><button class="icon danger" data-del="'+x.coll+'" data-id="'+x.id+'" aria-label="Delete">✕</button></td></tr>';
+        '<td class="r"><button class="icon danger" data-act="deltx" data-coll="'+x.coll+'" data-id="'+x.id+'" aria-label="Delete">✕</button></td></tr>';
     }).join('')+'</tbody></table></div></div>';
   }
   return h;
@@ -1414,8 +1462,8 @@ V.budget=function(){
     '</div>';
 
   // Only salary that has actually been paid out is money to distribute.
-  var paidOut=drawnThisMonth(), used=salarySpent(cm), alloc=allocTotal(cm)+used.debt, unalloc=paidOut-alloc, rest=paidOut-used.total;
-  h+='<div class="card"><div class="row between"><h2>💵 Salary to distribute · '+monthLabel(cm)+'</h2><button class="primary sm" data-act="allocate">+ Allocate</button></div>'+
+  var paidOut=drawnThisMonth(), used=salarySpent(cm), unalloc=availableMoney(cm), alloc=paidOut-unalloc, rest=paidOut-used.total;
+  h+='<div class="card"><div class="row between"><h2>💵 Salary to distribute · '+monthLabel(cm)+'</h2><button class="primary sm" data-act="allocate">+ Allocate · '+shortMoney(Math.max(0,availableMoney(cm)))+'</button></div>'+
     '<div class="grid g3" style="margin:8px 0">'+
       tile('Paid out',shortMoney(paidOut),'of '+shortMoney(sal)+' salary')+
       tile('Spent',shortMoney(used.total),used.debt?'incl. '+shortMoney(used.debt)+' debts':'')+
@@ -1472,7 +1520,7 @@ V.budget=function(){
     h+='</div>';
   });
   h+='<div class="card tight" style="margin-bottom:14px"><div class="row between"><span>Debt payments <small class="muted">(auto from Debts)</small></span><b class="num">'+money(mins)+'</b></div></div>'+
-    '<div class="row" style="margin-bottom:14px"><button class="primary" data-act="allocate">+ Allocate</button><button data-act="spend">+ Log spending</button></div>'+
+    '<div class="row" style="margin-bottom:14px"><button class="primary" data-act="allocate">+ Allocate · '+money(Math.max(0,availableMoney(cm)))+' free</button><button data-act="spend">+ Log spending</button></div>'+
     '<button class="fab" data-act="spend" aria-label="Log spending">＋ Spend</button><div style="height:56px" aria-hidden="true"></div>';
 
   var recent=S.spend.filter(function(x){return monthKey(x.date)===cm;}).sort(function(a,b){return b.date.localeCompare(a.date);});
@@ -1481,8 +1529,8 @@ V.budget=function(){
       var c=x.catId==='tithe'?{name:'🙏 Tithe'}:S.budget.find(function(b){return b.id===x.catId;});
       var sub=c&&x.subId&&c.subs?c.subs.find(function(y){return y.id===x.subId;}):null;
       if(sub) c={name:c.name+' › '+sub.name};
-      return '<tr><td class="num" style="white-space:nowrap">'+esc(shortDate(x.date))+'</td><td>'+esc(c?c.name:'(deleted)')+(x.note?'<br><small>'+esc(x.note)+'</small>':'')+'</td><td class="r num">'+money(x.amount)+'</td>'+
-        '<td class="r"><button class="icon danger" data-del="spend" data-id="'+x.id+'" aria-label="Delete">✕</button></td></tr>';
+      return '<tr class="tap" data-act="edittx" data-coll="spend" data-id="'+x.id+'"><td class="num" style="white-space:nowrap">'+esc(shortDate(x.date))+'</td><td>'+esc(c?c.name:'(deleted)')+(x.note?'<br><small>'+esc(x.note)+'</small>':'')+'</td><td class="r num">'+money(x.amount)+'</td>'+
+        '<td class="r"><button class="icon danger" data-act="deltx" data-coll="spend" data-id="'+x.id+'" aria-label="Delete">✕</button></td></tr>';
     }).join('')+'</tbody></table></div></div>';
   }
   h+=info('Budget tips for this family','<ul>'+
@@ -1497,8 +1545,9 @@ V.budget=function(){
 // Payments falling due in the next n days, soonest first.
 function debtSavingsCard(){
   var list=debtSavings(); if(!list.length) return '';
-  var today=sum(list,function(x){return x.today;});
+  var today=sum(list,function(x){return x.today;}), free=Math.max(0,availableMoney());
   var h='<div class="card dsave"><div class="row between"><h2>💰 Save daily for debts</h2><span class="num"><b>'+money(today)+'</b> <small class="muted">today</small></span></div>'+
+    '<div class="row between" style="margin:4px 0"><small class="muted num">Free salary money: '+money(free)+'</small>'+(today>0.5?'<button class="sm" data-act="allotall" '+(free>0.5?'':'disabled')+'>Allot all</button>':'')+'</div>'+
     '<small class="muted">Each due payment spread over the days until it\'s due'+(S.saveStart?' (saving since '+shortDate(S.saveStart)+')':'')+'. Tap to set today\'s share aside.</small>';
   list.forEach(function(x){
     var ready=x.saved>=x.amount-0.5, behind=x.expected-x.saved>x.daily+0.5;
@@ -1506,7 +1555,7 @@ function debtSavingsCard(){
       '<div class="bar thin '+(ready?'good':behind?'warn':'')+'" style="margin-top:5px"><i style="width:'+pct(x.saved,x.amount).toFixed(1)+'%"></i></div>'+
       '<small class="num">'+money(x.daily)+'/day · saved '+money(x.saved)+(behind?' · <span class="neg">behind '+money(x.expected-x.saved)+'</span>':'')+'</small></div>'+
       (ready?'<button class="primary sm" data-act="pay" data-id="'+x.d.id+'">Pay</button>'
-        :x.today>0.5?'<button class="primary sm" data-act="allot" data-id="'+x.d.id+'" data-amt="'+Math.round(x.today*100)/100+'">Allot '+shortMoney(x.today)+'</button>'
+        :x.today>0.5?(free>0.5?'<button class="primary sm" data-act="allot" data-id="'+x.d.id+'" data-amt="'+Math.round(x.today*100)/100+'">Allot '+shortMoney(Math.min(x.today,free))+'</button>':'<button class="sm" disabled>No money free</button>')
         :'<span class="pill good">✓ today</span>')+'</div>';
   });
   return h+'</div>';
@@ -1831,6 +1880,41 @@ function dreamExtra(d, sal){
 }
 
 // A face for each family member, from the age they typed.
+// ---- transactions
+var TX_TYPES={all:[], sales:['sale'], business:['bizexp','tax'], spending:['spend','tithe'], salary:['draw'], debts:['debtpay','debtsave'], savings:['sweep','dreamadd']};
+var TX_LABEL={all:'All', sales:'Sales', business:'Business', spending:'Spending', salary:'Salary', debts:'Debts', savings:'Savings'};
+var txFilter='all';
+function txLabelOf(coll, x){
+  if(coll==='incomes') return {kind:'sale', icon:'💼', label:x.source};
+  if(coll==='bizExp'){ if(x.kind==='tax') return {kind:'tax', icon:'🧾', label:'BIR tax payment'};
+    var b=S.businesses.find(function(y){return y.id===x.bizId;}), o=b&&b.opex.find(function(y){return y.id===x.itemId;});
+    return {kind:'bizexp', icon:'🏪', label:(b?b.name:'Business')+' · '+(o?o.name:'expense')}; }
+  if(coll==='spend') return x.catId==='tithe'?{kind:'tithe', icon:'🙏', label:'Tithe'}:{kind:'spend', icon:'🧾', label:pickedLabel(x.subId?x.catId+'|'+x.subId:x.catId)||'(deleted category)'};
+  var icons={draw:'👪', debtpay:'📉', debtsave:'💰', sweep:'🛢️', dreamadd:'⭐'};
+  return {kind:x.kind, icon:icons[x.kind]||'↔', label:x.note||x.kind};
+}
+function allTx(){
+  var out=[];
+  [['incomes',1],['bizExp',-1],['spend',-1],['moves',0]].forEach(function(c){
+    (S[c[0]]||[]).forEach(function(x,i){ var l=txLabelOf(c[0],x); out.push({coll:c[0], x:x, i:i, kind:l.kind, icon:l.icon, label:l.label, sign:c[1]}); });
+  });
+  return out.sort(function(a,b){ return b.x.date.localeCompare(a.x.date)||b.i-a.i; });
+}
+function txRow(t){
+  return '<div class="txrow" data-act="edittx" data-coll="'+t.coll+'" data-id="'+t.x.id+'" role="button" tabindex="0">'+
+    '<span class="txi">'+t.icon+'</span><span class="txl"><b>'+esc(t.label)+'</b><small>'+esc(shortDate(t.x.date))+(t.x.note&&t.coll!=='moves'?' · '+esc(t.x.note):'')+'</small></span>'+
+    '<span class="num '+(t.sign>0?'pos':t.sign<0?'':'')+'">'+(t.sign>0?'+':t.sign<0?'−':'')+money(t.x.amount)+'</span>'+
+    '<button class="icon danger" data-act="deltx" data-coll="'+t.coll+'" data-id="'+t.x.id+'" aria-label="Delete">✕</button></div>';
+}
+// Reverse a transfer's effect on balances (debts, goals, funds).
+function reverseMove(m, factor){
+  var a=num(m.amount)*(factor==null?1:factor);
+  if(m.kind==='debtpay'||(m.kind==='sweep'&&String(m.to).indexOf('debt:')===0)){
+    var id=m.kind==='debtpay'?m.to:String(m.to).slice(5), d=S.debts.find(function(x){return x.id===id;}); if(d) d.balance=Math.max(0,num(d.balance)+a);
+  } else if(m.kind==='dreamadd'||(m.kind==='sweep'&&String(m.to).indexOf('dream:')===0)){
+    var g=S.dreams.find(function(x){return x.id===String(m.to).slice(6);}); if(g) g.saved=Math.max(0,num(g.saved)-a);
+  } else if(m.kind==='sweep'){ S.funds[m.to]=Math.max(0,num(S.funds[m.to])-a); }
+}
 function avatar(f){
   var a=String(f.age||''), n=parseFloat(a)||0, months=/mo/i.test(a);
   if(months||n<2) return '👶';
@@ -1901,12 +1985,11 @@ V.settings=function(){
     '<label class="f"><span>Theme</span><select id="themeSel"><option value="">Match device</option><option value="light">Light</option><option value="dark">Dark</option></select></label>'+
     '</div></div>';
 
-  // Newest first; same-day transfers keep their entry order, latest on top.
-  var mv=S.moves.map(function(m,i){return {m:m,i:i};}).sort(function(a,b){return b.m.date.localeCompare(a.m.date)||b.i-a.i;}).map(function(x){return x.m;}).slice(0,30);
-  h+='<div class="card"><h2>Transfers log</h2>'+(mv.length?'<div class="scroll"><table><tbody>'+mv.map(function(m){
-    return '<tr><td class="num" style="white-space:nowrap">'+esc(shortDate(m.date))+'</td><td>'+esc(m.note||m.kind)+'</td><td class="r num">'+money(m.amount)+'</td>'+
-      '<td class="r"><button class="icon danger" data-act="undo" data-id="'+m.id+'" aria-label="Undo">Undo</button></td></tr>';
-  }).join('')+'</tbody></table></div>':'<p class="muted">Salary payouts and sweeps show up here.</p>')+'</div>';
+  // Every transaction in one list: tap to edit, ✕ to delete (undoable).
+  var tx=allTx().filter(function(x){ return txFilter==='all'||TX_TYPES[txFilter].indexOf(x.kind)>=0; });
+  h+='<div class="card"><div class="row between"><h2>🧾 Transactions</h2>'+(undoStack.length?'<button class="sm" data-act="undo1">↶ Undo</button>':'')+'</div>'+
+    '<div class="txfilter">'+Object.keys(TX_TYPES).map(function(k){ return '<button class="chip'+(txFilter===k?' on':'')+'" data-txf="'+k+'">'+TX_LABEL[k]+'</button>'; }).join('')+'</div>'+
+    (tx.length?tx.slice(0,80).map(txRow).join(''):'<p class="muted">Nothing here yet.</p>')+'</div>';
 
   h+='<div class="card"><h2>Your data</h2><p class="muted">Saved only in this browser on this device. Nobody else can see it — which also means clearing the browser erases it. Export a backup regularly and keep it somewhere safe (it contains your family\'s finances).</p>'+
     '<div class="row"><button class="primary" data-act="export">Export backup</button><button data-act="import">Import backup</button><button data-act="print">Print</button><span class="spacer"></span><button class="danger" data-act="reset">Erase everything</button></div>'+
@@ -1929,7 +2012,13 @@ dlgForm.addEventListener('submit',function(e){
   var btn=e.submitter;
   if(btn&&btn.value==='cancel'){ return; }
   var data={}; new FormData(dlgForm).forEach(function(v,k){data[k]=v;});
+  var before=JSON.stringify(S), t0=Date.now();
   if(dlgSubmit){ var r=dlgSubmit(data); if(r===false){ e.preventDefault(); return; } }
+  if(JSON.stringify(S)!==before){
+    undoStack.push({label:(dlgForm.querySelector('h2')||{}).textContent||'change', json:before, at:Date.now()}); undoFresh=true;
+    if(undoStack.length>40) undoStack.shift(); updateUndoBtn();
+    if(toastAt<t0) toast('Saved'); else { var keep=document.querySelector('#toast span'); if(keep) toast(keep.textContent); }
+  }
   save(); render();
 });
 function field(name,label,attrs,value){ return '<label class="f"><span>'+label+'</span><input name="'+name+'" '+(attrs||'')+' value="'+esc(value==null?'':value)+'"></label>'; }
@@ -1941,6 +2030,39 @@ function selectField(name,label,opts,value){
 }
 
 var ACT={};
+ACT.deltx=function(el){
+  var coll=el.dataset.coll, x=(S[coll]||[]).find(function(y){return y.id===el.dataset.id;}); if(!x) return;
+  checkpoint('delete transaction');
+  if(coll==='moves') reverseMove(x);
+  S[coll]=S[coll].filter(function(y){return y!==x;});
+  if(dlg.open) dlg.close();
+  save(); render(); toast('Deleted');
+};
+ACT.edittx=function(el){
+  var coll=el.dataset.coll, x=(S[coll]||[]).find(function(y){return y.id===el.dataset.id;}); if(!x) return;
+  var l=txLabelOf(coll,x), f='';
+  f+='<input class="bigamt num" name="amount" inputmode="decimal" required aria-label="Amount" value="'+num(x.amount)+'">';
+  if(coll==='incomes'){ var src=bizNames(); if(src.indexOf(x.source)<0) src.push(x.source); f+=selectField('source','Business',src,x.source); }
+  if(coll==='spend'){ var cur=x.catId==='tithe'?'tithe':(x.subId?x.catId+'|'+x.subId:x.catId);
+    f+='<div class="picked">'+esc(pickedLabel(cur))+'</div>'+catPicker(cur,{tithe:true,noRecent:true}); }
+  f+=field('date','Date','type="date" required',x.date);
+  if(coll!=='moves') f+=field('note','Note','',x.note||'');
+  f+='<button type="button" class="danger" data-act="deltx" data-coll="'+coll+'" data-id="'+x.id+'">Delete</button>';
+  openDialog('Edit · '+l.icon+' '+l.label, f, function(v){
+    var a=num(v.amount); if(a<=0){ toast('Enter an amount'); return false; }
+    if(coll==='moves'){
+      // amount change on a transfer: apply only the difference to what it moved
+      // reverseMove(x, f) undoes f × the amount; −diff/amount applies the extra (or returns the surplus)
+      var diff=a-num(x.amount); if(Math.abs(diff)>0.004&&num(x.amount)>0) reverseMove(x,-diff/num(x.amount));
+      x.amount=a; if(x.fromJar!=null) x.fromJar=Math.min(num(x.fromJar),a);
+    } else x.amount=a;
+    x.date=v.date||x.date;
+    if(coll!=='moves') x.note=v.note||'';
+    if(coll==='incomes') x.source=v.source;
+    if(coll==='spend'&&v.catId){ var k=String(v.catId).split('|'); x.catId=k[0]; x.subId=k[1]||null; }
+    toast('Updated');
+  }, 'Save');
+};
 ACT.income=function(){
   var src=bizNames(); if(!src.length) src=['Business'];
   openDialog('Add sales',
@@ -2011,18 +2133,20 @@ ACT.spend=function(el){
     '<details class="more"><summary>Date &amp; note</summary>'+field('date','Date','type="date" required',todayISO())+field('note','Note','')+'</details>',
     function(d){ var a=num(d.amount); if(a<=0){ toast('Enter an amount'); return false; }
       if(!d.catId){ toast('Choose a category'); return false; }
+      if(d.catId!=='tithe'){ var leftNow=drawnThisMonth()-salarySpent().total;
+        if(a>leftNow+0.5&&!confirm('Only '+money(Math.max(0,leftNow))+' of paid-out salary is left. Log '+money(a)+' anyway?')) return false; }
       S.lastCat=d.catId;
       var k=String(d.catId).split('|');
       S.spend.push({id:uid(),date:d.date||todayISO(),catId:k[0],subId:k[1]||null,amount:a,note:d.note}); toast(k[0]==='tithe'?'Tithe recorded 🙏':'Logged'); }, 'Save');
 };
 ACT.allocate=function(el){
   var cm=thisMonth(), paidOut=drawnThisMonth(), debts=salarySpent(cm).debt;
-  var avail=function(){ return paidOut-debts-allocTotal(cm); };
+  var avail=function(){ return availableMoney(cm); };
   var key=el&&el.dataset.key||'';
   var cur=function(k){ if(!k) return 0; var p=k.split('|'), b=S.budget.find(function(y){return y.id===p[0];}); if(!b) return 0; return p[1]?fundedSub(b,{id:p[1]},cm):num(allocMap(cm)[k]); };
   openDialog('Allocate · '+monthLabel(cm),
     '<div class="alloc-top num"><span>Available to allocate</span><b class="'+(avail()<0?'neg':'')+'">'+money(avail())+'</b></div>'+
-    '<small class="muted">Salary paid out '+money(paidOut)+' − saved/paid for debts '+money(debts)+' − already allocated '+money(allocTotal(cm))+'</small>'+
+    '<small class="muted">Salary paid out '+money(paidOut)+' − debts saved/paid '+money(debts)+' − money already in budget lines. You can\'t allocate more than this.</small>'+
     (paidOut<=0?'<div class="note warn">Pay out the salary first (Home → Pay salary), then allocate it.</div>':'')+
     '<input class="bigamt num" name="amount" inputmode="decimal" placeholder="₱0" aria-label="Amount for this category" value="'+(key?cur(key)||'':'')+'">'+
     '<div class="picked" aria-live="polite">'+(key?esc(pickedLabel(key)):'Choose a category')+'</div>'+
@@ -2032,13 +2156,18 @@ ACT.allocate=function(el){
     function(d){
       if(!d.catId){ toast('Choose a category'); return false; }
       var amt=num(d.amount), before=cur(d.catId);
-      if(amt-before>avail()+0.5&&paidOut>0&&!confirm('That is '+money(amt-before-avail())+' more than is available. Allocate anyway?')) return false;
+      // a line's money only needs to grow by what it doesn't already have (allocated or spent)
+      var p=d.catId.split('|'), b=S.budget.find(function(y){return y.id===p[0];});
+      var lineNow=b?Math.max(fundedLine(b,cm),spentThisMonth(b.id)):0, lineAfter=b?Math.max(fundedLine(b,cm)-before+amt,spentThisMonth(b.id)):amt;
+      var growth=lineAfter-lineNow;
+      if(growth>Math.max(0,avail())+0.5){ toast('Only '+money(Math.max(0,avail()))+' is free — enter up to '+money(before+Math.max(0,avail()))); return false; }
       setAlloc(d.catId,amt,cm); toast(amt>0?money(amt)+' → '+pickedLabel(d.catId).split(' › ').pop():'Allocation removed');
     }, 'Allocate');
 };
 // Fill every line up to its plan, in budget order, with what is available.
 ACT.fillplan=function(){
-  var cm=thisMonth(), left=drawnThisMonth()-salarySpent(cm).debt-allocTotal(cm), n=0;
+  var cm=thisMonth(), left=Math.max(0,availableMoney(cm)), n=0;
+  if(left>0.5) checkpoint('fund per plan');
   if(left<=0.5){ toast('Nothing left to allocate'); return; }
   S.budget.forEach(function(b){
     if(left<=0.5) return;
@@ -2102,9 +2231,24 @@ ACT.pay=function(el){
       toast(d.balance<=0.5?'🎉 '+d.name+' is PAID OFF!':'Balance now '+money(d.balance)); }, 'Record');
 };
 // Set aside today's share for one debt (tapped by hand).
+ACT.undo1=function(){ undoLast(); };
+// Set aside today's share for every debt at once, as far as the free money goes.
+ACT.allotall=function(){
+  var free=Math.max(0,availableMoney()), list=debtSavings().filter(function(x){return x.today>0.5;}), n=0, total=0;
+  if(!list.length){ toast('All debts are up to date today ✓'); return; }
+  if(free<=0.5){ toast('No money free — pay out salary first'); return; }
+  checkpoint('allot all debts');
+  list.forEach(function(x){
+    var a=Math.min(x.today,free-total); if(a<=0.5) return;
+    S.moves.push({id:uid(),date:todayISO(),kind:'debtsave',to:x.d.id,amount:Math.round(a*100)/100,note:'Saved for '+x.d.name}); total+=a; n++;
+  });
+  save(); render(); toast(money(total)+' set aside for '+n+' debt'+(n>1?'s':'')+(total<sum(list,function(x){return x.today;})-0.5?' (all the free money)':''));
+};
 ACT.allot=function(el){
   var d=S.debts.find(function(x){return x.id===el.dataset.id;}); if(!d) return;
-  var a=num(el.dataset.amt); if(!(a>0)) return;
+  var a=Math.min(num(el.dataset.amt),Math.max(0,availableMoney()));
+  if(!(a>0.5)){ toast('No money free — pay out salary first'); return; }
+  checkpoint('allot '+d.name);
   S.moves.push({id:uid(),date:todayISO(),kind:'debtsave',to:d.id,amount:Math.round(a*100)/100,note:'Saved for '+d.name});
   save(); render(); toast(money(a)+' set aside for '+d.name);
 };
@@ -2117,6 +2261,7 @@ ACT.draw=function(){
     '<p class="muted" style="font-size:13px">Do the real transfer in your bank app, then record it here.</p>'+
     (h<need-0.5?'<div class="note warn">The tank has less than the salary due so far — pay out what\'s there; the rest follows as sales come in.</div>':''),
     function(v){ var a=num(v.amount); if(a<=0) return false;
+      if(a>h+0.5){ toast('The tank only has '+money(h)); return false; }
       S.moves.push({id:uid(),date:todayISO(),kind:'draw',amount:a,note:'Salary for '+monthLabel(thisMonth(),true)}); toast('Salary recorded'); }, 'Record');
 };
 ACT.sweep=function(el){
@@ -2146,6 +2291,7 @@ ACT.sweep=function(el){
 ACT.undo=function(el){
   var m=S.moves.find(function(x){return x.id===el.dataset.id;}); if(!m) return;
   if(!confirm('Undo "'+(m.note||m.kind)+'" ('+money(m.amount)+')?')) return;
+  checkpoint('undo '+(m.note||m.kind));
   if(m.kind==='debtpay'||(m.kind==='sweep'&&String(m.to).indexOf('debt:')===0)){
     var id=m.kind==='debtpay'?m.to:String(m.to).slice(5), d=S.debts.find(function(x){return x.id===id;}); if(d) d.balance=num(d.balance)+num(m.amount);
   } else if(m.kind==='dreamadd'||(m.kind==='sweep'&&String(m.to).indexOf('dream:')===0)){
@@ -2193,9 +2339,10 @@ ACT.dreamadd=function(el){
 ACT.dreambought=function(el){
   var d=S.dreams.find(function(x){return x.id===el.dataset.id;}); if(!d) return;
   if(!confirm('Mark "'+d.name+'" as bought? 🎉')) return;
+  checkpoint('mark bought');
   d.status='bought'; save(); render(); toast('Congratulations! 🎉');
 };
-ACT.dreammove=function(el){
+ACT.dreammove=function(el){ checkpoint('reorder goals');
   var i=S.dreams.findIndex(function(x){return x.id===el.dataset.id;}), j=i+(+el.dataset.dir);
   if(i<0||j<0||j>=S.dreams.length) return;
   var t=S.dreams[i]; S.dreams[i]=S.dreams[j]; S.dreams[j]=t; save(); render();
@@ -2211,15 +2358,16 @@ ACT.addcat=function(el){
     function(v){ S.budget.push({id:uid(),name:v.name,group:v.group||'Other',amount:num(v.amount),essential:!!v.essential}); });
 };
 ACT.addsub=function(el){
+  checkpoint('add sub-item');
   var b=S.budget.find(function(x){return x.id===el.dataset.id;}); if(!b) return;
   b.subs=b.subs||[];
   // Splitting a line that already had an amount: keep it as the first sub-item.
   if(!b.subs.length&&num(b.amount)>0) b.subs.push({id:uid(),name:b.name,amount:num(b.amount)});
   b.subs.push({id:uid(),name:'',amount:0}); save(); render();
 };
-ACT.addfam=function(){ S.family.push({id:uid(),name:'',age:''}); save(); render(); };
-ACT.addbiz=function(){ S.businesses.push(newBiz('Business '+(S.businesses.length+1))); save(); render(); };
-ACT.addopex=function(el){ var b=S.businesses.find(function(x){return x.id===el.dataset.biz;}); if(!b) return; b.opex.push({id:uid(),name:'',amount:0,freq:'month',day:30,from:todayISO()}); save(); render(); };
+ACT.addfam=function(){ checkpoint('add family member'); S.family.push({id:uid(),name:'',age:''}); save(); render(); };
+ACT.addbiz=function(){ checkpoint('add business'); S.businesses.push(newBiz('Business '+(S.businesses.length+1))); save(); render(); };
+ACT.addopex=function(el){ checkpoint('add opex line'); var b=S.businesses.find(function(x){return x.id===el.dataset.biz;}); if(!b) return; b.opex.push({id:uid(),name:'',amount:0,freq:'month',day:30,from:todayISO()}); save(); render(); };
 ACT.export=function(){
   // Inside the Android app the WebView can't download blobs; hand the JSON to
   // the native side, which opens the system "save as" picker.
@@ -2238,8 +2386,8 @@ ACT.export=function(){
 };
 ACT.import=function(){ document.getElementById('importFile').click(); };
 ACT.print=function(){ if(window.AndroidBridge) AndroidBridge.print(); else window.print(); };
-ACT.reset=function(){ if(confirm('Erase ALL data on this device? Export a backup first if you might need it.')){ S=freshState(); save(); tab='home'; render(); } };
-ACT.sample=function(){
+ACT.reset=function(){ if(confirm('Erase ALL data on this device? Export a backup first if you might need it.')){ checkpoint('erase everything'); S=freshState(); save(); tab='home'; render(); } };
+ACT.sample=function(){ checkpoint('sample numbers');
   // Illustrative numbers only, so the family can see how every screen works.
   var cm=thisMonth(), b=['Online store','Food stall'];
   S.businesses=b.map(function(n){ return newBiz(n); });
@@ -2289,6 +2437,7 @@ document.addEventListener('input',function(e){
 });
 document.addEventListener('change',function(e){
   var el=e.target;
+  if(el.dataset&&(el.dataset.bind||el.dataset.edit||el.dataset.sub||el.dataset.opx||el.dataset.bizf||el.dataset.protect||el.dataset.biz!=null)) checkpoint('edit',true);
   if(el.id==='importFile'&&el.files[0]){
     var r=new FileReader(); r.onload=function(){
       try{
@@ -2296,10 +2445,11 @@ document.addEventListener('change',function(e){
         if(d&&d.kind==='family-budget-debts'&&Array.isArray(d.debts)){
           // A debt list only: replaces the debts, leaves income/budget/goals alone.
           if(S.debts.length&&!confirm('Replace your '+S.debts.length+' debts with the '+d.debts.length+' in this file?')) return;
+          checkpoint('import debts');
           S.debts=d.debts.map(function(x){ return Object.assign({id:uid(),rate:0,min:0,due:'',schedule:null,note:'',group:''},x,{start:Math.max(num(x.start),num(x.balance))}); });
           save(); tab='debts'; render(); toast(d.debts.length+' debts imported'); return;
         }
-        if(!d||!Array.isArray(d.budget)) throw 0; S=Object.assign(freshState(),d); migrate(); save(); render(); toast('Backup restored');
+        if(!d||!Array.isArray(d.budget)) throw 0; checkpoint('restore backup'); S=Object.assign(freshState(),d); migrate(); save(); render(); toast('Backup restored');
       }
       catch(err){ toast('That file is not a valid backup'); }
     }; r.readAsText(el.files[0]); el.value=''; return;
@@ -2354,7 +2504,8 @@ document.addEventListener('click',function(e){
         a.value=cur||pl||''; a.select(); } }
     return;
   }
-  var el=e.target.closest('button,[data-go],.bline[data-act]'); if(!el) return;
+  var el=e.target.closest('button,[data-go],[data-act],[data-txf]'); if(!el) return;
+  if(el.dataset.txf){ txFilter=el.dataset.txf; render(); return; }
   if(el.dataset.tab){ go(el.dataset.tab); return; }
   if(el.dataset.incnav){ incMk=addMonths(incMk||thisMonth(),+el.dataset.incnav); render(); return; }
   if(el.dataset.bedit!=null){ editGroups[el.dataset.bedit]=!editGroups[el.dataset.bedit]; render(); return; }
@@ -2367,23 +2518,26 @@ document.addEventListener('click',function(e){
   if(el.dataset.act&&ACT[el.dataset.act]){ e.preventDefault(); ACT[el.dataset.act](el); return; }
   if(el.dataset.delbiz!=null){ var bb=S.businesses[+el.dataset.delbiz];
     if(bb&&!confirm('Remove '+bb.name+'? Its logged sales stay in the history.')) return;
+    checkpoint('remove business');
     S.businesses.splice(+el.dataset.delbiz,1); save(); render(); return; }
   if(el.dataset.delsub){
+    checkpoint('delete sub-item');
     var bl2=S.budget.find(function(x){return x.id===el.dataset.id;}); if(!bl2) return;
     bl2.subs=bl2.subs.filter(function(x){return x.id!==el.dataset.delsub;});
     // The last sub-item gone: the line goes back to a single amount (their total).
     if(!bl2.subs.length) bl2.amount=0;
     save(); render(); return;
   }
-  if(el.dataset.delopx){ var bz3=S.businesses.find(function(x){return x.id===el.dataset.bid;}); if(bz3){ bz3.opex=bz3.opex.filter(function(x){return x.id!==el.dataset.delopx;}); save(); render(); } return; }
+  if(el.dataset.delopx){ checkpoint('delete opex line'); var bz3=S.businesses.find(function(x){return x.id===el.dataset.bid;}); if(bz3){ bz3.opex=bz3.opex.filter(function(x){return x.id!==el.dataset.delopx;}); save(); render(); } return; }
   if(el.dataset.del){
     var coll=el.dataset.del;
+    checkpoint('delete');
     if(coll==='budget'&&S.spend.some(function(s){return s.catId===el.dataset.id;})&&!confirm('This category has logged spending. Delete anyway?')) return;
     if(coll==='debts'&&!confirm('Delete this debt?')) return;
     if(coll==='dreams'&&!confirm('Delete this goal and its saved amount?')) return;
     S[coll]=S[coll].filter(function(x){return x.id!==el.dataset.id;});
     if(dlg.open) dlg.close();
-    save(); render();
+    save(); render(); toast('Deleted');
   }
 });
 
@@ -2435,7 +2589,7 @@ function render(){
   document.getElementById('view').innerHTML=V[tab]();
   var st=steps();
   document.getElementById('hdrSub').textContent=new Date().toLocaleDateString('en-PH',{weekday:'short',month:'long',day:'numeric'});
-  document.getElementById('hdrStep').textContent=st.current?'Step '+(st.index+1)+'/'+st.list.length+' ›':'🎉 Done';
+  document.getElementById('hdrStep').textContent=st.current?(st.index+1)+'/'+st.list.length+' ›':'🎉';
   document.getElementById('hdrStep').title=st.current?st.current.title:'';
   var ts=document.getElementById('themeSel'); if(ts){ try{ ts.value=localStorage.getItem(KEY+'.theme')||''; }catch(e){} }
 }
