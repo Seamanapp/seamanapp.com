@@ -310,6 +310,12 @@ button.link.subadd{font-size:13px;padding:2px 18px 8px;display:block}
 .subl{display:grid;grid-template-columns:minmax(0,40%) 1fr 48px;gap:8px;align-items:center;font-size:12.5px;margin:4px 0}
 .subl > span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
 .subl .bar.thin{margin-top:0;height:5px} .subl .num{text-align:right}
+details.coll > summary{font-size:16px}
+details.coll .coll-b{margin-top:6px}
+details.bizsave{border-top:1px solid var(--line);padding:6px 0}
+details.bizsave summary{display:flex;justify-content:space-between;cursor:pointer;list-style:none;padding:6px 0;color:var(--ink)}
+details.bizsave summary::-webkit-details-marker{display:none}
+.dash .stat .h .pos,.pos{color:var(--good)}
 .txfilter{display:flex;gap:6px;overflow-x:auto;padding:6px 0 8px}
 .txrow{display:grid;grid-template-columns:28px 1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
 .txrow:last-child{border-bottom:0}
@@ -319,8 +325,8 @@ tr.tap{cursor:pointer}
 .orow.total{border-top:2px solid var(--line)}
 .prio{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--bar);color:var(--muted);font-size:11px;font-weight:700;vertical-align:1px}
 .prio.top{background:var(--brand);color:var(--brand-ink)}
-.dsave .dsrow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
-.dsave .dsrow:last-child{border-bottom:0}
+.dsrow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.dsrow:last-child{border-bottom:0}
 .dsrow small{display:block;color:var(--muted);font-size:12px}
 .dtoday{margin-bottom:14px;font-weight:600}
 .dtoday small{font-weight:400}
@@ -709,6 +715,31 @@ function opexLineStatus(o, b){
   var asideAll=accrued(o,b,'2000-01-01',t);
   return {next:next, due:num(o.amount), cycleAside:cycleAside, cyclePaid:cyclePaid, reserve:asideAll-paidAll, daily:dailyValue(o,b)};
 }
+// Opex savings, same idea as the debts: business money set aside by hand
+// for each line, used first when the line is paid.
+function opexJar(o){
+  var inn=sum(S.moves.filter(function(m){return m.kind==='opexsave'&&m.to===o.id;}),function(m){return num(m.amount);});
+  var out=sum(S.bizExp.filter(function(e){return e.itemId===o.id;}),function(e){return num(e.fromJar);});
+  var back=sum(S.moves.filter(function(m){return m.kind==='opexrelease'&&m.to===o.id;}),function(m){return num(m.amount);});
+  return Math.max(0,inn-out-back);
+}
+// One line's daily saving toward its next due date: what should be saved by
+// today (its daily slices so far this cycle), what's saved, what to allot now.
+function opexSaving(o, b){
+  if(!(num(o.amount)>0)) return null;
+  var st=opexLineStatus(o,b); if(!st.next) return null;
+  var t=todayISO(), next=st.next, start=prevDue2(o,b,next);
+  var expected=Math.min(st.due, accrued(o,b,start,t<next?t:next)), jar=opexJar(o);
+  var openLeft=Math.max(1,openCount(b,addDays(t,-1),next));
+  return {o:o, b:b, next:next, due:st.due, expected:expected, jar:jar, daily:dailyValue(o,b),
+    today:Math.max(0,Math.min(st.due-jar, expected-jar)), needPerDay:Math.max(0,st.due-jar)/openLeft,
+    ready:jar>=st.due-0.5, daysLeft:Math.max(0,daysBetween(t,next))};
+}
+function opexSavings(bizId){
+  var out=[];
+  S.businesses.forEach(function(b){ if(bizId&&b.id!==bizId) return; b.opex.forEach(function(o){ var x=opexSaving(o,b); if(x) out.push(x); }); });
+  return out.sort(function(a,b){ return a.next.localeCompare(b.next)||b.due-a.due; });
+}
 // Opex report for a month: daily budget building up vs sales, per business.
 function opexReport(mk, onlyBizId){
   var cm=thisMonth(), last=mk===cm?+todayISO().slice(8,10):mk<cm?daysIn(mk):0, days=[], cumB=0, cumS=0;
@@ -733,8 +764,10 @@ function bizWallet(){
   w.paidTax=sum(S.bizExp.filter(function(e){return e.kind==='tax';}),function(e){return num(e.amount);});
   w.given=titheGiven();
   w.balance=num(S.walletStart)+w.sales-w.paidOpex-w.paidTax-w.given-w.family;
-  w.opexRes=w.opex-w.paidOpex; w.taxRes=w.tax-w.paidTax; w.titheRes=w.tithe-w.given;
-  w.free=w.balance-w.opexRes-w.taxRes-w.titheRes;
+  w.taxRes=w.tax-w.paidTax; w.titheRes=w.tithe-w.given;
+  w.jars=0; S.businesses.forEach(function(b){ b.opex.forEach(function(o){ w.jars+=opexJar(o); }); });
+  w.opexRes=w.jars;
+  w.free=w.balance-w.jars-Math.max(0,w.taxRes)-Math.max(0,w.titheRes);
   return w;
 }
 // A typical full month of a line (for the Profile summary).
@@ -1146,7 +1179,7 @@ function barChart(pts, opts){
       '<text x="'+cx+'" y="'+(H-6)+'" text-anchor="middle" class="tl">'+esc(p.label)+'</text>'+
       ((i===0||i===n-1)&&p.v>0?'<text x="'+cx+'" y="'+(H-pb-h-5)+'" text-anchor="middle" class="tv">'+shortMoney(p.v)+'</text>':'')+'</g>';
   });
-  if(opts.ref) g+='<line x1="0" x2="'+W+'" y1="'+y(opts.ref)+'" y2="'+y(opts.ref)+'" class="ref"/><text x="'+W+'" y="'+(y(opts.ref)-4)+'" text-anchor="end" class="tr">'+esc(opts.refLabel||'')+'</text>';
+  if(opts.ref) g+='<line x1="0" x2="'+W+'" y1="'+y(opts.ref)+'" y2="'+y(opts.ref)+'" class="ref"/><text x="2" y="'+(y(opts.ref)-4)+'" text-anchor="start" class="tr">'+esc(opts.refLabel||'')+'</text>';
   return '<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(opts.aria||'Column chart')+'">'+g+'</svg>';
 }
 
@@ -1307,35 +1340,54 @@ V.income=function(){
     :'<p class="muted">No sales logged for '+monthLabel(incMk,true)+'.</p>'+(f.deficit>0.5?'<div class="note bad">Opex deficit: '+money(f.deficit)+' should be set aside by now but there are no sales yet.</div>':''))+
     '</div>';
 
-  // Business wallet: what the account should hold, and what's spoken for
+  // Business dashboard, wallet (with daily opex savings), opex report and the
+  // per-business view — each folds away, since there may be several businesses.
+  h+=bizDashboard();
+
   var wal=bizWallet(), wparts=[
-    {label:'Set aside for opex',v:Math.max(0,wal.opexRes),color:slotColor(1)},
+    {label:'Set aside for opex',v:Math.max(0,wal.jars),color:slotColor(1)},
     {label:'Tax to pay',v:Math.max(0,wal.taxRes),color:slotColor(2)},
     {label:'Tithe to give',v:Math.max(0,wal.titheRes),color:slotColor(3)},
-    {label:'Free (reinvest)',v:Math.max(0,wal.free),color:slotColor(4)}];
-  var lines=[];
-  S.businesses.forEach(function(b){ b.opex.forEach(function(o){ if(num(o.amount)>0){ var st=opexLineStatus(o,b); lines.push({b:b,o:o,st:st}); } }); });
-  lines.sort(function(a,b){ return String(a.st.next||'9').localeCompare(String(b.st.next||'9')); });
-  h+='<div class="card wallet"><div class="row between"><h2>👛 Business wallet</h2><button class="primary sm" data-act="bizexp">Pay expense</button></div>'+
-    '<div class="row between" style="align-items:baseline"><span class="muted">Should have now</span><b class="num" style="font-size:26px">'+money(wal.balance)+'</b></div>'+
+    {label:'Free',v:Math.max(0,wal.free),color:slotColor(4)}];
+  var osv=opexSavings(), oToday=sum(osv,function(x){return x.today;}), bfree=Math.max(0,wal.free);
+  var firstOpen=osv.find(function(x){return !x.ready;});
+  var oRow=function(x,i){
+    var behind=x.expected-x.jar>x.daily+0.5;
+    return '<div class="dsrow"><div class="dl"><b><span class="prio'+(x===firstOpen?' top':'')+'">'+(i+1)+'</span> '+esc(x.o.name)+'</b>'+
+      '<small class="num">Due '+shortDate(x.next)+(x.daysLeft?' · '+x.daysLeft+' day'+(x.daysLeft>1?'s':'')+' left':' · today')+' · '+money(x.due)+PER_LABEL[x.o.freq||'month']+'</small>'+
+      '<div class="bar thin '+(x.ready?'good':behind?'warn':'')+'" style="margin-top:5px"><i style="width:'+pct(x.jar,x.due).toFixed(1)+'%"></i></div>'+
+      '<small class="num">saved '+money(x.jar)+' · '+(x.ready?'ready ✓':'needs '+money(x.needPerDay)+'/day from now')+(behind?' · <span class="neg">behind '+money(x.expected-x.jar)+'</span>':'')+'</small>'+
+      (x===firstOpen&&!behind&&bfree>0.5?'<button class="link" style="padding:2px 0;font-size:12px" data-act="opexahead" data-oid="'+x.o.id+'">⏩ Get ahead on this one</button>':'')+'</div>'+
+      (x.ready?'<button class="primary sm" data-act="bizexp" data-line="'+x.b.id+'|'+x.o.id+'" data-amt="'+Math.round(x.due)+'">Pay</button>'
+        :x.today>0.5?(bfree>0.5?'<button class="primary sm" data-act="opexallot" data-oid="'+x.o.id+'" data-amt="'+Math.round(x.today*100)/100+'">Allot '+shortMoney(Math.min(x.today,bfree))+'</button>':'<button class="sm" disabled>No money free</button>')
+        :'<span class="pill good">✓ today</span>')+'</div>';
+  };
+  var idx={}; osv.forEach(function(x,i){ idx[x.o.id]=i; });
+  var groupsHtml=S.businesses.length>1
+    ? S.businesses.map(function(b){ var l=osv.filter(function(x){return x.b.id===b.id;}); if(!l.length) return '';
+        var t=sum(l,function(x){return x.today;});
+        return '<details class="bizsave" data-g="wal:'+b.id+'"'+(openGroups['wal:'+b.id]!==false?' open':'')+'><summary><b>'+esc(b.name)+'</b><span class="num">'+(t>0.5?money(t)+' today':'✓')+'</span></summary>'+
+          l.map(function(x){return oRow(x,idx[x.o.id]);}).join('')+
+          (t>0.5?'<button class="sm" data-act="opexallotall" data-biz="'+b.id+'" '+(bfree>0.5?'':'disabled')+'>Allot all · '+esc(b.name)+'</button>':'')+'</details>';
+      }).join('')
+    : osv.map(oRow).join('');
+  h+=collapsible('inc:wallet',true,'<span class="gn">👛 Business wallet</span><span class="gt num">'+money(wal.balance)+'</span>',
+    '<div class="row between" style="align-items:baseline;margin-top:8px"><span class="muted">Should have now</span><b class="num" style="font-size:24px">'+money(wal.balance)+'</b></div>'+
     (wal.balance>0?stackBar(wparts)+legend(wparts):'')+
-    (wal.free<-0.5?'<div class="note bad">Short '+money(-wal.free)+': sales so far haven\'t covered what should be set aside for opex and tax.</div>':'')+
-    (wal.opexRes<-0.5?'<div class="note bad">Opex paid is '+money(-wal.opexRes)+' more than was set aside — raise those lines in Profile.</div>':'')+
-    (lines.length?'<div class="k" style="margin:10px 0 4px">Opex · building up to each due date</div>'+lines.map(function(x){
-      var st=x.st, nd=st.next?new Date(st.next+'T00:00:00'):null;
-      var cyc=pct(st.cycleAside,st.due), paidC=st.cyclePaid>=st.due-0.5;
-      return '<div class="wline"><div class="dl"><b>'+esc(x.o.name)+'</b><small>'+esc(x.b.name)+' · '+money(st.due)+PER_LABEL[x.o.freq||'month']+'</small>'+
-        (nd?'<small class="num">Due '+nd.toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric'})+' · set aside '+money(st.cycleAside)+' of '+money(st.due)+'</small>':'')+
-        '<div class="bar thin '+(paidC?'good':'')+'" style="margin-top:4px"><i style="width:'+(paidC?100:cyc).toFixed(1)+'%"></i></div></div>'+
-        '<div class="r num"><b class="'+(st.reserve<-0.5?'neg':'')+'">'+money(st.reserve)+'</b><small class="muted">held</small></div>'+
-        '<button class="icon" data-act="bizexp" data-line="'+x.b.id+'|'+x.o.id+'" data-amt="'+Math.round(st.due)+'">Pay</button></div>';
-    }).join(''):'<p class="muted" style="font-size:13px">Add opex lines to your businesses in Profile to see what to set aside.</p>')+
+    (wal.free<-0.5?'<div class="note bad">Short '+money(-wal.free)+': the wallet doesn\'t cover what\'s set aside plus tax and tithe.</div>':'')+
+    (osv.length?'<div class="row between" style="margin:12px 0 2px"><b>🏪 Save daily for opex</b><span class="num"><b>'+money(oToday)+'</b> <small class="muted">today</small></span></div>'+
+      '<div class="row between" style="margin-bottom:4px"><small class="muted num">Free business money: '+money(bfree)+'</small><span class="row" style="gap:6px">'+
+        (osv.some(function(x){return x.jar>0.5;})?'<button class="sm" data-act="opexreset">↺ Reset</button>':'')+
+        (oToday>0.5?'<button class="sm primary" data-act="opexallotall" '+(bfree>0.5?'':'disabled')+'>Allot all</button>':'')+'</span></div>'+
+      groupsHtml
+      :'<p class="muted" style="font-size:13px">Add opex lines to your businesses in Profile to save for them daily.</p>')+
     (wal.taxRes>0.5?'<div class="row between" style="margin-top:8px"><span>🧾 Tax set aside '+money(wal.taxRes)+'</span><button class="sm" data-act="bizexp" data-line="tax|tax">Pay tax</button></div>':'')+
+    '<div class="row" style="margin-top:10px"><button class="sm" data-act="bizexp">Pay an expense</button></div>'+
     info('How the wallet works','<ul>'+
-      '<li>All sales go into the business account. Every open day, a slice of each opex line is set aside so its full amount is there by the due date.</li>'+
-      '<li>The family share moves to the tank; tax and tithe stay until paid/given; what remains is free for reinvesting.</li>'+
-      '<li>If the real account balance differs, set the starting balance in Profile → Family businesses.</li></ul>')+
-    '</div>';
+      '<li>All sales go into the business account; the family share moves to the tank, tax and tithe stay until paid/given.</li>'+
+      '<li><b>Opex is saved by hand, like the debts:</b> each line\'s amount is spread over the open days until it\'s due. Allot all gives every line its daily share first (soonest due first), then catches up the soonest due.</li>'+
+      '<li>Paying an expense uses its savings first. Reset returns unused savings to free money.</li>'+
+      '<li>If the real account balance differs, set the starting balance in Profile → Family businesses.</li></ul>'));
 
   // Opex report: daily value of every line, the daily budget building up
   // through the month against sales, and the deficit when sales fall short.
@@ -1343,7 +1395,7 @@ V.income=function(){
   S.businesses.forEach(function(b){ b.opex.forEach(function(o){ if(num(o.amount)>0) olines.push({b:b,o:o,month:accrued(o,b,addDays(incMk+'-01',-1),lastOfMonth(incMk)),mtd:opexDue(o,b,incMk)}); }); });
   if(olines.length){
     var monthTot=sum(olines,function(x){return x.month;});
-    h+='<div class="card"><h2>📊 Opex report · '+monthLabel(incMk)+'</h2>'+
+    h+=collapsible('inc:opex',false,'<span class="gn">📊 Opex report · '+monthLabel(incMk)+'</span><span class="gt num'+(rep.deficit>0.5?' neg':'')+'">'+(rep.deficit>0.5?'deficit '+shortMoney(rep.deficit):'surplus '+shortMoney(rep.surplus))+'</span>',
       '<div class="grid g3" style="margin:8px 0">'+
         tile('Monthly opex',shortMoney(monthTot),monthLabel(incMk))+
         tile('Set aside so far',shortMoney(rep.budget),'sales '+shortMoney(rep.sales))+
@@ -1352,14 +1404,14 @@ V.income=function(){
       '<div class="olist">'+olines.map(function(x){
         return '<div class="orow"><span><b>'+esc(x.o.name)+'</b><small>'+money(num(x.o.amount))+PER_LABEL[x.o.freq||'month']+(S.businesses.length>1?' · '+esc(x.b.name):'')+'</small></span>'+
           '<span class="num">'+money(x.month)+'<small>this month</small></span><span class="num">'+money(x.mtd)+'<small>set aside</small></span></div>';
-      }).join('')+'<div class="orow total"><span><b>Total</b></span><span class="num"><b>'+money(monthTot)+'</b></span><span class="num"><b>'+money(rep.budget)+'</b></span></div></div></div>';
+      }).join('')+'<div class="orow total"><span><b>Total</b></span><span class="num"><b>'+money(monthTot)+'</b></span><span class="num"><b>'+money(rep.budget)+'</b></span></div></div>');
   }
 
   // 2 · Each business side by side
   var rows=f.byBiz.filter(function(x){return x.revenue||x.opex;});
   if(rows.length){
     var mx=Math.max.apply(null,rows.map(function(x){return Math.max(x.revenue,x.opex);}).concat([1]));
-    h+='<div class="card"><h2>🏪 By business</h2>'+rows.map(function(x){
+    h+=collapsible('inc:biz',false,'<span class="gn">🏪 By business · '+monthLabel(incMk)+'</span><span class="gt num">'+rows.length+'</span>',rows.map(function(x){
       var margin=x.revenue?Math.round(x.profit/x.revenue*100):0, b=x.biz;
       var items=b?b.opex.map(function(o){
         var act=sum(S.bizExp.filter(function(e){return e.itemId===o.id&&monthKey(e.date)===incMk;}),function(e){return num(e.amount);});
@@ -1372,8 +1424,8 @@ V.income=function(){
           var over=o.plan&&o.act>o.plan;
           return '<div class="row between"><span>'+esc(o.name)+' <small class="muted">'+money(o.amt)+' '+FREQ_LABEL[o.freq]+'</small></span><span class="num'+(over?' neg':'')+'">'+(o.act?money(o.act):'—')+' <small>/ '+money(o.plan)+' so far</small></span></div>';
         }).join('')+'</div>':'<p class="muted" style="font-size:13px">Set this business\'s opex in Profile → Businesses.</p>')+
-        (x.est?'<small class="muted">* includes planned costs due so far — log real ones with "− Expense"</small>':'')+'</details>';
-    }).join('')+'</div>';
+        '</details>';
+    }).join(''));
   }
 
   // 3 · Family share over the year, against the salary
@@ -1441,6 +1493,63 @@ function cumChart(days){
     '<line class="xh" x1="0" x2="0" y1="'+pt+'" y2="'+(H-pb)+'" visibility="hidden"/><circle class="xd" r="4.5" cx="0" cy="0" visibility="hidden"/>'+
     '</svg></div>'+
     '<div class="row" style="gap:14px;font-size:12px;margin:4px 0 8px"><span><span class="sw" style="background:var(--brand)"></span> sales (cumulative)</span><span><span class="sw" style="background:var(--c1)"></span> opex budget (cumulative)</span></div>';
+}
+function collapsible(key, defOpen, summary, body){
+  var open=openGroups[key]!=null?openGroups[key]:defOpen;
+  return '<details class="card grp coll" data-g="'+key+'"'+(open?' open':'')+'><summary>'+summary+'</summary><div class="coll-b">'+body+'</div></details>';
+}
+var dashBiz='all';
+// The numbers worth watching for the family business(es).
+function bizDashboard(){
+  if(!S.businesses.length&&!S.incomes.length) return '';
+  var mk=incMk||thisMonth(), cm=thisMonth(), t=todayISO();
+  var bizs=dashBiz==='all'?S.businesses:S.businesses.filter(function(b){return b.id===dashBiz;});
+  var names=dashBiz==='all'?bizNames():bizs.map(function(b){return b.name;});
+  var salesOn=function(iso){ return sum(S.incomes.filter(function(i){return i.date===iso&&names.indexOf(i.source)>=0;}),function(i){return num(i.amount);}); };
+  var last=mk===cm?+t.slice(8,10):mk<cm?daysIn(mk):0, days=[], openDays=0;
+  var isOpenAny=function(iso){ return !bizs.length||bizs.some(function(b){return isOpen(b,iso);}); };
+  for(var d=1; d<=last; d++){ var iso=mk+'-'+pad(d), v=salesOn(iso), op=isOpenAny(iso); if(op) openDays++; days.push({d:d,iso:iso,v:v,open:op}); }
+  var month=sum(days,function(x){return x.v;});
+  var pmk=addMonths(mk,-1), prev=0; for(d=1; d<=Math.min(last,daysIn(pmk)); d++) prev+=salesOn(pmk+'-'+pad(d));
+  var growth=prev>0?(month-prev)/prev*100:null;
+  var dailyOpex=0; bizs.forEach(function(b){ b.opex.forEach(function(o){ dailyOpex+=dailyValue(o,b); }); });
+  var taxR=num(S.split.tax)/100, breakEven=dailyOpex/Math.max(0.01,1-taxR);
+  var below=days.filter(function(x){return x.open&&x.v<breakEven-0.5;}).length;
+  var avg=openDays?month/openDays:0, best=days.reduce(function(a,x){return x.v>(a?a.v:0)?x:a;},null);
+  var f=monthFlow(mk, dashBiz==='all'?undefined:names[0]);
+  var margin=f.revenue?f.profit/f.revenue*100:0, opexPct=f.revenue?f.opex/f.revenue*100:0;
+  var last7=0; for(d=0; d<7; d++) last7+=salesOn(addDays(t,-d));
+  var free=bizWallet().free, runway=dailyOpex>0?Math.max(0,free)/dailyOpex:null;
+  var body='';
+  if(S.businesses.length>1) body+='<div class="txfilter">'+[['all','All']].concat(S.businesses.map(function(b){return [b.id,b.name];})).map(function(o){
+    return '<button class="chip'+(dashBiz===o[0]?' on':'')+'" data-dashbiz="'+o[0]+'">'+esc(o[1])+'</button>'; }).join('')+'</div>';
+  body+='<div class="grid g3 dash" style="margin:8px 0">'+
+    (mk===cm?tile('Today',shortMoney(salesOn(t)),'last 7 days '+shortMoney(last7)):tile('Open days',String(openDays),monthLabel(mk)))+
+    tile('This month',shortMoney(month),growth==null?'—':'<span class="'+(growth<0?'neg':'pos')+'">'+(growth>=0?'▲ ':'▼ ')+Math.abs(growth).toFixed(0)+'%</span> vs '+monthLabel(pmk).split(' ')[0])+
+    tile('Avg / open day',money(avg),'<span class="'+(avg<breakEven?'neg':'pos')+'">'+(avg<breakEven?'below':'above')+' break-even</span>')+
+    tile('Break-even / day',money(breakEven),below+' day'+(below===1?'':'s')+' below')+
+    tile('Profit margin','<span class="'+(margin<0?'neg':'')+'">'+margin.toFixed(0)+'%</span>','opex '+opexPct.toFixed(0)+'% of sales')+
+    (dashBiz==='all'?tile('Runway',runway==null?'—':Math.floor(runway)+' days','free money ÷ daily opex'):tile('Best day',best&&best.v>0?shortMoney(best.v):'—',best&&best.v>0?shortDate(best.iso):''))+
+    '</div>';
+  if(days.length) body+='<div class="k" style="margin-top:4px">Daily sales vs break-even</div>'+
+    barChart(days.map(function(x){ return {label:(x.d===1||x.d%5===0)?String(x.d):'', v:x.v, color:x.v<breakEven-0.5?'var(--warn)':'var(--brand)',
+      tip:shortDate(x.iso)+': '+money(x.v)+(x.open?'':' (closed)')+(x.v<breakEven-0.5?' · below break-even':'')}; }),
+      {ref:breakEven, refLabel:'break-even '+shortMoney(breakEven), aria:'Daily sales this month against break-even'})+
+    '<div class="row" style="gap:14px;font-size:12px"><span><span class="sw" style="background:var(--brand)"></span> at/above break-even</span><span><span class="sw" style="background:var(--warn)"></span> below</span></div>';
+  if(dashBiz==='all'&&S.businesses.length>1){
+    var rows=S.businesses.map(function(b){ var ff=monthFlow(mk,b.name); return {b:b,f:ff}; }), mx=Math.max.apply(null,rows.map(function(r){return r.f.revenue;}).concat([1]));
+    body+='<div class="k" style="margin-top:10px">Side by side · '+monthLabel(mk)+'</div>'+rows.map(function(r){
+      var m=r.f.revenue?r.f.profit/r.f.revenue*100:0;
+      return '<div class="hb" data-tip="'+esc(r.b.name+': sales '+money(r.f.revenue)+' · profit '+money(r.f.profit))+'"><span class="hl">'+esc(r.b.name)+'</span>'+
+        '<span class="ht"><i style="width:'+(r.f.revenue/mx*100).toFixed(1)+'%;background:var(--brand)"></i></span><span class="hv num">'+shortMoney(r.f.revenue)+' <small class="'+(m<0?'neg':'muted')+'">'+m.toFixed(0)+'%</small></span></div>';
+    }).join('');
+  }
+  body+=info('What these numbers mean','<ul>'+
+    '<li><b>Break-even / day:</b> sales needed each open day to cover the daily opex and the tax on those sales. Below it, the business is eating into money set aside.</li>'+
+    '<li><b>Profit margin:</b> profit ÷ sales. <b>Opex %</b> is how much of each peso of sales goes to running costs.</li>'+
+    '<li><b>Runway:</b> how many open days of opex the free business money could cover if sales stopped.</li>'+
+    '<li><b>vs last month</b> compares the same days of the month, so early-month numbers are fair.</li></ul>');
+  return collapsible('inc:dash',true,'<span class="gn">📈 Business dashboard · '+monthLabel(mk)+'</span><span class="gt num">'+shortMoney(month)+'</span>',body);
 }
 function wfRow(label, v, color, strong){
   return '<div class="wfr'+(strong?' strong':'')+'"><span>'+(color?'<span class="sw" style="background:'+color+'"></span> ':'')+label+'</span><span class="num'+(v<0&&!color?' neg':'')+'">'+(v<0?'−':'')+money(Math.abs(v))+'</span></div>';
@@ -1891,7 +2000,7 @@ function dreamExtra(d, sal){
 
 // A face for each family member, from the age they typed.
 // ---- transactions
-var TX_TYPES={all:[], sales:['sale'], business:['bizexp','tax'], spending:['spend','tithe'], salary:['draw'], debts:['debtpay','debtsave','debtrelease'], savings:['sweep','dreamadd']};
+var TX_TYPES={all:[], sales:['sale'], business:['bizexp','tax','opexsave','opexrelease'], spending:['spend','tithe'], salary:['draw'], debts:['debtpay','debtsave','debtrelease'], savings:['sweep','dreamadd']};
 var TX_LABEL={all:'All', sales:'Sales', business:'Business', spending:'Spending', salary:'Salary', debts:'Debts', savings:'Savings'};
 var txFilter='all';
 function txLabelOf(coll, x){
@@ -1900,7 +2009,7 @@ function txLabelOf(coll, x){
     var b=S.businesses.find(function(y){return y.id===x.bizId;}), o=b&&b.opex.find(function(y){return y.id===x.itemId;});
     return {kind:'bizexp', icon:'🏪', label:(b?b.name:'Business')+' · '+(o?o.name:'expense')}; }
   if(coll==='spend') return x.catId==='tithe'?{kind:'tithe', icon:'🙏', label:'Tithe'}:{kind:'spend', icon:'🧾', label:pickedLabel(x.subId?x.catId+'|'+x.subId:x.catId)||'(deleted category)'};
-  var icons={draw:'👪', debtpay:'📉', debtsave:'💰', debtrelease:'↺', sweep:'🛢️', dreamadd:'⭐'};
+  var icons={draw:'👪', debtpay:'📉', debtsave:'💰', debtrelease:'↺', opexsave:'🏪', opexrelease:'↺', sweep:'🛢️', dreamadd:'⭐'};
   return {kind:x.kind, icon:icons[x.kind]||'↔', label:x.note||x.kind};
 }
 function allTx(){
@@ -2065,7 +2174,7 @@ ACT.edittx=function(el){
       // reverseMove(x, f) undoes f × the amount; −diff/amount applies the extra (or returns the surplus)
       var diff=a-num(x.amount); if(Math.abs(diff)>0.004&&num(x.amount)>0) reverseMove(x,-diff/num(x.amount));
       x.amount=a; if(x.fromJar!=null) x.fromJar=Math.min(num(x.fromJar),a);
-    } else x.amount=a;
+    } else { x.amount=a; if(x.fromJar!=null) x.fromJar=Math.min(num(x.fromJar),a); }
     x.date=v.date||x.date;
     if(coll!=='moves') x.note=v.note||'';
     if(coll==='incomes') x.source=v.source;
@@ -2095,10 +2204,11 @@ ACT.bizexp=function(el){
     selectField('line','Business · expense',opts,pre||opts[0][0])+
     field('amount','Amount paid','inputmode="decimal" required placeholder="0"',el&&el.dataset.amt?el.dataset.amt:'')+
     field('note','Note (optional)','')+
-    '<p class="muted" style="font-size:13px">Paid from the business wallet. Planned lines draw on what was set aside for them.</p>',
+    '<p class="muted" style="font-size:13px">Paid from the business wallet. Money set aside for the line is used first.</p>',
     function(d){ var a=num(d.amount); if(a<=0) return false; var k=d.line.split('|');
       if(k[0]==='tax') S.bizExp.push({id:uid(),date:d.date||todayISO(),kind:'tax',bizId:null,itemId:null,amount:a,note:d.note});
-      else S.bizExp.push({id:uid(),date:d.date||todayISO(),bizId:k[0],itemId:k[1],amount:a,note:d.note});
+      else { var o0=null; S.businesses.forEach(function(b){ b.opex.forEach(function(o){ if(o.id===k[1]) o0=o; }); });
+        S.bizExp.push({id:uid(),date:d.date||todayISO(),bizId:k[0],itemId:k[1],amount:a,fromJar:o0?Math.min(a,opexJar(o0)):0,note:d.note}); }
       incMk=monthKey(d.date||todayISO()); toast('Expense logged'); }, 'Log');
 };
 // Category picker: search, recent chips, and every line grouped by section
@@ -2256,6 +2366,50 @@ ACT.allotall=function(){
   });
   list.forEach(function(x){ var a=got[x.d.id]; if(a>0.5){ S.moves.push({id:uid(),date:todayISO(),kind:'debtsave',to:x.d.id,amount:Math.round(a*100)/100,note:'Saved for '+x.d.name}); n++; } });
   save(); render(); toast(money(total)+' set aside for '+n+' debt'+(n>1?'s':'')+(total<sum(list,function(x){return x.today;})-0.5?' (all the free money)':''));
+};
+// ---- opex savings actions (business money)
+function bizFree(){ return Math.max(0,bizWallet().free); }
+ACT.opexallot=function(el){
+  var x=opexSavings().find(function(y){return y.o.id===el.dataset.oid;}); if(!x) return;
+  var a=Math.min(num(el.dataset.amt),bizFree());
+  if(!(a>0.5)){ toast('No free business money — log sales first'); return; }
+  checkpoint('allot '+x.o.name);
+  S.moves.push({id:uid(),date:todayISO(),kind:'opexsave',to:x.o.id,bizId:x.b.id,amount:Math.round(a*100)/100,note:'Set aside · '+x.o.name});
+  save(); render(); toast(money(a)+' set aside for '+x.o.name);
+};
+// Two passes, like the debts: every line's daily share (soonest due first), then catch-up.
+ACT.opexallotall=function(el){
+  var list=opexSavings(el&&el.dataset.biz||null).filter(function(x){return x.today>0.5;}), free=bizFree(), total=0, got={};
+  if(!list.length){ toast('All opex is up to date today ✓'); return; }
+  if(free<=0.5){ toast('No free business money — log sales first'); return; }
+  checkpoint('allot all opex');
+  [function(x){return Math.min(x.daily,x.today);}, function(x){return x.today-(got[x.o.id]||0);}].forEach(function(want){
+    list.forEach(function(x){ var a=Math.min(want(x),free-total); if(a>0.5){ got[x.o.id]=(got[x.o.id]||0)+a; total+=a; } });
+  });
+  var n=0; list.forEach(function(x){ var a=got[x.o.id]; if(a>0.5){ S.moves.push({id:uid(),date:todayISO(),kind:'opexsave',to:x.o.id,bizId:x.b.id,amount:Math.round(a*100)/100,note:'Set aside · '+x.o.name}); n++; } });
+  save(); render(); toast(money(total)+' set aside for '+n+' opex line'+(n>1?'s':'')+(total<sum(list,function(x){return x.today;})-0.5?' (all the free money)':''));
+};
+ACT.opexreset=function(){
+  var held=[]; S.businesses.forEach(function(b){ b.opex.forEach(function(o){ var j=opexJar(o); if(j>0.5) held.push({o:o,b:b,j:j}); }); });
+  var tot=sum(held,function(x){return x.j;});
+  if(!held.length){ toast('Nothing set aside to reset'); return; }
+  if(!confirm('Return '+money(tot)+' set aside for opex to free business money? Expenses already paid stay.')) return;
+  checkpoint('reset opex savings');
+  held.forEach(function(x){ S.moves.push({id:uid(),date:todayISO(),kind:'opexrelease',to:x.o.id,bizId:x.b.id,amount:Math.round(x.j*100)/100,note:'Reset · '+x.o.name}); });
+  save(); render(); toast(money(tot)+' back to free business money');
+};
+ACT.opexahead=function(el){
+  var x=opexSavings().find(function(y){return y.o.id===el.dataset.oid;}); if(!x) return;
+  var free=bizFree(), need=Math.max(0,x.due-x.jar);
+  openDialog('Get ahead · '+x.o.name,
+    '<div class="alloc-top num"><span>Free business money</span><b>'+money(free)+'</b></div>'+
+    '<small class="muted num">Due '+shortDate(x.next)+' · '+money(x.due)+' · saved '+money(x.jar)+' · still needed '+money(need)+'</small>'+
+    '<input class="bigamt num" name="amount" inputmode="decimal" required aria-label="Amount" value="'+Math.round(Math.min(free,need))+'">',
+    function(v){ var a=num(v.amount); if(a<=0) return false;
+      if(a>free+0.5){ toast('Only '+money(free)+' is free'); return false; }
+      if(a>need+0.5){ toast('Only '+money(need)+' is still needed'); return false; }
+      S.moves.push({id:uid(),date:todayISO(),kind:'opexsave',to:x.o.id,bizId:x.b.id,amount:Math.round(a*100)/100,note:'Set aside ahead · '+x.o.name});
+      toast(money(a)+' set aside ahead for '+x.o.name); }, 'Save ahead');
 };
 // Return every unused debt saving to free salary money (payments already made stay).
 ACT.resetdebtsave=function(){
@@ -2543,6 +2697,7 @@ document.addEventListener('click',function(e){
   }
   var el=e.target.closest('button,[data-go],[data-act],[data-txf]'); if(!el) return;
   if(el.dataset.txf){ txFilter=el.dataset.txf; render(); return; }
+  if(el.dataset.dashbiz){ dashBiz=el.dataset.dashbiz; render(); return; }
   if(el.dataset.tab){ go(el.dataset.tab); return; }
   if(el.dataset.incnav){ incMk=addMonths(incMk||thisMonth(),+el.dataset.incnav); render(); return; }
   if(el.dataset.bedit!=null){ editGroups[el.dataset.bedit]=!editGroups[el.dataset.bedit]; render(); return; }
