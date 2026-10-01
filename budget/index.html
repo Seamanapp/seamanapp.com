@@ -299,6 +299,12 @@ button.icon.on{background:var(--brand);color:var(--brand-ink);border-color:var(-
 .bar.thin{height:6px;margin-top:4px}
 .card.tithe{border-left:4px solid var(--c3)}
 .card.install ol{margin:6px 0;padding-left:20px}
+.oprow{padding:8px 0;border-bottom:1px solid var(--line)}
+.oprow:last-of-type{border-bottom:0}
+.opsched{display:grid;grid-template-columns:88px 104px 1fr;gap:6px;margin-top:6px}
+.opsched > *{min-width:0}
+.opsched select,.opsched input{min-height:36px;padding:6px 8px;font-size:14px}
+.opsched .when{align-self:center;font-size:13px}
 .fam{display:grid;grid-template-columns:40px 1fr 84px auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
 .fam .av{font-size:26px;text-align:center}
 .hb{display:grid;grid-template-columns:minmax(0,34%) 1fr 52px;gap:8px;align-items:center;margin:7px 0;font-size:13px}
@@ -490,7 +496,32 @@ function bizNames(){
   return n;
 }
 function bizByName(n){ return S.businesses.find(function(b){return b.name===n;}); }
-function plannedOpex(b){ return b?sum(b.opex,function(o){return num(o.amount);}):0; }
+// Opex schedules. Each line repeats per day (on the days the business is
+// open), per week (on one weekday), per month (on one date), or happens once.
+var OPEN_DAYS={all:[0,1,2,3,4,5,6], monsat:[1,2,3,4,5,6], monfri:[1,2,3,4,5]};
+var OPEN_LABEL={all:'Every day', monsat:'Mon–Sat', monfri:'Mon–Fri'};
+var FREQ_LABEL={day:'daily', week:'weekly', month:'monthly', once:'once'};
+var WEEKDAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function weekday(mk,d){ return new Date(+mk.slice(0,4), +mk.slice(5,7)-1, d).getDay(); }
+// How much of one opex line has fallen due in month mk: through today for the
+// current month, the whole month for past ones, nothing for future months.
+function opexDue(o, b, mk){
+  var cm=thisMonth(); if(mk>cm) return 0;
+  var last=mk===cm?+todayISO().slice(8,10):daysIn(mk), a=num(o.amount), f=o.freq||'month', n=0, d;
+  if(f==='day'){ var open=OPEN_DAYS[(b&&b.open)||'all']; for(d=1;d<=last;d++) if(open.indexOf(weekday(mk,d))>=0) n++; return a*n; }
+  if(f==='week'){ var wd=o.wd==null?1:+o.wd; for(d=1;d<=last;d++) if(weekday(mk,d)===wd) n++; return a*n; }
+  if(f==='once') return o.date&&monthKey(o.date)===mk&&+o.date.slice(8,10)<=last?a:0;
+  return Math.min(+o.day||1, daysIn(mk))<=last?a:0;
+}
+// A typical full month, for the summary in Profile (one-time lines excluded).
+function opexMonthly(o, b){
+  var a=num(o.amount), f=o.freq||'month';
+  if(f==='day') return a*OPEN_DAYS[(b&&b.open)||'all'].length*52/12;
+  if(f==='week') return a*52/12;
+  if(f==='once') return 0;
+  return a;
+}
+function plannedOpex(b){ return b?sum(b.opex,function(o){return opexMonthly(o,b);}):0; }
 function flowMonths(){
   var m={}; S.incomes.forEach(function(i){m[monthKey(i.date)]=1;}); S.bizExp.forEach(function(e){m[monthKey(e.date)]=1;});
   return Object.keys(m).sort();
@@ -501,19 +532,37 @@ function monthFlow(mk, onlyBiz){
   (onlyBiz?[onlyBiz]:bizNames()).forEach(function(name){
     var b=bizByName(name);
     var rev=sum(S.incomes.filter(function(i){return i.source===name&&monthKey(i.date)===mk;}),function(i){return num(i.amount);});
-    var act=b?S.bizExp.filter(function(e){return e.bizId===b.id&&monthKey(e.date)===mk;}):[];
-    var est=!act.length&&rev>0&&plannedOpex(b)>0;
-    var ox=act.length?sum(act,function(e){return num(e.amount);}):(est?plannedOpex(b):0);
-    r.revenue+=rev; r.opex+=ox; if(est) r.opexEst=true;
-    r.byBiz.push({name:name, biz:b, revenue:rev, opex:ox, est:est, profit:rev-ox});
+    var acts=b?S.bizExp.filter(function(e){return e.bizId===b.id&&monthKey(e.date)===mk;}):[];
+    var actual=sum(acts,function(e){return num(e.amount);}), planned=0;
+    // Each line: what was actually paid if logged, otherwise its planned cost so far
+    // (only in months the business was running — it had sales or logged costs).
+    if(b&&(rev>0||acts.length)) b.opex.forEach(function(o){
+      if(!acts.some(function(e){return e.itemId===o.id;})) planned+=opexDue(o,b,mk);
+    });
+    r.revenue+=rev; r.actual=(r.actual||0)+actual; r.planned=(r.planned||0)+planned;
+    r.byBiz.push({name:name, biz:b, revenue:rev, opex:actual+planned, actual:actual, planned:planned, est:planned>0, profit:rev-actual-planned});
   });
-  r.profit=r.revenue-r.opex;
-  r.tax=r.revenue*num(S.split.tax)/100;
-  r.reinvest=Math.max(0,r.profit)*num(S.split.biz)/100;
-  var base=S.tithe.base;
-  r.titheBase=base==='gross'?r.revenue:base==='family'?Math.max(0,r.profit-r.tax-r.reinvest):Math.max(0,r.profit);
-  r.tithe=r.titheBase*num(S.tithe.pct)/100;
-  r.family=r.profit-r.tax-r.reinvest-r.tithe;
+  var calc=function(planned){
+    var x={}; x.opex=(r.actual||0)+planned; x.profit=r.revenue-x.opex;
+    x.tax=r.revenue*num(S.split.tax)/100;
+    x.reinvest=Math.max(0,x.profit)*num(S.split.biz)/100;
+    var base=S.tithe.base;
+    x.titheBase=base==='gross'?r.revenue:base==='family'?Math.max(0,x.profit-x.tax-x.reinvest):Math.max(0,x.profit);
+    x.tithe=x.titheBase*num(S.tithe.pct)/100;
+    x.family=x.profit-x.tax-x.reinvest-x.tithe;
+    return x;
+  };
+  var planned=r.planned||0, x=calc(planned);
+  // Planned (not yet logged) costs never drive the family share below zero:
+  // count only as much as sales can carry and report the rest as uncovered.
+  if(x.family<0&&planned>0){
+    // largest planned amount that keeps the family share at or above zero
+    var lo=0, hi=planned;
+    if(calc(0).family>0) for(var k=0;k<40;k++){ var mid=(lo+hi)/2; if(calc(mid).family>=0) lo=mid; else hi=mid; }
+    r.uncovered=planned-lo; x=calc(lo);
+  } else r.uncovered=0;
+  Object.keys(x).forEach(function(k){ r[k]=x[k]; });
+  r.opexEst=planned>0;
   return r;
 }
 function titheGiven(mk){ return sum(S.spend.filter(function(x){return x.catId==='tithe'&&(!mk||monthKey(x.date)===mk);}),function(x){return num(x.amount);}); }
@@ -935,13 +984,14 @@ V.income=function(){
     (f.revenue>0?stackBar(parts)+
       '<div class="wf">'+
         wfRow('Sales',f.revenue,'')+
-        wfRow('− Opex'+(f.opexEst?' <small>planned</small>':''),-f.opex,slotColor(1))+
+        wfRow('− Opex'+(f.opexEst?' <small>'+(f.actual>0?'incl. planned':'planned')+(incMk===thisMonth()?' so far':'')+'</small>':''),-f.opex,slotColor(1))+
         wfRow('= Profit <small>'+(f.revenue?Math.round(f.profit/f.revenue*100):0)+'% margin</small>',f.profit,'',true)+
         wfRow('− Tax <small>'+num(S.split.tax)+'% of sales</small>',-f.tax,slotColor(2))+
         wfRow('− 🙏 Tithe <small>'+num(S.tithe.pct)+'% of '+TITHE_BASES[S.tithe.base]+'</small>',-f.tithe,slotColor(3))+
         wfRow('− Reinvest <small>'+num(S.split.biz)+'% of profit</small>',-f.reinvest,slotColor(4))+
         wfRow('= Family share → tank',f.family,slotColor(5),true)+
-      '</div>'+(f.family<0?'<div class="note bad">The business spent more than it earned this month — the family share is negative.</div>':'')
+      '</div>'+(f.uncovered>0.5?'<div class="note warn">'+money(f.uncovered)+' of planned costs so far isn\'t covered by sales yet — it\'s not taken from the family share. Log the real expenses with "− Expense".</div>':'')+
+      (f.family<0?'<div class="note bad">Logged business expenses are more than this month\'s sales — the family share is negative.</div>':'')
     :'<p class="muted">No sales logged for '+monthLabel(incMk,true)+'.</p>')+
     '</div>';
 
@@ -953,16 +1003,16 @@ V.income=function(){
       var margin=x.revenue?Math.round(x.profit/x.revenue*100):0, b=x.biz;
       var items=b?b.opex.map(function(o){
         var act=sum(S.bizExp.filter(function(e){return e.itemId===o.id&&monthKey(e.date)===incMk;}),function(e){return num(e.amount);});
-        return {name:o.name, plan:num(o.amount), act:act};
-      }).filter(function(o){return o.plan||o.act;}):[];
+        return {name:o.name, plan:opexDue(o,b,incMk), act:act, freq:o.freq||'month', amt:num(o.amount)};
+      }).filter(function(o){return o.amt||o.act;}):[];
       return '<details class="bizrow"><summary><div class="row between"><b>'+esc(x.name)+'</b><span class="num'+(x.profit<0?' neg':'')+'">'+money(x.profit)+' <small>'+margin+'%</small></span></div>'+
         '<div class="hb2"><span>Sales</span><span class="ht"><i style="width:'+(x.revenue/mx*100).toFixed(1)+'%;background:var(--brand)"></i></span><span class="num">'+shortMoney(x.revenue)+'</span></div>'+
         '<div class="hb2"><span>Opex'+(x.est?'*':'')+'</span><span class="ht"><i style="width:'+(x.opex/mx*100).toFixed(1)+'%;background:'+slotColor(1)+'"></i></span><span class="num">'+shortMoney(x.opex)+'</span></div></summary>'+
         (items.length?'<div class="opx">'+items.map(function(o){
           var over=o.plan&&o.act>o.plan;
-          return '<div class="row between"><span>'+esc(o.name)+'</span><span class="num'+(over?' neg':'')+'">'+(o.act?money(o.act):'—')+' <small>/ '+money(o.plan)+'</small></span></div>';
+          return '<div class="row between"><span>'+esc(o.name)+' <small class="muted">'+money(o.amt)+' '+FREQ_LABEL[o.freq]+'</small></span><span class="num'+(over?' neg':'')+'">'+(o.act?money(o.act):'—')+' <small>/ '+money(o.plan)+' so far</small></span></div>';
         }).join('')+'</div>':'<p class="muted" style="font-size:13px">Set this business\'s opex in Profile → Businesses.</p>')+
-        (x.est?'<small class="muted">* planned opex — log actual expenses with "− Expense"</small>':'')+'</details>';
+        (x.est?'<small class="muted">* includes planned costs due so far — log real ones with "− Expense"</small>':'')+'</details>';
     }).join('')+'</div>';
   }
 
@@ -1434,15 +1484,24 @@ V.settings=function(){
   // The family businesses: what each one is, and what it costs to run.
   h+='<h2 style="margin:18px 2px 8px">🏪 Family businesses</h2>'+S.businesses.map(function(b,i){
     var po=plannedOpex(b);
-    return '<details class="card grp" data-g="biz:'+b.id+'"'+(openGroups['biz:'+b.id]?' open':'')+'><summary><span class="gn">'+esc(b.name||'Business')+'</span><span class="gt num">'+money(po)+'<small class="muted">/mo opex</small></span></summary>'+
+    return '<details class="card grp" data-g="biz:'+b.id+'"'+(openGroups['biz:'+b.id]?' open':'')+'><summary><span class="gn">'+esc(b.name||'Business')+'</span><span class="gt num">≈'+money(po)+'<small class="muted">/mo opex</small></span></summary>'+
       '<div class="grid g2" style="margin-top:10px">'+
         '<label class="f"><span>Business name</span><input data-bizf="name" data-bid="'+b.id+'" value="'+esc(b.name)+'"></label>'+
         '<label class="f"><span>What it does</span><input data-bizf="desc" data-bid="'+b.id+'" value="'+esc(b.desc||'')+'" placeholder="e.g. online shop, food stall"></label></div>'+
-      '<div class="k" style="margin:4px 0">Monthly operating expenses (opex)</div>'+
+      '<label class="f"><span>Open</span><select data-bizf="open" data-bid="'+b.id+'">'+Object.keys(OPEN_DAYS).map(function(k){
+        return '<option value="'+k+'"'+(((b.open||'all')===k)?' selected':'')+'>'+OPEN_LABEL[k]+'</option>'; }).join('')+'</select></label>'+
+      '<div class="k" style="margin:4px 0">Operating expenses (opex)</div>'+
       b.opex.map(function(o){
-        return '<div class="brow"><input class="bname" aria-label="Expense name" data-opx="name" data-bid="'+b.id+'" data-oid="'+o.id+'" value="'+esc(o.name)+'" placeholder="Expense">'+
-          '<input class="amt num" inputmode="decimal" aria-label="Monthly amount for '+esc(o.name)+'" data-opx="amount" data-bid="'+b.id+'" data-oid="'+o.id+'" value="'+(num(o.amount)||'')+'" placeholder="0">'+
-          '<span></span><button class="icon danger" data-delopx="'+o.id+'" data-bid="'+b.id+'" aria-label="Delete '+esc(o.name)+'">✕</button></div>';
+        var f=o.freq||'month', attrs=' data-bid="'+b.id+'" data-oid="'+o.id+'"', when;
+        if(f==='week') when='<select aria-label="Weekday" data-opx="wd"'+attrs+'>'+WEEKDAYS.map(function(w,i){return '<option value="'+i+'"'+((o.wd==null?1:+o.wd)===i?' selected':'')+'>every '+w+'</option>';}).join('')+'</select>';
+        else if(f==='month') when='<select aria-label="Day of month" data-opx="day"'+attrs+'>'+Array.apply(null,{length:31}).map(function(_,i){return '<option value="'+(i+1)+'"'+((+o.day||1)===i+1?' selected':'')+'>on the '+ordinal(i+1)+'</option>';}).join('')+'</select>';
+        else if(f==='once') when='<input type="date" aria-label="Date" data-opx="date"'+attrs+' value="'+esc(o.date||'')+'">';
+        else when='<span class="muted when">'+OPEN_LABEL[b.open||'all']+'</span>';
+        return '<div class="oprow"><div class="row"><input class="bname" aria-label="Expense name" data-opx="name"'+attrs+' value="'+esc(o.name)+'" placeholder="Expense" style="flex:1">'+
+          '<button class="icon danger" data-delopx="'+o.id+'" data-bid="'+b.id+'" aria-label="Delete '+esc(o.name)+'">✕</button></div>'+
+          '<div class="opsched"><input class="amt num" inputmode="decimal" aria-label="Amount for '+esc(o.name)+'" data-opx="amount"'+attrs+' value="'+(num(o.amount)||'')+'" placeholder="0">'+
+          '<select aria-label="How often" data-opx="freq"'+attrs+'>'+Object.keys(FREQ_LABEL).map(function(k){return '<option value="'+k+'"'+(f===k?' selected':'')+'>'+FREQ_LABEL[k]+'</option>';}).join('')+'</select>'+when+'</div>'+
+          (f!=='month'&&f!=='once'&&num(o.amount)?'<small class="muted num">≈ '+money(opexMonthly(o,b))+' a month</small>':'')+'</div>';
       }).join('')+
       '<div class="row" style="margin-top:8px"><button class="sm" data-act="addopex" data-biz="'+b.id+'">+ Opex line</button><span class="spacer"></span>'+
       '<button class="sm danger" data-delbiz="'+i+'">Remove business</button></div></details>';
@@ -1773,12 +1832,16 @@ document.addEventListener('change',function(e){
   if(el.dataset.bizf){
     var bz=S.businesses.find(function(x){return x.id===el.dataset.bid;}); if(!bz) return;
     if(el.dataset.bizf==='name'){ var old=bz.name, nw=el.value.trim()||old; S.incomes.forEach(function(i){ if(i.source===old) i.source=nw; }); bz.name=nw; }
+    else if(el.dataset.bizf==='open') bz.open=el.value;
     else bz.desc=el.value;
     save(); render(); return;
   }
   if(el.dataset.opx){
     var bz2=S.businesses.find(function(x){return x.id===el.dataset.bid;}), o=bz2&&bz2.opex.find(function(x){return x.id===el.dataset.oid;}); if(!o) return;
-    o[el.dataset.opx]=el.dataset.opx==='amount'?num(el.value):el.value; save(); render(); return;
+    var fk=el.dataset.opx;
+    o[fk]=fk==='amount'?num(el.value):(fk==='wd'||fk==='day')?+el.value:el.value;
+    if(fk==='freq'&&el.value==='once'&&!o.date) o.date=todayISO();
+    save(); render(); return;
   }
   if(el.dataset.edit){
     var item=S[el.dataset.edit].find(function(x){return x.id===el.dataset.id;}); if(!item) return;
@@ -1857,6 +1920,8 @@ function isStandalone(){ return (window.matchMedia&&matchMedia('(display-mode: s
 function applyTheme(v){ if(v) document.documentElement.setAttribute('data-theme',v); else document.documentElement.removeAttribute('data-theme'); }
 
 function render(){
+  // Remember which sections are open before redrawing (the toggle event can lag a click).
+  document.querySelectorAll('details[data-g]').forEach(function(d){ openGroups[d.dataset.g]=d.open; });
   document.querySelectorAll('nav.tabs button').forEach(function(b){ b.setAttribute('aria-selected', String(b.dataset.tab===tab)); });
   document.getElementById('view').innerHTML=V[tab]();
   var st=steps();
