@@ -317,6 +317,8 @@ button.link.subadd{font-size:13px;padding:2px 18px 8px;display:block}
 .txl small{color:var(--muted);font-size:12px} .txrow .pos{color:var(--good)}
 tr.tap{cursor:pointer}
 .orow.total{border-top:2px solid var(--line)}
+.prio{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--bar);color:var(--muted);font-size:11px;font-weight:700;vertical-align:1px}
+.prio.top{background:var(--brand);color:var(--brand-ink)}
 .dsave .dsrow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .dsave .dsrow:last-child{border-bottom:0}
 .dsrow small{display:block;color:var(--muted);font-size:12px}
@@ -889,7 +891,8 @@ function daysBetween(a,b){ return Math.round((new Date(b+'T00:00:00')-new Date(a
 function debtJar(d){
   var inn=sum(S.moves.filter(function(m){return m.kind==='debtsave'&&m.to===d.id;}),function(m){return num(m.amount);});
   var out=sum(S.moves.filter(function(m){return m.kind==='debtpay'&&m.to===d.id;}),function(m){return num(m.fromJar);});
-  return Math.max(0,inn-out);
+  var back=sum(S.moves.filter(function(m){return m.kind==='debtrelease'&&m.to===d.id;}),function(m){return num(m.amount);});
+  return Math.max(0,inn-out-back);
 }
 // Daily savings plan for one debt's next due payment: spread over the days
 // from the day after the previous due date (or the savings start) to the due
@@ -904,7 +907,9 @@ function debtSaving(d){
   var elapsed=Math.max(0,Math.min(days,daysBetween(start,t)+1));
   var saved=debtJar(d), expected=Math.min(A,daily*elapsed);
   var today=Math.max(0,Math.min(A-saved, expected-saved));
-  return {d:d, due:due, amount:A, start:start, days:days, daily:daily, elapsed:elapsed, expected:expected, saved:saved, today:today, daysLeft:Math.max(0,daysBetween(t,due))};
+  var daysLeft=Math.max(0,daysBetween(t,due));
+  return {d:d, due:due, amount:A, start:start, days:days, daily:daily, elapsed:elapsed, expected:expected, saved:saved, today:today, daysLeft:daysLeft,
+    needPerDay:Math.max(0,A-saved)/(daysLeft+1), ready:saved>=A-0.5};
 }
 function debtSavings(){ return activeDebts().map(debtSaving).filter(Boolean).sort(function(a,b){return a.due.localeCompare(b.due);}); }
 
@@ -913,8 +918,8 @@ function debtSavings(){ return activeDebts().map(debtSaving).filter(Boolean).sor
 function salarySpent(mk){
   mk=mk||thisMonth();
   var sp=sum(S.spend.filter(function(x){return monthKey(x.date)===mk&&x.catId!=='tithe';}),function(x){return num(x.amount);});
-  var dp=sum(S.moves.filter(function(m){return monthKey(m.date)===mk&&(m.kind==='debtsave'||m.kind==='debtpay');}),
-    function(m){ return m.kind==='debtsave'?num(m.amount):num(m.amount)-num(m.fromJar); });
+  var dp=sum(S.moves.filter(function(m){return monthKey(m.date)===mk&&(m.kind==='debtsave'||m.kind==='debtpay'||m.kind==='debtrelease');}),
+    function(m){ return m.kind==='debtsave'?num(m.amount):m.kind==='debtrelease'?-num(m.amount):num(m.amount)-num(m.fromJar); });
   return {spend:sp, debt:dp, total:sp+dp};
 }
 function drawnThisMonth(){ var cm=thisMonth(); return sum(S.moves.filter(function(m){return m.kind==='draw'&&monthKey(m.date)===cm;}),function(m){return num(m.amount);}); }
@@ -1224,7 +1229,7 @@ V.home=function(){
     h+='<div class="card tight dtoday"><div class="row between"><span>💰 Debts to save today</span><b class="num">'+money(dToday)+'</b></div>'+
       '<div class="row between" style="margin-top:6px"><small class="muted num">free salary money '+money(freeH)+'</small><span class="row" style="gap:6px">'+
       (dToday>0.5?'<button class="primary sm" data-act="allotall" '+(canAllot>0.5?'':'disabled')+'>Allot all'+(canAllot>0.5&&canAllot<dToday-0.5?' '+shortMoney(canAllot):'')+'</button>':'<span class="pill good">✓ up to date</span>')+
-      '<button class="icon" data-go="budget" aria-label="See debts">›</button></span></div></div>';
+      '<button class="icon" data-go="debts" aria-label="See debts">›</button></span></div></div>';
   }
   h+='<div class="grid g2">'+
     '<div class="card tight"><div class="row between"><span class="k">🛢️ Tank</span>'+(surplus>0.5?'<span class="pill good">+'+shortMoney(surplus)+'</span>':'')+'</div>'+
@@ -1475,8 +1480,6 @@ V.budget=function(){
       : '<div class="note" style="margin-bottom:0">No salary paid out yet this month. Pay it from the tank on <b>Home → Pay salary</b>; that amount is what this budget distributes.</div>')+
     '</div>';
 
-  h+=debtSavingsCard();
-
   // Each category: progress bars by default, the editor behind ✎.
   groups.forEach(function(g){
     var items=S.budget.filter(function(b){return b.group===g;});
@@ -1547,13 +1550,20 @@ function debtSavingsCard(){
   var list=debtSavings(); if(!list.length) return '';
   var today=sum(list,function(x){return x.today;}), free=Math.max(0,availableMoney());
   var h='<div class="card dsave"><div class="row between"><h2>💰 Save daily for debts</h2><span class="num"><b>'+money(today)+'</b> <small class="muted">today</small></span></div>'+
-    '<div class="row between" style="margin:4px 0"><small class="muted num">Free salary money: '+money(free)+'</small>'+(today>0.5?'<button class="sm" data-act="allotall" '+(free>0.5?'':'disabled')+'>Allot all</button>':'')+'</div>'+
-    '<small class="muted">Each due payment spread over the days until it\'s due'+(S.saveStart?' (saving since '+shortDate(S.saveStart)+')':'')+'. Tap to set today\'s share aside.</small>';
-  list.forEach(function(x){
+    '<div class="row between" style="margin:4px 0"><small class="muted num">Free salary money: '+money(free)+'</small><span class="row" style="gap:6px">'+
+      (list.some(function(x){return x.saved>0.5;})?'<button class="sm" data-act="resetdebtsave" title="Return unused savings to free money">↺ Reset</button>':'')+
+      (today>0.5?'<button class="sm primary" data-act="allotall" '+(free>0.5?'':'disabled')+'>Allot all</button>':'')+'</span></div>'+
+    info('How priority works','<ol><li><b>Everyone stays on pace:</b> each debt first gets its daily share, soonest due first.</li>'+
+      '<li><b>Soonest due catches up first:</b> what\'s left goes to the nearest due date until it\'s on track, then the next.</li>'+
+      '<li><b>Get ahead</b> on the next due when you have extra, so it\'s ready early.</li></ol>'+
+      '<p>Each payment is spread over the days until it\'s due'+(S.saveStart?' (saving since '+shortDate(S.saveStart)+')':'')+'. “Needs ₱X/day” is what it takes from today to be ready on time.</p>');
+  var firstOpen=list.find(function(x){return !x.ready;});
+  list.forEach(function(x,i){
     var ready=x.saved>=x.amount-0.5, behind=x.expected-x.saved>x.daily+0.5;
-    h+='<div class="dsrow"><div class="dl"><b>'+esc(x.d.name)+'</b><small class="num">Due '+shortDate(x.due)+(x.daysLeft?' · '+x.daysLeft+' day'+(x.daysLeft>1?'s':'')+' left':' · today')+' · '+money(x.amount)+'</small>'+
+    h+='<div class="dsrow"><div class="dl"><b><span class="prio'+(x===firstOpen?' top':'')+'">'+(i+1)+'</span> '+esc(x.d.name)+'</b><small class="num">Due '+shortDate(x.due)+(x.daysLeft?' · '+x.daysLeft+' day'+(x.daysLeft>1?'s':'')+' left':' · today')+' · '+money(x.amount)+'</small>'+
       '<div class="bar thin '+(ready?'good':behind?'warn':'')+'" style="margin-top:5px"><i style="width:'+pct(x.saved,x.amount).toFixed(1)+'%"></i></div>'+
-      '<small class="num">'+money(x.daily)+'/day · saved '+money(x.saved)+(behind?' · <span class="neg">behind '+money(x.expected-x.saved)+'</span>':'')+'</small></div>'+
+      '<small class="num">saved '+money(x.saved)+' · '+(x.ready?'ready ✓':'needs '+money(x.needPerDay)+'/day from now')+(behind?' · <span class="neg">behind '+money(x.expected-x.saved)+'</span>':'')+'</small>'+
+      (x===firstOpen&&!behind&&free>0.5?'<button class="link" style="padding:2px 0;font-size:12px" data-act="getahead" data-id="'+x.d.id+'">⏩ Get ahead on this one</button>':'')+'</div>'+
       (ready?'<button class="primary sm" data-act="pay" data-id="'+x.d.id+'">Pay</button>'
         :x.today>0.5?(free>0.5?'<button class="primary sm" data-act="allot" data-id="'+x.d.id+'" data-amt="'+Math.round(x.today*100)/100+'">Allot '+shortMoney(Math.min(x.today,free))+'</button>':'<button class="sm" disabled>No money free</button>')
         :'<span class="pill good">✓ today</span>')+'</div>';
@@ -1881,7 +1891,7 @@ function dreamExtra(d, sal){
 
 // A face for each family member, from the age they typed.
 // ---- transactions
-var TX_TYPES={all:[], sales:['sale'], business:['bizexp','tax'], spending:['spend','tithe'], salary:['draw'], debts:['debtpay','debtsave'], savings:['sweep','dreamadd']};
+var TX_TYPES={all:[], sales:['sale'], business:['bizexp','tax'], spending:['spend','tithe'], salary:['draw'], debts:['debtpay','debtsave','debtrelease'], savings:['sweep','dreamadd']};
 var TX_LABEL={all:'All', sales:'Sales', business:'Business', spending:'Spending', salary:'Salary', debts:'Debts', savings:'Savings'};
 var txFilter='all';
 function txLabelOf(coll, x){
@@ -1890,7 +1900,7 @@ function txLabelOf(coll, x){
     var b=S.businesses.find(function(y){return y.id===x.bizId;}), o=b&&b.opex.find(function(y){return y.id===x.itemId;});
     return {kind:'bizexp', icon:'🏪', label:(b?b.name:'Business')+' · '+(o?o.name:'expense')}; }
   if(coll==='spend') return x.catId==='tithe'?{kind:'tithe', icon:'🙏', label:'Tithe'}:{kind:'spend', icon:'🧾', label:pickedLabel(x.subId?x.catId+'|'+x.subId:x.catId)||'(deleted category)'};
-  var icons={draw:'👪', debtpay:'📉', debtsave:'💰', sweep:'🛢️', dreamadd:'⭐'};
+  var icons={draw:'👪', debtpay:'📉', debtsave:'💰', debtrelease:'↺', sweep:'🛢️', dreamadd:'⭐'};
   return {kind:x.kind, icon:icons[x.kind]||'↔', label:x.note||x.kind};
 }
 function allTx(){
@@ -2238,11 +2248,38 @@ ACT.allotall=function(){
   if(!list.length){ toast('All debts are up to date today ✓'); return; }
   if(free<=0.5){ toast('No money free — pay out salary first'); return; }
   checkpoint('allot all debts');
-  list.forEach(function(x){
-    var a=Math.min(x.today,free-total); if(a<=0.5) return;
-    S.moves.push({id:uid(),date:todayISO(),kind:'debtsave',to:x.d.id,amount:Math.round(a*100)/100,note:'Saved for '+x.d.name}); total+=a; n++;
+  // Pass 1 keeps every debt on pace (its daily share), soonest due first;
+  // pass 2 puts what's left on the catch-up of the soonest due, then the next.
+  var got={};
+  [function(x){return Math.min(x.daily,x.today);}, function(x){return x.today-(got[x.d.id]||0);}].forEach(function(want){
+    list.forEach(function(x){ var a=Math.min(want(x),free-total); if(a>0.5){ got[x.d.id]=(got[x.d.id]||0)+a; total+=a; } });
   });
+  list.forEach(function(x){ var a=got[x.d.id]; if(a>0.5){ S.moves.push({id:uid(),date:todayISO(),kind:'debtsave',to:x.d.id,amount:Math.round(a*100)/100,note:'Saved for '+x.d.name}); n++; } });
   save(); render(); toast(money(total)+' set aside for '+n+' debt'+(n>1?'s':'')+(total<sum(list,function(x){return x.today;})-0.5?' (all the free money)':''));
+};
+// Return every unused debt saving to free salary money (payments already made stay).
+ACT.resetdebtsave=function(){
+  var held=activeDebts().map(function(d){return {d:d,j:debtJar(d)};}).filter(function(x){return x.j>0.5;});
+  var tot=sum(held,function(x){return x.j;});
+  if(!held.length){ toast('Nothing saved to reset'); return; }
+  if(!confirm('Return '+money(tot)+' saved for '+held.length+' debt'+(held.length>1?'s':'')+' to free salary money? Payments already made stay.')) return;
+  checkpoint('reset debt savings');
+  held.forEach(function(x){ S.moves.push({id:uid(),date:todayISO(),kind:'debtrelease',to:x.d.id,amount:Math.round(x.j*100)/100,note:'Reset savings · '+x.d.name}); });
+  save(); render(); toast(money(tot)+' back to free money');
+};
+// Put extra toward the next due payment, beyond today's share.
+ACT.getahead=function(el){
+  var x=debtSavings().find(function(y){return y.d.id===el.dataset.id;}); if(!x) return;
+  var free=Math.max(0,availableMoney()), need=Math.max(0,x.amount-x.saved);
+  openDialog('Get ahead · '+x.d.name,
+    '<div class="alloc-top num"><span>Free salary money</span><b>'+money(free)+'</b></div>'+
+    '<small class="muted num">Due '+shortDate(x.due)+' · '+money(x.amount)+' · saved '+money(x.saved)+' · still needed '+money(need)+'</small>'+
+    '<input class="bigamt num" name="amount" inputmode="decimal" required aria-label="Amount" value="'+Math.round(Math.min(free,need))+'">',
+    function(v){ var a=num(v.amount); if(a<=0) return false;
+      if(a>free+0.5){ toast('Only '+money(free)+' is free'); return false; }
+      if(a>need+0.5){ toast('Only '+money(need)+' is still needed'); return false; }
+      S.moves.push({id:uid(),date:todayISO(),kind:'debtsave',to:x.d.id,amount:Math.round(a*100)/100,note:'Saved ahead for '+x.d.name});
+      toast(money(a)+' saved ahead for '+x.d.name); }, 'Save ahead');
 };
 ACT.allot=function(el){
   var d=S.debts.find(function(x){return x.id===el.dataset.id;}); if(!d) return;
