@@ -309,6 +309,11 @@ button.link.subadd{font-size:13px;padding:2px 18px 8px;display:block}
 .subl{display:grid;grid-template-columns:minmax(0,40%) 1fr 48px;gap:8px;align-items:center;font-size:12.5px;margin:4px 0}
 .subl > span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
 .subl .bar.thin{margin-top:0;height:5px} .subl .num{text-align:right}
+.dsave .dsrow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.dsave .dsrow:last-child{border-bottom:0}
+.dsrow small{display:block;color:var(--muted);font-size:12px}
+.dtoday{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font-weight:600;margin-bottom:14px}
+.dtoday span:first-child{flex:1}
 .fab{position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom));z-index:15;border-radius:99px;padding:12px 18px;
   background:var(--brand);color:var(--brand-ink);border:0;font-size:16px;box-shadow:0 8px 20px -6px rgba(0,0,0,.45)}
 .bline[data-act]{cursor:pointer;border-radius:8px}
@@ -482,6 +487,7 @@ function freshState(){
     starterMonths:1,                   // starter emergency fund, in months of essentials
     holdingStart:0,
     walletStart:0,                     // business account balance when the app was started
+    saveStart:null,                    // first day of daily debt saving (defaults to the 1st of the month)
     incomes:[],                        // {id,date,source,amount,note}
     moves:[],                          // {id,date,kind:'draw'|'sweep'|'debtpay'|'fund',to,amount,note}
     budget:defaultBudget(),
@@ -507,6 +513,7 @@ function load(){
 function migrate(){
   S.businesses=(S.businesses||[]).map(function(b){ return typeof b==='string'?newBiz(b):b; });
   S.bizExp=S.bizExp||[];
+  if(!S.saveStart) S.saveStart=thisMonth()+'-01';
   S.businesses.forEach(function(b){
     var opw=openDaysOf(b).length, first=S.incomes.filter(function(i){return i.source===b.name;}).map(function(i){return i.date;})
       .concat(S.bizExp.filter(function(e){return e.bizId===b.id;}).map(function(e){return e.date;})).sort()[0]||todayISO();
@@ -828,12 +835,44 @@ function holding(){
   var out=sum(S.moves.filter(function(m){return m.kind==='draw'||m.kind==='sweep';}),function(m){return num(m.amount);});
   return num(S.holdingStart)+inflow-out;
 }
+/* Daily living. Income arrives daily, so nothing asks for a month's money up
+   front: the salary is earned day by day, and each debt with a due date is
+   saved for a little every day until it's due. */
+function dayOfMonth(){ return +todayISO().slice(8,10); }
+// Salary earned so far this month (monthly salary spread over its days).
+function salaryEarnedSoFar(){ var cm=thisMonth(); return salary()*dayOfMonth()/daysIn(cm); }
+function salaryDueSoFar(){ return Math.max(0, salaryEarnedSoFar()-drawnThisMonth()); }
+function daysBetween(a,b){ return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/864e5); }
+// Money set aside for a debt (allotted, not yet used by a payment).
+function debtJar(d){
+  var inn=sum(S.moves.filter(function(m){return m.kind==='debtsave'&&m.to===d.id;}),function(m){return num(m.amount);});
+  var out=sum(S.moves.filter(function(m){return m.kind==='debtpay'&&m.to===d.id;}),function(m){return num(m.fromJar);});
+  return Math.max(0,inn-out);
+}
+// Daily savings plan for one debt's next due payment: spread over the days
+// from the day after the previous due date (or the savings start) to the due
+// date. Expected = what should be saved by today; today = amount to allot now.
+function debtSaving(d){
+  if(num(d.balance)<=0.5||!d.due) return null;
+  var nd=nextDue(d); if(!(nd.amount>0)) return null;
+  var due=nd.date, A=nd.amount, pm=addMonths(nd.mk,-1);
+  var start=addDays(pm+'-'+pad(Math.min(+d.due,daysIn(pm))),1);
+  var ss=S.saveStart||thisMonth()+'-01'; if(start<ss) start=ss; if(start>due) start=due;
+  var t=todayISO(), days=daysBetween(start,due)+1, daily=A/days;
+  var elapsed=Math.max(0,Math.min(days,daysBetween(start,t)+1));
+  var saved=debtJar(d), expected=Math.min(A,daily*elapsed);
+  var today=Math.max(0,Math.min(A-saved, expected-saved));
+  return {d:d, due:due, amount:A, start:start, days:days, daily:daily, elapsed:elapsed, expected:expected, saved:saved, today:today, daysLeft:Math.max(0,daysBetween(t,due))};
+}
+function debtSavings(){ return activeDebts().map(debtSaving).filter(Boolean).sort(function(a,b){return a.due.localeCompare(b.due);}); }
+
 // What the paid-out salary has already been used for this month: budget
 // spending (the tithe comes from income, not here) plus debt payments.
 function salarySpent(mk){
   mk=mk||thisMonth();
   var sp=sum(S.spend.filter(function(x){return monthKey(x.date)===mk&&x.catId!=='tithe';}),function(x){return num(x.amount);});
-  var dp=sum(S.moves.filter(function(m){return m.kind==='debtpay'&&monthKey(m.date)===mk;}),function(m){return num(m.amount);});
+  var dp=sum(S.moves.filter(function(m){return monthKey(m.date)===mk&&(m.kind==='debtsave'||m.kind==='debtpay');}),
+    function(m){ return m.kind==='debtsave'?num(m.amount):num(m.amount)-num(m.fromJar); });
   return {spend:sp, debt:dp, total:sp+dp};
 }
 function drawnThisMonth(){ var cm=thisMonth(); return sum(S.moves.filter(function(m){return m.kind==='draw'&&monthKey(m.date)===cm;}),function(m){return num(m.amount);}); }
@@ -1126,16 +1165,19 @@ V.home=function(){
     '<div class="node"><span class="big">👪</span><b class="num">'+shortMoney(sal)+'</b><small>salary</small></div><span class="arr">›</span>'+
     '<div class="node"><span class="big">🎯</span><b class="num">'+shortMoney(Math.max(0,leftover()))+'</b><small>to goal</small></div></div>';
 
-  var salDue=Math.max(0,sal-drawn), used=salarySpent(), salLeft=drawn-used.total;
+  var salDue=salaryDueSoFar(), used=salarySpent(), salLeft=drawn-used.total, perDay=sal/daysIn(cm);
   h+='<div class="card salary"><div class="row between"><span class="k">👪 Salary · '+monthLabel(cm)+'</span>'+
-      (sal>0&&salDue<0.5?'<span class="pill good">Paid out ✓</span>':sal>0?'<span class="pill warn">Due '+shortMoney(salDue)+'</span>':'')+'</div>'+
+      (sal>0&&salDue<0.5?'<span class="pill good">Up to date ✓</span>':sal>0?'<span class="pill warn">Due '+shortMoney(salDue)+'</span>':'')+'</div>'+
+    '<small class="muted num">'+money(perDay)+' a day · paid out '+money(drawn)+' of '+money(sal)+' this month</small>'+
     '<div class="grid g3" style="margin:8px 0">'+
-      tile('Still to pay out',shortMoney(salDue),'of '+shortMoney(sal))+
+      tile('Due so far',shortMoney(salDue),'day '+dayOfMonth()+' of '+daysIn(cm))+
       tile('Spent',shortMoney(used.total),used.debt?'incl. '+shortMoney(used.debt)+' debts':'')+
       tile('Left to spend','<span class="'+(salLeft<0?'neg':'')+'">'+(salLeft<0?'−':'')+shortMoney(Math.abs(salLeft))+'</span>','paid out '+shortMoney(drawn))+'</div>'+
     (drawn>0?'<div class="bar '+(used.total>drawn?'bad':used.total>drawn*0.85?'warn':'')+'"><i style="width:'+pct(used.total,drawn).toFixed(1)+'%"></i></div>':'')+
     (salLeft<0&&drawn<sal?'<div class="note warn" style="margin-bottom:0">More was spent than has been paid out — record the salary payout with <b>Pay salary</b>.</div>':'')+
-    (salDue>0.5?'<button class="primary sm" style="margin-top:10px" data-act="draw">Pay salary</button>':'')+'</div>';
+    (salDue>0.5||hold>0.5?'<button class="primary sm" style="margin-top:10px" data-act="draw">Pay salary</button>':'')+'</div>';
+  var dsv=debtSavings(), dToday=sum(dsv,function(x){return x.today;});
+  if(dsv.length) h+='<button class="card tight dtoday" data-go="budget"><span>💰 Debts to save today</span><b class="num">'+money(dToday)+'</b><span class="muted">›</span></button>';
   h+='<div class="grid g2">'+
     '<div class="card tight"><div class="row between"><span class="k">🛢️ Tank</span>'+(surplus>0.5?'<span class="pill good">+'+shortMoney(surplus)+'</span>':'')+'</div>'+
       '<div class="v num">'+money(hold)+'</div>'+
@@ -1372,7 +1414,7 @@ V.budget=function(){
     '</div>';
 
   // Only salary that has actually been paid out is money to distribute.
-  var paidOut=drawnThisMonth(), used=salarySpent(cm), alloc=allocTotal(cm)+mins, unalloc=paidOut-alloc, rest=paidOut-used.total;
+  var paidOut=drawnThisMonth(), used=salarySpent(cm), alloc=allocTotal(cm)+used.debt, unalloc=paidOut-alloc, rest=paidOut-used.total;
   h+='<div class="card"><div class="row between"><h2>💵 Salary to distribute · '+monthLabel(cm)+'</h2><button class="primary sm" data-act="allocate">+ Allocate</button></div>'+
     '<div class="grid g3" style="margin:8px 0">'+
       tile('Paid out',shortMoney(paidOut),'of '+shortMoney(sal)+' salary')+
@@ -1380,10 +1422,12 @@ V.budget=function(){
       tile('Left','<span class="'+(rest<0?'neg':'')+'">'+(rest<0?'−':'')+shortMoney(Math.abs(rest))+'</span>','',' style="border-color:'+(rest>=0?'var(--good)':'var(--bad)')+'"')+'</div>'+
     (paidOut>0
       ? '<div class="bar '+(used.total>paidOut?'bad':'')+'"><i style="width:'+pct(used.total,paidOut).toFixed(1)+'%"></i></div>'+
-        '<div class="row between num" style="font-size:13px;margin-top:8px"><span class="muted">Allocated '+money(alloc)+(mins?' <small>(incl. '+shortMoney(mins)+' debts)</small>':'')+'</span>'+
+        '<div class="row between num" style="font-size:13px;margin-top:8px"><span class="muted">Allocated '+money(alloc)+(used.debt?' <small>(incl. '+shortMoney(used.debt)+' debts)</small>':'')+'</span>'+
           '<span class="'+(unalloc<0?'neg':'')+'"><b>'+(unalloc>=0?money(unalloc)+'</b> to allocate':money(-unalloc)+'</b> over')+'</span></div>'
       : '<div class="note" style="margin-bottom:0">No salary paid out yet this month. Pay it from the tank on <b>Home → Pay salary</b>; that amount is what this budget distributes.</div>')+
     '</div>';
+
+  h+=debtSavingsCard();
 
   // Each category: progress bars by default, the editor behind ✎.
   groups.forEach(function(g){
@@ -1451,6 +1495,22 @@ V.budget=function(){
 };
 
 // Payments falling due in the next n days, soonest first.
+function debtSavingsCard(){
+  var list=debtSavings(); if(!list.length) return '';
+  var today=sum(list,function(x){return x.today;});
+  var h='<div class="card dsave"><div class="row between"><h2>💰 Save daily for debts</h2><span class="num"><b>'+money(today)+'</b> <small class="muted">today</small></span></div>'+
+    '<small class="muted">Each due payment spread over the days until it\'s due'+(S.saveStart?' (saving since '+shortDate(S.saveStart)+')':'')+'. Tap to set today\'s share aside.</small>';
+  list.forEach(function(x){
+    var ready=x.saved>=x.amount-0.5, behind=x.expected-x.saved>x.daily+0.5;
+    h+='<div class="dsrow"><div class="dl"><b>'+esc(x.d.name)+'</b><small class="num">Due '+shortDate(x.due)+(x.daysLeft?' · '+x.daysLeft+' day'+(x.daysLeft>1?'s':'')+' left':' · today')+' · '+money(x.amount)+'</small>'+
+      '<div class="bar thin '+(ready?'good':behind?'warn':'')+'" style="margin-top:5px"><i style="width:'+pct(x.saved,x.amount).toFixed(1)+'%"></i></div>'+
+      '<small class="num">'+money(x.daily)+'/day · saved '+money(x.saved)+(behind?' · <span class="neg">behind '+money(x.expected-x.saved)+'</span>':'')+'</small></div>'+
+      (ready?'<button class="primary sm" data-act="pay" data-id="'+x.d.id+'">Pay</button>'
+        :x.today>0.5?'<button class="primary sm" data-act="allot" data-id="'+x.d.id+'" data-amt="'+Math.round(x.today*100)/100+'">Allot '+shortMoney(x.today)+'</button>'
+        :'<span class="pill good">✓ today</span>')+'</div>';
+  });
+  return h+'</div>';
+}
 function upcomingDues(n){
   var t=new Date(todayISO()+'T00:00:00'), lim=new Date(t.getTime()+n*864e5);
   return activeDebts().filter(function(d){return d.due;}).map(function(d){ var nd=nextDue(d); return {d:d, date:nd.date, amount:nd.amount}; })
@@ -1583,6 +1643,7 @@ V.debts=function(){
     (parts.length?stackBar(parts)+legend(parts):'<p class="muted">Nothing ticked.</p>')+
     (left.length?'<small class="muted">Not included: '+esc(left.map(function(d){return d.name;}).join(', '))+' ('+money(sum(left,function(d){return num(d.balance);}))+') — change with ✎</small>':'')+'</div>';
 
+  h+=debtSavingsCard();
   h+=calendarCard();
 
   // Payoff plan: strategy toggle, the extra, and the balance falling to zero.
@@ -1835,6 +1896,7 @@ V.settings=function(){
   h+='<div class="card"><h2>Money settings</h2><div class="grid g2">'+
     '<label class="f"><span>Currency symbol</span><input data-bind="currency" value="'+esc(S.currency)+'"></label>'+
     '<label class="f"><span>Starter emergency fund (months of essentials)</span><select data-bind="starterMonths" data-num>'+[0.5,1,2].map(function(n){return '<option value="'+n+'"'+(S.starterMonths==n?' selected':'')+'>'+n+'</option>';}).join('')+'</select></label>'+
+    '<label class="f"><span>Daily debt saving started on</span><input type="date" data-bind="saveStart" value="'+esc(S.saveStart||'')+'"></label>'+
     '<label class="f"><span>Holding tank starting balance</span><input inputmode="decimal" data-bind="holdingStart" data-num value="'+num(S.holdingStart)+'"></label>'+
     '<label class="f"><span>Theme</span><select id="themeSel"><option value="">Match device</option><option value="light">Light</option><option value="dark">Dark</option></select></label>'+
     '</div></div>';
@@ -1954,13 +2016,13 @@ ACT.spend=function(el){
       S.spend.push({id:uid(),date:d.date||todayISO(),catId:k[0],subId:k[1]||null,amount:a,note:d.note}); toast(k[0]==='tithe'?'Tithe recorded 🙏':'Logged'); }, 'Save');
 };
 ACT.allocate=function(el){
-  var cm=thisMonth(), paidOut=drawnThisMonth(), mins=debtMins();
-  var avail=function(){ return paidOut-mins-allocTotal(cm); };
+  var cm=thisMonth(), paidOut=drawnThisMonth(), debts=salarySpent(cm).debt;
+  var avail=function(){ return paidOut-debts-allocTotal(cm); };
   var key=el&&el.dataset.key||'';
   var cur=function(k){ if(!k) return 0; var p=k.split('|'), b=S.budget.find(function(y){return y.id===p[0];}); if(!b) return 0; return p[1]?fundedSub(b,{id:p[1]},cm):num(allocMap(cm)[k]); };
   openDialog('Allocate · '+monthLabel(cm),
     '<div class="alloc-top num"><span>Available to allocate</span><b class="'+(avail()<0?'neg':'')+'">'+money(avail())+'</b></div>'+
-    '<small class="muted">Salary paid out '+money(paidOut)+' − debts due '+money(mins)+' − already allocated '+money(allocTotal(cm))+'</small>'+
+    '<small class="muted">Salary paid out '+money(paidOut)+' − saved/paid for debts '+money(debts)+' − already allocated '+money(allocTotal(cm))+'</small>'+
     (paidOut<=0?'<div class="note warn">Pay out the salary first (Home → Pay salary), then allocate it.</div>':'')+
     '<input class="bigamt num" name="amount" inputmode="decimal" placeholder="₱0" aria-label="Amount for this category" value="'+(key?cur(key)||'':'')+'">'+
     '<div class="picked" aria-live="polite">'+(key?esc(pickedLabel(key)):'Choose a category')+'</div>'+
@@ -1976,7 +2038,7 @@ ACT.allocate=function(el){
 };
 // Fill every line up to its plan, in budget order, with what is available.
 ACT.fillplan=function(){
-  var cm=thisMonth(), left=drawnThisMonth()-debtMins()-allocTotal(cm), n=0;
+  var cm=thisMonth(), left=drawnThisMonth()-salarySpent(cm).debt-allocTotal(cm), n=0;
   if(left<=0.5){ toast('Nothing left to allocate'); return; }
   S.budget.forEach(function(b){
     if(left<=0.5) return;
@@ -2031,18 +2093,29 @@ ACT.pay=function(el){
     '<div class="bigdate" style="margin-top:0"><small>Balance</small><b class="num">'+money(d.balance)+'</b></div>'+
     field('amount','Amount paid','inputmode="decimal" required',due>0?Math.round(due*100)/100:'')+
     (d.due||d.schedule||num(d.min)>0?selectField('forMonth','For the payment due in',months,forMk):'')+
-    field('date','Paid on','type="date"',todayISO()),
+    field('date','Paid on','type="date"',todayISO())+
+    (debtJar(d)>0.5?'<div class="note good">'+money(debtJar(d))+' saved for this debt is used first.</div>':''),
     function(v){ var a=num(v.amount); if(a<=0) return false;
+      var jar=Math.min(a,debtJar(d));
       d.balance=Math.max(0,Math.round((num(d.balance)-a)*100)/100);
-      S.moves.push({id:uid(),date:v.date||todayISO(),kind:'debtpay',to:d.id,amount:a,forMonth:v.forMonth||null,note:'Payment → '+d.name+(v.forMonth?' ('+monthLabel(v.forMonth)+')':'')});
+      S.moves.push({id:uid(),date:v.date||todayISO(),kind:'debtpay',to:d.id,amount:a,fromJar:jar,forMonth:v.forMonth||null,note:'Payment → '+d.name+(v.forMonth?' ('+monthLabel(v.forMonth)+')':'')});
       toast(d.balance<=0.5?'🎉 '+d.name+' is PAID OFF!':'Balance now '+money(d.balance)); }, 'Record');
 };
+// Set aside today's share for one debt (tapped by hand).
+ACT.allot=function(el){
+  var d=S.debts.find(function(x){return x.id===el.dataset.id;}); if(!d) return;
+  var a=num(el.dataset.amt); if(!(a>0)) return;
+  S.moves.push({id:uid(),date:todayISO(),kind:'debtsave',to:d.id,amount:Math.round(a*100)/100,note:'Saved for '+d.name});
+  save(); render(); toast(money(a)+' set aside for '+d.name);
+};
 ACT.draw=function(){
-  var sal=salary(), need=Math.max(0,sal-drawnThisMonth()), h=holding();
+  var need=salaryDueSoFar(), h=Math.max(0,holding()), def=Math.min(h,need>0.5?need:h);
   openDialog('Pay the family salary',
-    field('amount','Amount to transfer to the spending account','inputmode="decimal" required',Math.round(need*100)/100)+
-    '<p class="muted" style="font-size:13px">Still to pay out this month: '+money(need)+'. Do the real transfer in your bank app, then record it here.</p>'+
-    (h<need?'<div class="note warn">The tank shows '+money(Math.max(0,h))+' — log all business sales first, or pay out only what is there.</div>':''),
+    '<div class="alloc-top num"><span>In the tank</span><b>'+money(h)+'</b></div>'+
+    '<small class="muted num">Salary due so far this month: '+money(need)+' ('+money(salary()/daysIn(thisMonth()))+' a day)</small>'+
+    field('amount','Amount to transfer to the spending account','inputmode="decimal" required',Math.round(def*100)/100)+
+    '<p class="muted" style="font-size:13px">Do the real transfer in your bank app, then record it here.</p>'+
+    (h<need-0.5?'<div class="note warn">The tank has less than the salary due so far — pay out what\'s there; the rest follows as sales come in.</div>':''),
     function(v){ var a=num(v.amount); if(a<=0) return false;
       S.moves.push({id:uid(),date:todayISO(),kind:'draw',amount:a,note:'Salary for '+monthLabel(thisMonth(),true)}); toast('Salary recorded'); }, 'Record');
 };
