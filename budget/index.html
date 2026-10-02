@@ -534,6 +534,8 @@ function migrate(){
   S.businesses=(S.businesses||[]).map(function(b){ return typeof b==='string'?newBiz(b):b; });
   S.bizExp=S.bizExp||[];
   if(!S.saveStart) S.saveStart=thisMonth()+'-01';
+  var ids={}; S.debts.forEach(function(d){ ids[d.id]=1; });
+  S.moves=S.moves.filter(function(m){ return !((m.kind==='debtpay'||m.kind==='debtsave'||m.kind==='debtrelease')&&!ids[m.to])&&!(m.kind==='sweep'&&String(m.to).indexOf('debt:')===0&&!ids[String(m.to).slice(5)]); });
   S.businesses.forEach(function(b){
     var opw=openDaysOf(b).length, first=S.incomes.filter(function(i){return i.source===b.name;}).map(function(i){return i.date;})
       .concat(S.bizExp.filter(function(e){return e.bizId===b.id;}).map(function(e){return e.date;})).sort()[0]||todayISO();
@@ -885,15 +887,17 @@ function paidFor(d,mk){ return S.moves.some(function(m){ return m.kind==='debtpa
 function daysIn(mk){ return new Date(+mk.slice(0,4), +mk.slice(5,7), 0).getDate(); }
 function debtMins(){ return sum(activeDebts(), function(d){ return nextDue(d).amount; }); }
 // Stable group order = first appearance in the debt list; colour follows the group.
+// Archived debts keep their records but leave every list and total.
+function liveDebts(){ return S.debts.filter(function(d){return !d.archived;}); }
 function debtGroups(){
   var order=[], by={};
-  S.debts.forEach(function(d){ var g=d.group||'Other debts'; if(!by[g]){ by[g]=[]; order.push(g); } by[g].push(d); });
+  liveDebts().forEach(function(d){ var g=d.group||'Other debts'; if(!by[g]){ by[g]=[]; order.push(g); } by[g].push(d); });
   return order.map(function(g,i){ return {name:g, slot:i<7?i+1:0, debts:by[g], total:sum(by[g],function(d){return Math.max(0,num(d.balance));})}; });
 }
 function essentials(){ return budgetTotal(function(b){return b.essential;}) + debtMins(); }
-function activeDebts(){ return S.debts.filter(function(d){return num(d.balance)>0.5;}); }
-function totalDebt(){ return sum(S.debts, function(d){return Math.max(0,num(d.balance));}); }
-function totalDebtStart(){ return sum(S.debts, function(d){return Math.max(num(d.start),num(d.balance));}); }
+function activeDebts(){ return liveDebts().filter(function(d){return num(d.balance)>0.5;}); }
+function totalDebt(){ return sum(liveDebts(), function(d){return Math.max(0,num(d.balance));}); }
+function totalDebtStart(){ return sum(liveDebts(), function(d){return Math.max(num(d.start),num(d.balance));}); }
 // Zero-based: salary − planned spending − minimum payments = what's left to
 // throw at the current step every month.
 function leftover(){ return salary() - budgetTotal() - debtMins(); }
@@ -1417,12 +1421,14 @@ V.income=function(){
         var act=sum(S.bizExp.filter(function(e){return e.itemId===o.id&&monthKey(e.date)===incMk;}),function(e){return num(e.amount);});
         return {name:o.name, plan:opexDue(o,b,incMk), act:act, freq:o.freq||'month', amt:num(o.amount)};
       }).filter(function(o){return o.amt||o.act;}):[];
+      var oneoff=b?sum(S.bizExp.filter(function(e){return e.bizId===b.id&&e.kind!=='tax'&&!e.itemId&&monthKey(e.date)===incMk;}),function(e){return num(e.amount);}):0;
+      if(oneoff) items.push({name:'Other / one-off', plan:0, act:oneoff, freq:'once', amt:0});
       return '<details class="bizrow"><summary><div class="row between"><b>'+esc(x.name)+'</b><span class="num'+(x.profit<0?' neg':'')+'">'+money(x.profit)+' <small>'+margin+'%</small></span></div>'+
         '<div class="hb2"><span>Sales</span><span class="ht"><i style="width:'+(x.revenue/mx*100).toFixed(1)+'%;background:var(--brand)"></i></span><span class="num">'+shortMoney(x.revenue)+'</span></div>'+
         '<div class="hb2"><span>Opex'+(x.est?'*':'')+'</span><span class="ht"><i style="width:'+(x.opex/mx*100).toFixed(1)+'%;background:'+slotColor(1)+'"></i></span><span class="num">'+shortMoney(x.opex)+'</span></div></summary>'+
         (items.length?'<div class="opx">'+items.map(function(o){
           var over=o.plan&&o.act>o.plan;
-          return '<div class="row between"><span>'+esc(o.name)+' <small class="muted">'+money(o.amt)+' '+FREQ_LABEL[o.freq]+'</small></span><span class="num'+(over?' neg':'')+'">'+(o.act?money(o.act):'—')+' <small>/ '+money(o.plan)+' so far</small></span></div>';
+          return '<div class="row between"><span>'+esc(o.name)+(o.amt?' <small class="muted">'+money(o.amt)+' '+FREQ_LABEL[o.freq]+'</small>':'')+'</span><span class="num'+(over?' neg':'')+'">'+(o.act?money(o.act):'—')+(o.amt?' <small>/ '+money(o.plan)+' so far</small>':'')+'</span></div>';
         }).join('')+'</div>':'<p class="muted" style="font-size:13px">Set this business\'s opex in Profile → Businesses.</p>')+
         '</details>';
     }).join(''));
@@ -1461,7 +1467,7 @@ V.income=function(){
   // 4 · History: sales and business expenses together
   var hist=S.incomes.map(function(i){return {date:i.date,label:i.source,note:i.note,amt:num(i.amount),coll:'incomes',id:i.id};})
     .concat(S.bizExp.map(function(e){ var b=S.businesses.find(function(x){return x.id===e.bizId;}), o=b&&b.opex.find(function(x){return x.id===e.itemId;});
-      return {date:e.date,label:e.kind==='tax'?'🧾 BIR tax payment':(b?b.name:'Business')+' · '+(o?o.name:'expense'),note:e.note,amt:-num(e.amount),coll:'bizExp',id:e.id}; }))
+      return {date:e.date,label:e.kind==='tax'?'🧾 BIR tax payment':(b?b.name:'Business')+' · '+(o?o.name:'Other / one-off'),note:e.note,amt:-num(e.amount),coll:'bizExp',id:e.id}; }))
     .sort(function(a,b){return b.date.localeCompare(a.date);});
   if(hist.length){
     h+='<div class="card"><h2>History</h2><div class="scroll"><table><tbody>'+hist.slice(0,80).map(function(x){
@@ -1714,7 +1720,7 @@ function dueList(items){
 var cal={view:'month', mk:null, day:null};
 function duesInMonth(mk){
   var out=[], dim=daysIn(mk);
-  S.debts.forEach(function(d){
+  liveDebts().forEach(function(d){
     S.moves.forEach(function(m){ if(m.kind==='debtpay'&&m.to===d.id&&payMonth(m)===mk) out.push({d:d,date:m.forMonth&&d.due?mk+'-'+pad(Math.min(+d.due,dim)):m.date,amount:num(m.amount),paid:true}); });
     if(num(d.balance)<=0.5||!d.due) return;
     var a=projectDebt(d,120)[mk];
@@ -1797,10 +1803,10 @@ V.debts=function(){
     '<div class="grid g3" style="margin-top:12px">'+
       tile('Due · 30 days',shortMoney(sum(d30,function(x){return x.amount;})),d30.length+' payments')+
       tile('Debt-free',sim.ok?monthLabel(addMonths(cm,sim.months)):'—',sim.ok?Math.ceil(sim.months/12*10)/10+' yrs':'needs extra')+
-      tile('Debts left',String(live.length),'of '+S.debts.length)+'</div></div>';
+      tile('Debts left',String(live.length),'of '+liveDebts().length)+'</div></div>';
 
   // What we owe, by group: one stacked bar + legend.
-  var parts=[], other=0, left=S.debts.filter(function(d){return d.excludeOwe&&num(d.balance)>0.5;});
+  var parts=[], other=0, left=liveDebts().filter(function(d){return d.excludeOwe&&num(d.balance)>0.5;});
   debtGroups().forEach(function(g){
     var t=sum(g.debts.filter(function(d){return !d.excludeOwe;}),function(d){return Math.max(0,num(d.balance));});
     if(t<=0.5) return;
@@ -1846,7 +1852,7 @@ V.debts=function(){
         : barHTML(pct(start-g.total,start),'good')+'<div class="muted" style="font-size:12px;margin-top:4px">No fixed monthly payment — paid down with the extra</div>')+
       gs.map(function(d){
         var sd=sim.debts.find(function(x){return x.id===d.id;}), done=num(d.balance)<=0.5, nd=nextDue(d), dm=debtMonths(d);
-        return '<div class="drow'+(done?' done':'')+'"><div class="dl"><b>'+esc(d.name)+'</b><small class="num">'+
+        return '<div class="drow'+(done?' done':'')+'"><div class="dl" data-act="debtinfo" data-id="'+d.id+'" role="button" tabindex="0"><b>'+esc(d.name)+' <span class="muted" style="font-weight:400;font-size:12px">📜</span></b><small class="num">'+
           (done?'Paid off ✓':[d.due?'due '+ordinal(+d.due):'', nd.amount>0?money(nd.amount)+(d.schedule?' next':'/mo'):'no fixed payment', num(d.rate)>0?num(d.rate)+'%/yr':'', dm&&g.debts.length===1?dm.left+' of '+dm.total+' months left':''].filter(Boolean).join(' · '))+
           '</small>'+(dm&&!done&&g.debts.length>1?'<div class="mini-sl">'+sliceBar(dm.total,dm.total-dm.left,slotColor(g.slot))+'<small class="num">'+dm.left+' mo</small></div>':'')+
           (d.note&&!/^\d+ months? left$/i.test(d.note)?'<small class="dnote">'+esc(d.note)+'</small>':'')+'</div>'+
@@ -1855,6 +1861,9 @@ V.debts=function(){
       }).join('')+'</details>';
   });
 
+  var arch=S.debts.filter(function(d){return d.archived;});
+  if(arch.length) h+=collapsible('debt:archived',false,'<span class="gn">🗄 Archived <small>'+arch.length+'</small></span>',arch.map(function(d){
+    return '<div class="txrow" data-act="debtinfo" data-id="'+d.id+'"><span class="txi">🗄</span><span class="txl"><b>'+esc(d.name)+'</b><small>'+esc(d.group||'')+'</small></span><span class="num">'+money(d.balance)+'</span><span></span></div>'; }).join(''));
   h+=info('Rules while in debt','<ul>'+
     '<li><b>No new debt</b> — no new PayLater, installments or loans.</li>'+
     '<li><b>Every windfall → debt:</b> big business months, gifts, sold items.</li>'+
@@ -2007,7 +2016,7 @@ function txLabelOf(coll, x){
   if(coll==='incomes') return {kind:'sale', icon:'💼', label:x.source};
   if(coll==='bizExp'){ if(x.kind==='tax') return {kind:'tax', icon:'🧾', label:'BIR tax payment'};
     var b=S.businesses.find(function(y){return y.id===x.bizId;}), o=b&&b.opex.find(function(y){return y.id===x.itemId;});
-    return {kind:'bizexp', icon:'🏪', label:(b?b.name:'Business')+' · '+(o?o.name:'expense')}; }
+    return {kind:'bizexp', icon:'🏪', label:(b?b.name:'Business')+' · '+(o?o.name:x.note?'one-off: '+x.note:'Other / one-off')}; }
   if(coll==='spend') return x.catId==='tithe'?{kind:'tithe', icon:'🙏', label:'Tithe'}:{kind:'spend', icon:'🧾', label:pickedLabel(x.subId?x.catId+'|'+x.subId:x.catId)||'(deleted category)'};
   var icons={draw:'👪', debtpay:'📉', debtsave:'💰', debtrelease:'↺', opexsave:'🏪', opexrelease:'↺', sweep:'🛢️', dreamadd:'⭐'};
   return {kind:x.kind, icon:icons[x.kind]||'↔', label:x.note||x.kind};
@@ -2195,21 +2204,44 @@ ACT.income=function(){
       var f=monthFlow(incMk); toast(monthLabel(incMk)+': tithe '+money(f.tithe)+' · family share '+money(f.family)); }, 'Add');
 };
 // An actual business expense (opex) for a business, against one of its opex lines.
+// Business expense picker: every opex line grouped by business with what's
+// set aside and what's due next, plus one-off and BIR tax rows.
+function bizPickedLabel(v){
+  if(v==='tax|tax') return '🧾 BIR tax payment';
+  var k=String(v||'').split('|'), b=S.businesses.find(function(x){return x.id===k[0];}); if(!b) return '';
+  var o=b.opex.find(function(x){return x.id===k[1];});
+  return b.name+' › '+(o?o.name:'Other / one-off');
+}
+function bizPicker(selected){
+  var recent=[]; S.bizExp.slice().reverse().forEach(function(e){ var k=e.kind==='tax'?'tax|tax':e.bizId+'|'+(e.itemId||'other'); if(recent.indexOf(k)<0&&recent.length<5&&bizPickedLabel(k)) recent.push(k); });
+  var row=function(v,name,sub,hay,amt){ return '<button type="button" class="cpi'+(selected===v?' on':'')+'" data-val="'+v+'" data-name="'+esc(hay.toLowerCase())+'"'+(amt?' data-amt="'+Math.round(amt)+'"':'')+'><span>'+name+'</span><small class="num">'+sub+'</small></button>'; };
+  return '<div class="cpick" data-kind="biz"><input type="hidden" name="line" value="'+esc(selected||'')+'">'+
+    '<input type="search" class="cpsearch" placeholder="🔍 Search expense" aria-label="Search expense" autocomplete="off">'+
+    (recent.length?'<div class="cprecent">'+recent.map(function(k){return '<button type="button" class="chip'+(selected===k?' on':'')+'" data-val="'+k+'">'+esc(bizPickedLabel(k).split(' › ').pop())+'</button>';}).join('')+'</div>':'')+
+    '<div class="cplist">'+S.businesses.map(function(b){
+      return '<div class="cpg"><div class="cpgh">'+esc(b.name)+'</div>'+b.opex.map(function(o){
+        var st=opexLineStatus(o,b), jar=opexJar(o), left=Math.max(0,num(o.amount)-st.cyclePaid);
+        var sub=[jar>0.5?'💰 '+shortMoney(jar):'', st.next&&num(o.amount)>0?(left>0.5?shortMoney(left)+' due '+shortDate(st.next):'paid ✓'):''].filter(Boolean).join(' · ');
+        return row(b.id+'|'+o.id, esc(o.name), sub, b.name+' '+o.name+' '+(o.group||''), left>0.5?left:num(o.amount));
+      }).join('')+row(b.id+'|other','➕ Other / one-off','',b.name+' other one-off misc')+'</div>';
+    }).join('')+
+    '<div class="cpg"><div class="cpgh">Government</div>'+row('tax|tax','🧾 BIR tax payment',bizWallet().taxRes>0.5?shortMoney(bizWallet().taxRes)+' reserved':'','bir tax government')+'</div>'+
+    '</div></div>';
+}
 ACT.bizexp=function(el){
-  var opts=[]; S.businesses.forEach(function(b){ b.opex.forEach(function(o){ opts.push([b.id+'|'+o.id, b.name+' · '+o.name]); }); });
-  opts.push(['tax|tax','🧾 BIR tax payment']);
-  var pre=el&&el.dataset.line;
+  var pre=el&&el.dataset.line||'';
   openDialog(pre==='tax|tax'?'Pay tax':'Pay a business expense',
-    field('date','Date','type="date" required',todayISO())+
-    selectField('line','Business · expense',opts,pre||opts[0][0])+
-    field('amount','Amount paid','inputmode="decimal" required placeholder="0"',el&&el.dataset.amt?el.dataset.amt:'')+
-    field('note','Note (optional)','')+
-    '<p class="muted" style="font-size:13px">Paid from the business wallet. Money set aside for the line is used first.</p>',
-    function(d){ var a=num(d.amount); if(a<=0) return false; var k=d.line.split('|');
+    '<input class="bigamt num" name="amount" inputmode="decimal" required placeholder="₱0" aria-label="Amount paid" value="'+(el&&el.dataset.amt?esc(el.dataset.amt):'')+'">'+
+    '<div class="picked" aria-live="polite">'+(pre?esc(bizPickedLabel(pre)):'Choose an expense')+'</div>'+
+    bizPicker(pre)+
+    '<details class="more"><summary>Date &amp; note</summary>'+field('date','Date','type="date" required',todayISO())+field('note','Note (e.g. what the one-off was)','')+'</details>'+
+    '<p class="muted" style="font-size:13px">Paid from the business wallet (💰 = set aside for the line, used first).</p>',
+    function(d){ var a=num(d.amount); if(a<=0){ toast('Enter the amount'); return false; } if(!d.line){ toast('Choose an expense'); return false; }
+      var k=d.line.split('|');
       if(k[0]==='tax') S.bizExp.push({id:uid(),date:d.date||todayISO(),kind:'tax',bizId:null,itemId:null,amount:a,note:d.note});
       else { var o0=null; S.businesses.forEach(function(b){ b.opex.forEach(function(o){ if(o.id===k[1]) o0=o; }); });
-        S.bizExp.push({id:uid(),date:d.date||todayISO(),bizId:k[0],itemId:k[1],amount:a,fromJar:o0?Math.min(a,opexJar(o0)):0,note:d.note}); }
-      incMk=monthKey(d.date||todayISO()); toast('Expense logged'); }, 'Log');
+        S.bizExp.push({id:uid(),date:d.date||todayISO(),bizId:k[0],itemId:o0?k[1]:null,amount:a,fromJar:o0?Math.min(a,opexJar(o0)):0,note:d.note}); }
+      incMk=monthKey(d.date||todayISO()); toast('Expense logged · '+bizPickedLabel(d.line).split(' › ').pop()); }, 'Log');
 };
 // Category picker: search, recent chips, and every line grouped by section
 // (sub-items indented) as tappable rows showing what's left this month.
@@ -2321,7 +2353,8 @@ ACT.debt=function(el){
       '<textarea name="schedule" rows="4" placeholder="2026-10 11189.49&#10;2026-11 10529.72">'+esc(sched)+'</textarea></label></details>'+
     field('note','Note','',d?d.note:'')+
     '<label class="check"><input type="checkbox" name="owe" '+(!d||!d.excludeOwe?'checked':'')+'><span>Include in "What we owe"</span></label>'+
-    (d?'<button type="button" class="danger" data-del="debts" data-id="'+d.id+'">Delete this debt</button>':''),
+    (d?'<div class="row" style="margin-top:6px"><button type="button" data-act="debtarchive" data-id="'+d.id+'">'+(d.archived?'Restore from archive':'🗄 Archive (keep history)')+'</button>'+
+      '<button type="button" class="danger" data-act="debtdelete" data-id="'+d.id+'">Delete</button></div>':''),
     function(v){
       var sc=null;
       String(v.schedule||'').split(/\n/).forEach(function(line){
@@ -2352,6 +2385,54 @@ ACT.pay=function(el){
 };
 // Set aside today's share for one debt (tapped by hand).
 ACT.undo1=function(){ undoLast(); };
+// Archive: the debt leaves lists and totals, its records stay (money stays spent).
+ACT.debtarchive=function(el){
+  var d=S.debts.find(function(x){return x.id===el.dataset.id;}); if(!d) return;
+  checkpoint(d.archived?'restore '+d.name:'archive '+d.name);
+  var j=d.archived?0:debtJar(d);
+  // Savings not yet used for a payment go back to free money; payments stay as history.
+  if(j>0.5) S.moves.push({id:uid(),date:todayISO(),kind:'debtrelease',to:d.id,amount:Math.round(j*100)/100,note:'Archived · '+d.name});
+  d.archived=!d.archived; if(dlg.open) dlg.close(); save(); render(); toast(d.archived?d.name+' archived — history kept'+(j>0.5?' · '+money(j)+' savings back to free money':''):d.name+' restored');
+};
+// Delete: the debt and every payment/saving for it go; that money returns to free salary money.
+ACT.debtdelete=function(el){
+  var d=S.debts.find(function(x){return x.id===el.dataset.id;}); if(!d) return;
+  var recs=S.moves.filter(function(m){return ((m.kind==='debtpay'||m.kind==='debtsave'||m.kind==='debtrelease')&&m.to===d.id)||(m.kind==='sweep'&&m.to==='debt:'+d.id);});
+  var paid=sum(recs.filter(function(m){return m.kind==='debtpay'||m.kind==='sweep';}),function(m){return num(m.amount);}), jar=debtJar(d);
+  if(!confirm('Delete '+d.name+(recs.length?' and its '+recs.length+' record'+(recs.length>1?'s':'')+'? '+money(paid+jar)+' (payments '+money(paid)+' + savings '+money(jar)+') goes back to free salary money.\n\nTo keep the history instead, choose Archive.':'?'))) return;
+  checkpoint('delete '+d.name);
+  S.moves=S.moves.filter(function(m){return recs.indexOf(m)<0;});
+  S.debts=S.debts.filter(function(x){return x!==d;});
+  if(dlg.open) dlg.close(); save(); render(); toast(d.name+' deleted'+(paid+jar>0.5?' · '+money(paid+jar)+' back to free money':''));
+};
+// A debt's full record: summary, every payment (with balance after) and saving.
+ACT.debtinfo=function(el){
+  var d=S.debts.find(function(x){return x.id===el.dataset.id;}); if(!d) return;
+  var recs=S.moves.filter(function(m){return (m.kind==='debtpay'||m.kind==='debtsave'||m.kind==='debtrelease'||(m.kind==='sweep'&&m.to==='debt:'+d.id))&&(m.to===d.id||m.to==='debt:'+d.id);})
+    .map(function(m,i){return {m:m,i:i};}).sort(function(a,b){return b.m.date.localeCompare(a.m.date)||b.i-a.i;}).map(function(x){return x.m;});
+  var pays=recs.filter(function(m){return m.kind==='debtpay'||m.kind==='sweep';});
+  var paidTot=sum(pays,function(m){return num(m.amount);}), start=Math.max(num(d.start),num(d.balance)+paidTot);
+  var bal=num(d.balance), nd=num(d.balance)>0.5?nextDue(d):null, dm=debtMonths(d), sim=simulate(S.strategy,extraToDebt()), sd=sim.debts.find(function(x){return x.id===d.id;});
+  var rows=recs.map(function(m){
+    var after=null; if(m.kind==='debtpay'||m.kind==='sweep'){ after=bal; bal+=num(m.amount); }
+    var lab=m.kind==='debtpay'?'Payment'+(m.forMonth?' · for '+monthLabel(m.forMonth):''):m.kind==='sweep'?'Extra from tank':m.kind==='debtsave'?'Saved':'Savings returned';
+    var sub=[m.kind==='debtpay'&&num(m.fromJar)>0.5?money(m.fromJar)+' from savings':'', after!=null?'balance after '+money(after):''].filter(Boolean).join(' · ');
+    return '<div class="txrow" data-act="edittx" data-coll="moves" data-id="'+m.id+'"><span class="txi">'+({debtpay:'📉',sweep:'🛢️',debtsave:'💰',debtrelease:'↺'})[m.kind]+'</span>'+
+      '<span class="txl"><b>'+lab+'</b><small>'+esc(shortDate(m.date))+' '+m.date.slice(0,4)+(sub?' · '+sub:'')+'</small></span>'+
+      '<span class="num'+(m.kind==='debtpay'||m.kind==='sweep'?' pos':'')+'">'+(m.kind==='debtrelease'?'−':'')+money(m.amount)+'</span><span></span></div>';
+  }).join('');
+  openDialog('📜 '+d.name,
+    '<div class="grid g3" style="margin-bottom:8px">'+tile('Balance',shortMoney(d.balance),d.group||'')+tile('Paid so far',shortMoney(start-num(d.balance)),Math.round(pct(start-num(d.balance),start))+'% of '+shortMoney(start))+
+      tile(num(d.balance)<=0.5?'Status':'Next due',num(d.balance)<=0.5?'Paid ✓':nd?shortDate(nd.date):'—',nd&&nd.amount?money(nd.amount):'')+'</div>'+
+    barHTML(pct(start-num(d.balance),start),'good')+
+    '<small class="muted num" style="display:block;margin:6px 0 10px">'+[pays.length+' payment'+(pays.length===1?'':'s'), pays[0]?'last '+shortDate(pays[0].date):'', d.due?'due every '+ordinal(+d.due):'', dm?dm.left+' months of payments left':'', sd&&sd.paidOff?'paid off by '+monthLabel(addMonths(thisMonth(),sd.paidOff),true)+' on the plan':'', debtJar(d)>0.5?money(debtJar(d))+' saved now':'', d.archived?'archived':''].filter(Boolean).join(' · ')+'</small>'+
+    (d.note?'<div class="note" style="margin-top:0">'+esc(d.note)+'</div>':'')+
+    '<div class="k">Records</div>'+(rows||'<p class="muted">No payments or savings recorded yet.</p>')+
+    '<div class="row" style="margin-top:10px">'+(num(d.balance)>0.5&&!d.archived?'<button type="button" class="primary sm" data-act="pay" data-id="'+d.id+'">Pay</button>':'')+
+      '<button type="button" class="sm" data-act="debt" data-id="'+d.id+'">✎ Edit</button></div>',
+    function(){ }, 'Close');
+  var c=dlgForm.querySelector('button[value=cancel]'); if(c) c.hidden=true;
+};
 // Set aside today's share for every debt at once, as far as the free money goes.
 ACT.allotall=function(){
   var free=Math.max(0,availableMoney()), list=debtSavings().filter(function(x){return x.today>0.5;}), n=0, total=0;
@@ -2685,10 +2766,11 @@ document.addEventListener('click',function(e){
   // Category picker rows/chips inside dialogs
   var pk=e.target.closest('.cpi,.cprecent .chip');
   if(pk){
-    var box=pk.closest('form'), val=pk.dataset.val;
-    box.querySelector('input[name=catId]').value=val;
+    var box=pk.closest('form'), val=pk.dataset.val, biz=pk.closest('.cpick[data-kind=biz]');
+    box.querySelector('.cpick input[type=hidden]').value=val;
     box.querySelectorAll('.cpi,.cprecent .chip').forEach(function(x){ x.classList.toggle('on', x.dataset.val===val); });
-    var lab=box.querySelector('.picked'); if(lab) lab.textContent=pickedLabel(val);
+    var lab=box.querySelector('.picked'); if(lab) lab.textContent=biz?bizPickedLabel(val):pickedLabel(val);
+    if(biz){ var am=box.querySelector('[name=amount]'), row=biz.querySelector('.cpi[data-val="'+val+'"]'); if(am&&!am.value&&row&&row.dataset.amt) am.value=row.dataset.amt; return; }
     // In Allocate, show the category's current allocation
     if(box.querySelector('.fillplan')){ var p=val.split('|'), b=S.budget.find(function(y){return y.id===p[0];}), a=box.querySelector('[name=amount]');
       if(b&&a){ var cur=p[1]?fundedSub(b,{id:p[1]},thisMonth()):num(allocMap()[val]); var pl=p[1]?num((b.subs.find(function(y){return y.id===p[1];})||{}).amount):num(b.amount);
