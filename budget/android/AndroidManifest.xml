@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.seamanapp.familybudget"
-    android:versionCode="17"
-    android:versionName="2.6">
+    android:versionCode="18"
+    android:versionName="2.7">
 
     <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="34" />
 
-    <!-- The page makes no network requests; everything is served from inside
-         the APK. INTERNET is declared only so the WebView engine starts
-         cleanly on every Android version. -->
+    <!-- The app itself is served from inside the APK. The only network
+         requests are the optional, read-only Meta Ads sync to graph.facebook.com. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
