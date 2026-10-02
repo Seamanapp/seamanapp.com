@@ -347,6 +347,7 @@ tr.tap{cursor:pointer}
 .bar3 .p{width:2px;background:var(--ink,#333);opacity:.6;border-radius:0}
 .pas{display:flex;justify-content:space-between;gap:6px;font-size:11px;color:var(--muted)}.pas b{color:var(--ink,inherit);font-weight:600}
 .bline .chip,.subl .chip{padding:2px 8px;font-size:12px;min-height:0}
+.ptx{padding:6px 0;border-top:1px solid var(--line);gap:8px}.ptx span{min-width:0;font-size:13px}
 .wgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .wtile{display:flex;gap:8px;align-items:flex-start;text-align:left;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--card);min-width:0;font-weight:400}
 .wt{display:flex;flex-direction:column;min-width:0;gap:1px}
@@ -557,6 +558,12 @@ function migrate(){
   S.bizExp=S.bizExp||[];
   if(!S.saveStart) S.saveStart=thisMonth()+'-01';
   S.wallets=S.wallets||{};
+  S.moves.forEach(function(m){
+    if(m.kind!=='xfer') return;
+    var to=String(m.to), from=String(m.from);
+    if(to.indexOf('debt:')===0){ S.moves.push({id:uid(),date:m.date,kind:'debtsave',to:to.slice(5),amount:num(m.amount),note:'Saved (from transfer)'}); m.to='debt'; }
+    if(from.indexOf('debt:')===0){ S.moves.push({id:uid(),date:m.date,kind:'debtrelease',to:from.slice(5),amount:num(m.amount),note:'Returned (from transfer)'}); m.from='debt'; }
+  });
   var ids={}; S.debts.forEach(function(d){ ids[d.id]=1; });
   S.moves=S.moves.filter(function(m){ return !((m.kind==='debtpay'||m.kind==='debtsave'||m.kind==='debtrelease')&&!ids[m.to])&&!(m.kind==='sweep'&&String(m.to).indexOf('debt:')===0&&!ids[String(m.to).slice(5)]); });
   S.businesses.forEach(function(b){
@@ -984,7 +991,7 @@ function debtJar(d){
   var inn=sum(S.moves.filter(function(m){return m.kind==='debtsave'&&m.to===d.id;}),function(m){return num(m.amount);});
   var out=sum(S.moves.filter(function(m){return m.kind==='debtpay'&&m.to===d.id;}),function(m){return num(m.fromJar);});
   var back=sum(S.moves.filter(function(m){return m.kind==='debtrelease'&&m.to===d.id;}),function(m){return num(m.amount);});
-  return Math.max(0,inn-out-back+xferNet('debt:'+d.id));
+  return Math.max(0,inn-out-back);
 }
 // Daily savings plan for one debt's next due payment: spread over the days
 // from the day after the previous due date (or the savings start) to the due
@@ -1010,13 +1017,31 @@ function debtSaving(d){
    records; a transfer ('xfer' move) carries money between wallets and its fee
    comes off the sending one. Keys: family, tank, biz:<id>, debt:<id> (one
    debt's savings), fund:<emergency|education|retirement>, dream:<id>, outside. */
+/* Wallets show the real money in each account. Allotting (debt savings, the
+   family share building up in the tank) only says money should move; it moves
+   when a transfer is recorded. So a transfer has two sides:
+   - physical: always moves the money between the two accounts;
+   - planning: only when it changes what the money is for. Moving money that
+     was already allotted (family → debt savings, business → tank) and
+     matching a balance to the bank change nothing in the plan. A fee is
+     always a real cost to the sender. */
+function isMatch(m){ return !!m.match||m.note==='Matched to bank'; }
+function xferPipe(m){
+  var a=walletOf(m.from), b=walletOf(m.to);
+  return isMatch(m)||a==='debt'||b==='debt'||(a==='tank'&&b.indexOf('biz:')===0)||(b==='tank'&&a.indexOf('biz:')===0);
+}
 function xferNet(key, mk){
   return sum(S.moves.filter(function(m){return m.kind==='xfer'&&(!mk||monthKey(m.date)===mk);}),function(m){
-    return (m.to===key?num(m.amount):0)-(m.from===key?num(m.amount)+num(m.fee):0); });
+    var pipe=xferPipe(m); return (m.to===key&&!pipe?num(m.amount):0)-(m.from===key?(pipe?0:num(m.amount))+num(m.fee):0); });
 }
 function xferNetPrefix(pre){
   return sum(S.moves.filter(function(m){return m.kind==='xfer';}),function(m){
-    return (String(m.to).indexOf(pre)===0?num(m.amount):0)-(String(m.from).indexOf(pre)===0?num(m.amount)+num(m.fee):0); });
+    var pipe=xferPipe(m); return (String(m.to).indexOf(pre)===0&&!pipe?num(m.amount):0)-(String(m.from).indexOf(pre)===0?(pipe?0:num(m.amount))+num(m.fee):0); });
+}
+// Real money moved in/out of a wallet by transfers (amount, and fee when sending).
+function physNet(w){
+  return sum(S.moves.filter(function(m){return m.kind==='xfer';}),function(m){
+    return (walletOf(m.to)===w?num(m.amount):0)-(walletOf(m.from)===w?num(m.amount)+num(m.fee):0); });
 }
 var FUND_NAMES={emergency:'Emergency fund', education:'Kids\' education', retirement:'Retirement'};
 // Funds and dreams keep their saved amount as a number: transfers change it.
@@ -1025,27 +1050,46 @@ function adjustHeld(key, delta){
   if(key.indexOf('fund:')===0){ var f=key.slice(5); S.funds[f]=Math.max(0,num(S.funds[f])+delta); }
   else if(key.indexOf('dream:')===0){ var g=S.dreams.find(function(x){return x.id===key.slice(6);}); if(g) g.saved=Math.max(0,num(g.saved)+delta); }
 }
-// Family wallet cash: every salary payout, less spending and debt money, plus transfers.
+// Real money in the family account: salary payouts in, spending and the part
+// of debt payments not taken from the debt-savings account out, transfers.
 function familyCash(){
   var draws=sum(S.moves.filter(function(m){return m.kind==='draw';}),function(m){return num(m.amount);});
   var sp=sum(S.spend.filter(function(x){return x.catId!=='tithe';}),function(x){return num(x.amount);});
-  var debt=sum(S.moves.filter(function(m){return m.kind==='debtsave'||m.kind==='debtpay'||m.kind==='debtrelease';}),
-    function(m){ return m.kind==='debtsave'?num(m.amount):m.kind==='debtrelease'?-num(m.amount):num(m.amount)-num(m.fromJar); });
-  return draws-sp-debt+xferNet('family');
+  var paid=sum(S.moves.filter(function(m){return m.kind==='debtpay';}),function(m){return num(m.amount)-num(m.fromJar);});
+  return draws-sp-paid+physNet('family');
 }
-// Business cash split per business. Shared items (starting balance, tax, tithe)
-// sit with the first business; the rest follow each business's own records.
+// Debt-savings account: transfers in, less payments made from savings.
+function debtCash(){ return physNet('debt')-sum(S.moves.filter(function(m){return m.kind==='debtpay';}),function(m){return num(m.fromJar);}); }
+// Tank account: starting amount and transfers in, less salary payouts and sweeps.
+function tankCash(){
+  var out=sum(S.moves.filter(function(m){return m.kind==='draw'||m.kind==='sweep';}),function(m){return num(m.amount)+num(m.fee);});
+  return num(S.holdingStart)+physNet('tank')-out;
+}
+// Business accounts: sales in, expenses (and tax/tithe from the first) out, transfers.
+// The family share stays here until it's transferred to the tank.
 function bizCash(){
-  var tot=bizWallet().balance, out={}, list=S.businesses;
-  if(!list.length) return out;
-  var rest=0, fm=flowMonths();
-  list.slice(1).forEach(function(b){
-    var v=xferNet('biz:'+b.id);
-    fm.forEach(function(mk){ var f=monthFlow(mk,b.name); v+=f.revenue-f.family; });
-    v-=sum(S.bizExp.filter(function(e){return e.bizId===b.id;}),function(e){return num(e.amount);});
-    out[b.id]=v; rest+=v;
+  var out={}, list=S.businesses; if(!list.length) return out;
+  var main=list[0];
+  list.forEach(function(b){
+    var v=physNet('biz:'+b.id)+sum(S.incomes.filter(function(x){return x.source===b.name;}),function(x){return num(x.amount);})
+      -sum(S.bizExp.filter(function(e){return e.bizId===b.id;}),function(e){return num(e.amount);});
+    out[b.id]=v;
   });
-  out[list[0].id]=tot-rest;
+  var names=list.map(function(b){return b.name;});
+  out[main.id]+=num(S.walletStart)+sum(S.incomes.filter(function(x){return names.indexOf(x.source)<0;}),function(x){return num(x.amount);})
+    -sum(S.bizExp.filter(function(e){return !e.bizId||!list.some(function(b){return b.id===e.bizId;});}),function(e){return num(e.amount);})-titheGiven();
+  return out;
+}
+// Allotted but not yet moved: what to transfer, as one transfer each.
+function pendingTransfers(){
+  var out=[], dj=sum(S.debts,debtJar), dc=debtCash();
+  if(dj-dc>0.5) out.push({from:'family',to:'debt',amount:dj-dc,why:'allotted to debt savings'});
+  else if(dc-dj>0.5) out.push({from:'debt',to:'family',amount:dc-dj,why:'more than what\'s allotted'});
+  if(S.businesses.length){
+    var tk=holding()-tankCash(), mb='biz:'+S.businesses[0].id;
+    if(tk>0.5) out.push({from:mb,to:'tank',amount:tk,why:'family share earned'});
+    else if(tk<-0.5) out.push({from:'tank',to:mb,amount:-tk,why:'more than the family share'});
+  }
   return out;
 }
 function walletName(key){
@@ -1065,18 +1109,20 @@ function walletOf(key){
   return key.indexOf('debt:')===0?'debt':key.indexOf('fund:')===0?'protect':key.indexOf('dream:')===0?'dreams':key;
 }
 function walletList(){
-  var L=[], fam=familyCash(), free=Math.max(0,availableMoney());
+  var L=[], fam=familyCash(), free=Math.max(0,availableMoney()), pend=pendingTransfers();
+  var mv=function(k){ var x=pend.filter(function(p){return p.from===k;}), y=pend.filter(function(p){return p.to===k;});
+    return x.length?'↗ '+shortMoney(sum(x,function(p){return p.amount;}))+' to move out':y.length?'↘ '+shortMoney(sum(y,function(p){return p.amount;}))+' to receive':''; };
   var jars=sum(S.debts,debtJar), nj=S.debts.filter(function(d){return debtJar(d)>0.5;}).length;
-  L.push({key:'debt', icon:'💰', name:'Saved for debts', bal:jars, sub:nj?nj+' debt'+(nj>1?'s':'')+' saved for':'nothing saved yet',
-    parts:S.debts.filter(function(d){return debtJar(d)>0.5;}).map(function(d){return [d.name,debtJar(d)];})});
-  L.push({key:'family', icon:'👪', name:'Family budget', bal:fam, sub:money(free)+' free to allot',
-    parts:[['Free to allot this month',free],['Allotted to budget lines',Math.max(0,fam-free)]]});
-  L.push({key:'tank', icon:'🛢️', name:'Holding tank', bal:holding(), sub:'salary waiting', parts:[['Salary due so far',salaryDueSoFar()]]});
+  L.push({key:'debt', icon:'💰', name:'Saved for debts', bal:debtCash(), target:jars, sub:mv('debt')||(nj?nj+' debt'+(nj>1?'s':'')+' saved for':'nothing saved yet'),
+    parts:[['Allotted to debts',jars]].concat(S.debts.filter(function(d){return debtJar(d)>0.5;}).map(function(d){return ['  · '+d.name,debtJar(d)];}))});
+  L.push({key:'family', icon:'👪', name:'Family budget', bal:fam, sub:mv('family')||money(free)+' free to allot',
+    parts:[['Free to allot this month',free]]});
+  L.push({key:'tank', icon:'🛢️', name:'Holding tank', bal:tankCash(), target:holding(), sub:mv('tank')||'salary waiting', parts:[['Family share it should hold',holding()],['Salary due so far',salaryDueSoFar()]]});
   var bc=bizCash(), wal=bizWallet();
   S.businesses.forEach(function(b,i){
     var jar=sum(b.opex,opexJar), parts=[['Set aside for opex',jar]];
     if(i===0){ if(wal.taxRes>0.5) parts.push(['Tax to pay',wal.taxRes]); if(wal.titheRes>0.5) parts.push(['Tithe to give',wal.titheRes]); }
-    L.push({key:'biz:'+b.id, icon:'🏪', name:b.name, bal:num(bc[b.id]), sub:jar>0.5?shortMoney(jar)+' for opex':'business', parts:parts});
+    L.push({key:'biz:'+b.id, icon:'🏪', name:b.name, bal:num(bc[b.id]), sub:mv('biz:'+b.id)||(jar>0.5?shortMoney(jar)+' for opex':'business'), parts:parts});
   });
   var fk=Object.keys(S.funds||{});
   L.push({key:'protect', icon:'🛡️', name:'Protection', bal:sum(fk,function(k){return num(S.funds[k]);}), sub:'emergency & funds',
@@ -1119,6 +1165,18 @@ function metaEventAmount(ev, off){
   }catch(e){}
   return null;
 }
+/* Ad spend projection: actual spend through yesterday, plus the recent pace
+   (average of the last 7 full days, so a change in budget shows quickly) for
+   the days left including today. Early in the month last month's days count. */
+function metaProjection(a){
+  var cm=thisMonth(), t=todayISO(), d=a.daily||{}, past=[];
+  for(var i=1;i<=7;i++){ var k=addDays(t,-i); if(d[k]!=null) past.push(num(d[k])); }
+  var done=sum(Object.keys(d).filter(function(k){return k.slice(0,7)===cm&&k<t;}),function(k){return num(d[k]);});
+  var mtd=done+num(d[t]), daysDone=dayOfMonth()-1;
+  var pace=past.length>=3?sum(past,function(v){return v;})/past.length:daysDone>0?done/daysDone:num(d[t]);
+  var left=daysIn(cm)-daysDone;
+  return {mtd:mtd, pace:pace, month:done+Math.max(num(d[t]),pace)+pace*(left-1), next:pace*daysIn(addMonths(cm,1))};
+}
 function metaLine(a){
   var b=S.businesses.find(function(x){return x.id===a.bizId;}), o=b&&b.opex.find(function(x){return x.id===a.lineId;});
   return {b:b,o:o};
@@ -1142,6 +1200,8 @@ function syncMeta(quiet){
         .concat((a.events||[]).filter(function(x){return x.date<(a.since||t);})).slice(0,40);
       // Payments since the last sync. Owed before + new spend − owed now = what Meta charged.
       var paid=0, ln=metaLine(a);
+      // The linked expense line was deleted: bring it back so the opex projection keeps Meta in it.
+      if(ln.b&&!ln.o){ var no={id:uid(),name:'Meta Ads',amount:0,freq:'month',day:daysIn(cm),from:todayISO()}; ln.b.opex.push(no); a.lineId=no.id; ln=metaLine(a); }
       if(prev&&!now.prepay&&now.spent>=prev.spent-0.01) paid=prev.balance+(now.spent-prev.spent)-now.balance;
       var fresh=a.events.filter(function(e){return META_CHARGES.indexOf(e.type)>=0&&e.key>(a.lastEventKey||'')&&e.date>=(a.since||t);});
       if(now.prepay) fresh.forEach(function(e){ if(e.amount>0) paid+=e.amount; });
@@ -1153,10 +1213,9 @@ function syncMeta(quiet){
       }
       if(fresh.length) a.lastEventKey=fresh.map(function(e){return e.key;}).sort().pop();
       a.last=now; a.error=null;
-      // The linked line's monthly amount follows this month's actual daily spend.
-      if(ln.o&&a.autoAmount!==false){
-        var days=Object.keys(a.daily).filter(function(d){return d.slice(0,7)===cm;}), tot=sum(days,function(d){return a.daily[d];});
-        if(days.length){ ln.o.amount=Math.round(tot/dayOfMonth()*daysIn(cm)); ln.o.freq='month'; if(!ln.o.day) ln.o.day=daysIn(cm); }
+      // The linked line's monthly amount is the projected month of ad spend.
+      if(ln.o&&a.autoAmount!==false&&Object.keys(a.daily).length){
+        ln.o.amount=Math.round(metaProjection(a).month); ln.o.freq='month'; ln.o.meta=a.id; if(!ln.o.day) ln.o.day=daysIn(cm);
       }
     }).catch(function(e){ a.error=e.message; errs.push((a.name||a.id)+': '+e.message); });
   }); },Promise.resolve()).then(function(){
@@ -1176,14 +1235,14 @@ function metaCard(){
   return collapsible('inc:meta',true,'<span class="gn">📣 Meta Ads</span><span class="gt num">'+(accts.some(function(a){return a.last&&a.last.balance>0.5;})?'owe '+shortMoney(sum(accts,function(a){return a.last?a.last.balance:0;})):'✓')+'</span>',
     accts.map(function(a){
       var L=a.last, ln=metaLine(a), days=Object.keys(a.daily||{}).filter(function(d){return d.slice(0,7)===cm;}).sort();
-      var mtd=sum(days,function(d){return a.daily[d];}), avg=days.length?mtd/dayOfMonth():0;
+      var pj=metaProjection(a), mtd=pj.mtd;
       var pts=[]; for(var i=1;i<=daysIn(cm);i++){ var d=cm+'-'+pad(i); pts.push({label:i===1||i%5===0?String(i):'',v:num((a.daily||{})[d]),tip:shortDate(d)+': '+money(num((a.daily||{})[d]))}); }
       return '<div class="metaacct"><div class="row between"><b>'+esc(a.name||a.id)+'</b><button class="sm" data-act="metasync">🔄 Sync</button></div>'+
         '<small class="muted">'+(ln.b?'→ '+esc(ln.b.name)+(ln.o?' · '+esc(ln.o.name):''):'not linked to a business')+(L?' · synced '+esc(new Date(L.at).toLocaleString('en-PH',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})):'')+'</small>'+
         (a.error?'<div class="note bad">'+esc(a.error)+(/token|session|OAuth|expired/i.test(a.error)?' — paste a new token in Profile → Meta Ads.':'')+'</div>':'')+
         (L?'<div class="grid g3" style="margin:8px 0">'+tile(L.prepay?'Prepaid funds':'Owed to Meta',shortMoney(L.balance),L.prepay?'prepaid account':'charged on the bill date')+
-          tile('Spent '+monthLabel(cm).split(' ')[0],shortMoney(mtd),shortMoney(avg)+'/day')+
-          tile('This month ≈',shortMoney(avg*daysIn(cm)),'at this pace')+'</div>'+
+          tile('Spent '+monthLabel(cm).split(' ')[0],shortMoney(mtd),shortMoney(pj.pace)+'/day lately')+
+          tile('Projected',shortMoney(pj.month),'next month ≈'+shortMoney(pj.next))+'</div>'+
           (L.cap>0?'<small class="muted num">Spending limit '+money(L.spent)+' of '+money(L.cap)+'</small>'+barHTML(pct(L.spent,L.cap),pct(L.spent,L.cap)>90?'bad':pct(L.spent,L.cap)>75?'warn':''):'')+
           barChart(pts,{aria:'Meta ad spend per day'}):'<p class="muted">Not synced yet.</p>')+
         ((a.events||[]).length?'<div class="k" style="margin-top:8px">Billing</div>'+a.events.slice(0,6).map(function(e){
@@ -1207,6 +1266,11 @@ function walletsCard(){
       return '<button class="wtile" data-act="wallet" data-key="'+w.key+'">'+wlogo(w.key,w.icon)+
         '<span class="wt"><b>'+esc(w.name)+'</b><small>'+(i.bank?esc(i.bank+(i.acct?' · '+i.acct:'')):'<i>set bank</i>')+'</small>'+
         '<span class="wv num'+(w.bal<-0.5?' neg':'')+'">'+money(w.bal)+'</span><small class="num">'+w.sub+'</small></span></button>'; }).join('')+'</div>'+
+    (function(){ var pend=pendingTransfers(); if(!pend.length) return '';
+      return '<div class="k" style="margin-top:12px">⇄ To transfer</div>'+pend.map(function(p){
+        return '<div class="row between ptx"><span><b>'+esc(walletName(p.from))+' → '+esc(walletName(p.to))+'</b><small class="muted"> · '+esc(p.why)+'</small></span>'+
+          '<button class="sm primary" data-act="xfer" data-from="'+p.from+'" data-to="'+p.to+'" data-amt="'+(Math.round(p.amount*100)/100)+'">'+shortMoney(p.amount)+'</button></div>'; }).join('')+
+        '<small class="muted" style="display:block;margin-top:4px">Allotting only marks money for an account. Move it whenever you like — one bigger transfer saves fees.</small>'; })()+
     (order.length?'<div class="k" style="margin-top:12px">By bank</div><div class="wbanks">'+order.map(function(b){
       return '<span class="wbank">'+wlogo(banks[b].key,'🏦')+'<span><b>'+esc(b)+'</b><small class="num">'+money(banks[b].v)+'</small></span></span>'; }).join('')+'</div>':'')+
     '</div>';
@@ -2358,6 +2422,7 @@ V.settings=function(){
         else when='<span class="muted when">each open day</span>';
         var nd=num(o.amount)?nextDue2(o,b,todayISO()):null;
         return '<div class="oprow"><div class="row"><input class="bname" aria-label="Expense name" data-opx="name"'+attrs+' value="'+esc(o.name)+'" placeholder="Expense" style="flex:1">'+
+          (o.meta&&MA().some(function(a){return a.id===o.meta&&a.lineId===o.id&&a.autoAmount!==false;})?'<span class="pill good" title="Amount set from Meta Ads every sync">📣 auto</span>':'')+
           '<button class="icon danger" data-delopx="'+o.id+'" data-bid="'+b.id+'" aria-label="Delete '+esc(o.name)+'">✕</button></div>'+
           '<div class="opsched"><input class="amt num" inputmode="decimal" aria-label="Amount for '+esc(o.name)+'" data-opx="amount"'+attrs+' value="'+(num(o.amount)||'')+'" placeholder="0">'+
           '<select aria-label="Per" data-opx="freq"'+attrs+'>'+Object.keys(FREQ_LABEL).map(function(k){return '<option value="'+k+'"'+(f===k?' selected':'')+'>'+FREQ_LABEL[k]+'</option>';}).join('')+'</select>'+when+'</div>'+
@@ -2720,51 +2785,32 @@ ACT.metadisconnect=function(){
 };
 
 // What a wallet (or one part of it) can send right now.
+// Real money a wallet can send.
 function xferAvail(key){
   if(key==='outside') return Infinity;
-  if(key==='family') return Math.max(0,availableMoney());
-  if(key==='tank') return Math.max(0,holding());
-  if(key==='debt') return sum(S.debts,debtJar);
+  var w=walletList().find(function(x){return x.key===walletOf(key);});
   var id=key.slice(key.indexOf(':')+1);
-  if(key.indexOf('biz:')===0) return Math.max(0,num(bizCash()[id]));
-  if(key.indexOf('debt:')===0){ var d=S.debts.find(function(x){return x.id===id;}); return d?debtJar(d):0; }
   if(key.indexOf('fund:')===0) return num(S.funds[id]);
   if(key.indexOf('dream:')===0){ var g=S.dreams.find(function(x){return x.id===id;}); return g?num(g.saved):0; }
-  return 0;
+  return w?Math.max(0,w.bal):0;
 }
 function xferSelect(name, label, sel, sending){
   var o=function(v,t){ var av=sending?xferAvail(v):null; return '<option value="'+v+'"'+(v===sel?' selected':'')+'>'+esc(t)+(sending&&av!==Infinity?' · '+money(av):'')+'</option>'; };
   var g=function(t,inner){ return inner?'<optgroup label="'+esc(t)+'">'+inner+'</optgroup>':''; };
-  var debts=activeDebts().filter(function(d){return !sending||debtJar(d)>0.5;});
   var dreams=(S.dreams||[]).filter(function(d){return d.status!=='bought'&&(!sending||num(d.saved)>0.5);});
   return '<label class="f"><span>'+label+'</span><select name="'+name+'">'+
-    g('Family',o('family','👪 Family budget'+(sending?' (free)':''))+o('tank','🛢️ Holding tank'))+
+    g('Family',o('family','👪 Family budget')+o('tank','🛢️ Holding tank'))+
     g('Business',S.businesses.map(function(b){return o('biz:'+b.id,'🏪 '+b.name);}).join(''))+
-    g('Saved for debts',(debts.length?o('debt',sending?'💰 All debt savings (latest due first)':'💰 Debts — soonest due first'):'')+debts.map(function(d){return o('debt:'+d.id,'💰 '+d.name);}).join(''))+
+    g('Debts',o('debt','💰 Saved for debts'))+
     g('Protection',Object.keys(S.funds).map(function(k){return o('fund:'+k,'🛡️ '+(FUND_NAMES[k]||k));}).join(''))+
     g('Dreams',dreams.map(function(d){return o('dream:'+d.id,'⭐ '+dreamLabel(d));}).join(''))+
     g('Other',o('outside','💵 Outside (cash, gift, other account)'))+'</select></label>';
-}
-// Money into debt savings goes to the soonest due first; money out comes from the latest due.
-function splitToDebts(a){
-  var legs=[], rem=a, list=debtSavings();
-  list.forEach(function(x){ var g=Math.min(rem,Math.max(0,x.amount-x.saved)); if(g>0.005){ legs.push(['debt:'+x.d.id,g]); rem-=g; } });
-  if(rem>0.005){ var first=list[0]?list[0].d:activeDebts()[0]; if(!first) return null;
-    var l=legs.find(function(x){return x[0]==='debt:'+first.id;}); if(l) l[1]+=rem; else legs.push(['debt:'+first.id,rem]); }
-  return legs.map(function(x){return [x[0],Math.round(x[1]*100)/100];});
-}
-function splitFromDebts(a){
-  var legs=[], rem=a;
-  S.debts.filter(function(d){return debtJar(d)>0.5;}).map(function(d){ return {d:d, due:num(d.balance)>0.5?nextDue(d).date:'9999'}; })
-    .sort(function(x,y){return y.due.localeCompare(x.due);}).forEach(function(x){
-      var g=Math.min(rem,debtJar(x.d)); if(g>0.005){ legs.push(['debt:'+x.d.id,Math.round(g*100)/100]); rem-=g; } });
-  return legs;
 }
 ACT.xfer=function(el){
   var from=el&&el.dataset.from||'family', to=el&&el.dataset.to||'debt';
   if(from===to) to=from==='family'?'debt':'family';
   openDialog('⇄ Transfer between wallets',
-    '<input class="bigamt num" name="amount" inputmode="decimal" required placeholder="₱0" aria-label="Amount">'+
+    '<input class="bigamt num" name="amount" inputmode="decimal" required placeholder="₱0" aria-label="Amount" value="'+esc(el&&el.dataset.amt||'')+'">'+
     xferSelect('from','From',from,true)+xferSelect('to','To',to,false)+
     '<label class="f"><span>Transfer fee (optional)</span><input name="fee" inputmode="decimal" placeholder="0"></label>'+
     '<div class="row" style="gap:6px;margin:-4px 0 8px">'+[0,10,15,25].map(function(n){return '<button type="button" class="chip" data-fee="'+n+'">'+(n?'₱'+n:'No fee')+'</button>';}).join('')+'</div>'+
@@ -2773,21 +2819,14 @@ ACT.xfer=function(el){
     function(v){
       var a=num(v.amount), fee=num(v.fee), date=v.date||todayISO();
       if(a<=0){ toast('Enter the amount'); return false; }
-      if(v.from===v.to||(v.from==='debt'&&v.to.indexOf('debt:')===0)||(v.to==='debt'&&v.from.indexOf('debt:')===0)){ toast('Choose two different wallets'); return false; }
+      if(walletOf(v.from)===walletOf(v.to)&&v.from.indexOf(':')<0){ toast('Choose two different wallets'); return false; }
+      if(v.from===v.to){ toast('Choose two different wallets'); return false; }
       var av=xferAvail(v.from); if(a+fee>av+0.5){ toast(walletName(v.from)+' only has '+money(av)); return false; }
       if(v.from==='tank'&&v.to==='family'){
         S.moves.push({id:uid(),date:date,kind:'draw',amount:a,fee:fee,note:v.note||'Salary for '+monthLabel(monthKey(date),true)});
         toast('Salary payout recorded'); return; }
-      var src=v.from==='debt'?splitFromDebts(a+fee):[[v.from,a+fee]], dst=v.to==='debt'?splitToDebts(a):[[v.to,a]];
-      if(!dst||!dst.length){ toast('No debt to save for'); return false; }
-      var grp=uid(), legs=[];
-      // Pair up the sending and receiving parts; the fee rides on the first one.
-      if(src.length>1){ src[0][1]-=fee; src.forEach(function(x,i){ legs.push([x[0],dst[0][0],x[1],i?0:fee]); }); }
-      else dst.forEach(function(x,i){ legs.push([src[0][0],x[0],x[1],i?0:fee]); });
-      legs.forEach(function(l){
-        var m={id:uid(),date:date,kind:'xfer',from:l[0],to:l[1],amount:Math.round(l[2]*100)/100,fee:l[3],grp:grp,note:v.note||''};
-        S.moves.push(m); adjustHeld(m.to,m.amount); adjustHeld(m.from,-(m.amount+m.fee));
-      });
+      var m={id:uid(),date:date,kind:'xfer',from:v.from,to:v.to,amount:Math.round(a*100)/100,fee:fee,note:v.note||''};
+      S.moves.push(m); adjustHeld(m.to,m.amount); adjustHeld(m.from,-(m.amount+m.fee));
       toast(money(a)+' → '+walletName(v.to)+(fee?' · fee '+money(fee):''));
     }, 'Transfer');
 };
@@ -2799,7 +2838,7 @@ ACT.wallet=function(el){
   var recs=S.moves.filter(function(m){ return (m.kind==='xfer'&&(mine(m.from)||mine(m.to)))||(m.kind==='draw'&&(key==='tank'||key==='family')); })
     .map(function(m,ix){return {m:m,ix:ix};}).sort(function(a,b){return b.m.date.localeCompare(a.m.date)||b.ix-a.ix;}).slice(0,15).map(function(x){return x.m;});
   var send=key==='debt'?'debt':key==='protect'?'fund:emergency':key==='dreams'?((openDreams()[0]||{}).id?'dream:'+openDreams()[0].id:'outside'):key;
-  var matchable=key==='family'||key==='tank'||key.indexOf('biz:')===0;
+  var matchable=key==='family'||key==='tank'||key==='debt'||key.indexOf('biz:')===0;
   openDialog(w.icon+' '+w.name,
     '<div class="row" style="gap:12px;align-items:center;margin-bottom:8px">'+wlogo(key,w.icon,true)+'<div style="min-width:0"><div class="v num" style="font-size:26px">'+money(w.bal)+'</div>'+
       '<small class="muted">'+(i.bank?'🏦 '+esc(i.bank)+(i.acct?' · '+esc(i.acct):''):'No bank set yet')+'</small></div></div>'+
@@ -2825,7 +2864,7 @@ ACT.wmatch=function(el){
     field('actual','Balance in the bank app now','inputmode="decimal" required',Math.round(w.bal*100)/100)+
     '<p class="muted" style="font-size:13px">The difference is saved as an adjustment you can see (and undo) in Transactions.</p>',
     function(v){ var diff=num(v.actual)-w.bal; if(Math.abs(diff)<0.5){ toast('Already matches ✓'); return; }
-      S.moves.push({id:uid(),date:todayISO(),kind:'xfer',from:diff>0?'outside':key,to:diff>0?key:'outside',amount:Math.round(Math.abs(diff)*100)/100,fee:0,note:'Matched to bank'});
+      S.moves.push({id:uid(),date:todayISO(),kind:'xfer',from:diff>0?'outside':key,to:diff>0?key:'outside',amount:Math.round(Math.abs(diff)*100)/100,fee:0,match:true,note:'Matched to bank'});
       toast(w.name+' '+(diff>0?'+':'−')+money(Math.abs(diff))+' to match the bank'); }, 'Match');
 };
 ACT.wbank=function(el){
