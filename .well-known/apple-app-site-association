@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["WKRBHH3AK9.com.seamanapp.seafarerApp"],
+        "components": [
+          { "/": "/vouch", "comment": "crew vouch invite" },
+          { "/": "/vouch/*" },
+          { "/": "/v/*", "comment": "short vouch link" },
+          { "/": "/join", "comment": "club friend invite" },
+          { "/": "/join/*" }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["WKRBHH3AK9.com.seamanapp.seafarerApp"]
+  }
+}
