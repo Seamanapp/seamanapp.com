@@ -348,6 +348,13 @@ tr.tap{cursor:pointer}
 .pas{display:flex;justify-content:space-between;gap:6px;font-size:11px;color:var(--muted)}.pas b{color:var(--ink,inherit);font-weight:600}
 .bline .chip,.subl .chip{padding:2px 8px;font-size:12px;min-height:0}
 .ptx{padding:6px 0;border-top:1px solid var(--line);gap:8px}.ptx span{min-width:0;font-size:13px}
+.tstep{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.tstep:first-of-type{border-top:0}
+.tstep .tn{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:13px;background:var(--line);flex:none}
+.tstep.done .tn{background:var(--good);color:#fff}.tstep .tl{flex:1;min-width:0;display:flex;flex-direction:column}.tstep .tl small{color:var(--muted);font-size:12px}
+.tstep.done .tl b{color:var(--muted)}
+.pxt{display:flex;flex-direction:column;min-width:0}.pxt b{font-size:15px}
+.xnow{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:8px 0}
+.asgrow{display:grid;grid-template-columns:1fr 120px;align-items:center;gap:8px}.asgrow span{font-size:13px}
 .wgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .wtile{display:flex;gap:8px;align-items:flex-start;text-align:left;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--card);min-width:0;font-weight:400}
 .wt{display:flex;flex-direction:column;min-width:0;gap:1px}
@@ -558,6 +565,12 @@ function migrate(){
   S.bizExp=S.bizExp||[];
   if(!S.saveStart) S.saveStart=thisMonth()+'-01';
   S.wallets=S.wallets||{};
+  if(!S.accounts){
+    var byBank={}; S.accounts=[]; S.assign={};
+    Object.keys(S.wallets).forEach(function(k){ var w=S.wallets[k], n=(w.bank||'').trim(); if(!n) return;
+      if(!byBank[n]){ byBank[n]={id:uid(),name:n,logo:w.logo||''}; S.accounts.push(byBank[n]); }
+      S.assign[k]=byBank[n].id; });
+  }
   S.moves.forEach(function(m){
     if(m.kind!=='xfer') return;
     var to=String(m.to), from=String(m.from);
@@ -707,6 +720,7 @@ function prevDue2(o, b, due){
 // Set aside for one line over (fromExcl, toIncl]: each cycle's amount spread
 // evenly over the open days in that cycle. Nothing before the line started.
 function accrued(o, b, fromExcl, toIncl){
+  var ma=metaFor(o); if(ma) return metaAccrued(ma, fromExcl, toIncl);
   var amt=num(o.amount); if(!(amt>0)) return 0;
   if(o.from&&fromExcl<addDays(o.from,-1)) fromExcl=addDays(o.from,-1);
   if((o.freq||'month')==='day') return toIncl>fromExcl?openCount(b,fromExcl,toIncl)*amt:0;
@@ -737,6 +751,9 @@ function opexDue(o, b, mk){
 // One line right now: next due date and amount, how much of this cycle is
 // set aside, what has been paid, and what is held for it overall.
 function opexLineStatus(o, b){
+  var ma=metaFor(o);
+  if(ma){ var paid=sum(S.bizExp.filter(function(e){return e.itemId===o.id;}),function(e){return num(e.amount);});
+    return {next:null, due:metaOwed(ma), cycleAside:0, cyclePaid:0, reserve:accrued(o,b,'2000-01-01',todayISO())-paid, daily:metaProjection(ma).pace*metaTax(ma), meta:true}; }
   var t=todayISO(), paidAll=sum(S.bizExp.filter(function(e){return e.itemId===o.id;}),function(e){return num(e.amount);});
   var next=nextDue2(o,b,t), lastPaid=S.bizExp.filter(function(e){return e.itemId===o.id;}).map(function(e){return e.date;}).sort().pop()||null;
   // Paid already for today's due date → look at the following one.
@@ -758,6 +775,14 @@ function opexJar(o){
 // One line's daily saving toward its next due date: what should be saved by
 // today (its daily slices so far this cycle), what's saved, what to allot now.
 function opexSaving(o, b){
+  var ma=metaFor(o);
+  if(ma){
+    // Meta bills when it decides to: set aside what's been spent (with VAT)
+    // and not yet charged, so the money is there when the charge comes.
+    var owed=metaOwed(ma), jar0=opexJar(o), pace=metaProjection(ma).pace*metaTax(ma);
+    return {o:o, b:b, meta:ma, next:'9999-12-31', due:owed, expected:owed, jar:jar0, daily:pace,
+      today:Math.max(0,owed-jar0), needPerDay:Math.max(0,owed-jar0), ready:jar0>=owed-0.5, daysLeft:0};
+  }
   if(!(num(o.amount)>0)) return null;
   var st=opexLineStatus(o,b); if(!st.next) return null;
   var t=todayISO(), next=st.next, start=prevDue2(o,b,next);
@@ -798,7 +823,7 @@ function bizWallet(){
   w.paidOpex=sum(S.bizExp.filter(function(e){return e.kind!=='tax';}),function(e){return num(e.amount);});
   w.paidTax=sum(S.bizExp.filter(function(e){return e.kind==='tax';}),function(e){return num(e.amount);});
   w.given=titheGiven();
-  w.balance=num(S.walletStart)+w.sales-w.paidOpex-w.paidTax-w.given-w.family+xferNetPrefix('biz:');
+  w.balance=num(S.walletStart)+w.sales-w.paidOpex-w.paidTax-w.given-w.family+xferNetPrefix('biz:')-acctFees('biz:');
   w.taxRes=w.tax-w.paidTax; w.titheRes=w.tithe-w.given;
   w.jars=0; S.businesses.forEach(function(b){ b.opex.forEach(function(o){ w.jars+=opexJar(o); }); });
   w.opexRes=w.jars;
@@ -807,6 +832,7 @@ function bizWallet(){
 }
 // A typical full month of a line (for the Profile summary).
 function opexMonthly(o, b){
+  var ma=metaFor(o); if(ma) return metaProjection(ma).month*metaTax(ma);
   var a=num(o.amount), f=o.freq||'month', openPerMonth=openDaysOf(b).length*52/12;
   return {day:a*openPerMonth, week:a*52/12, '2week':a*26/12, semi:a*2, month:a, quarter:a/3, year:a/12, once:0}[f]||0;
 }
@@ -1177,6 +1203,32 @@ function metaProjection(a){
   var left=daysIn(cm)-daysDone;
   return {mtd:mtd, pace:pace, month:done+Math.max(num(d[t]),pace)+pace*(left-1), next:pace*daysIn(addMonths(cm,1))};
 }
+function metaTax(a){ return 1+(a.vat==null?(a.currency==='PHP'?12:0):num(a.vat))/100; }
+// The Meta account linked (with auto amount) to this opex line, if any.
+function metaFor(o){
+  if(!o||!o.meta||!S.meta) return null;
+  return (S.meta.accounts||[]).find(function(a){return a.id===o.meta&&a.lineId===o.id;})||null;
+}
+// Ad cost over (fromExcl, toIncl]: actual daily spend through today, the recent
+// pace after today — both with VAT, the way Meta charges it.
+function metaAccrued(a, fromExcl, toIncl){
+  var t=todayISO(), d=a.daily||{}, pj=null, tot=0, x=addDays(fromExcl,1), g=0;
+  if(a.since&&x<a.since.slice(0,8)+'01') x=a.since.slice(0,8)+'01';
+  while(x<=toIncl&&g++<800){
+    if(x<=t) tot+=num(d[x]); else { pj=pj||metaProjection(a); tot+=pj.pace; }
+    x=addDays(x,1);
+  }
+  return tot*metaTax(a);
+}
+// Spent on ads but not yet charged, with VAT (Meta's own figure when synced).
+// Meta ad cost (actual + VAT) counted in the opex of month mk.
+function metaOpex(mk){
+  var t=todayISO(), to=mk===thisMonth()?t:lastOfMonth(mk), tot=0;
+  if(mk>thisMonth()) return 0;
+  S.businesses.forEach(function(b){ b.opex.forEach(function(o){ var a=metaFor(o); if(a) tot+=metaAccrued(a,addDays(mk+'-01',-1),to); }); });
+  return tot;
+}
+function metaOwed(a){ return a.last&&!a.last.prepay?a.last.balance*metaTax(a):0; }
 function metaLine(a){
   var b=S.businesses.find(function(x){return x.id===a.bizId;}), o=b&&b.opex.find(function(x){return x.id===a.lineId;});
   return {b:b,o:o};
@@ -1194,7 +1246,7 @@ function syncMeta(quiet){
       var ac=r[0], off=metaOff(ac.currency), prev=a.last;
       var now={balance:num(ac.balance)/off, spent:num(ac.amount_spent)/off, cap:num(ac.spend_cap)/off, prepay:!!ac.is_prepay_account, status:ac.account_status, at:new Date().toISOString()};
       a.name=ac.name||a.name; a.currency=ac.currency;
-      a.daily={}; r[1].forEach(function(d){ a.daily[d.date_start]=num(d.spend); });
+      a.daily=a.daily||{}; r[1].forEach(function(d){ a.daily[d.date_start]=num(d.spend); });
       a.events=r[2].filter(function(e){return META_CHARGES.indexOf(e.event_type)>=0||/billing/.test(e.event_type);})
         .map(function(e){ return {key:e.event_type+'@'+e.event_time, date:String(e.event_time).slice(0,10), type:e.event_type, label:e.translated_event_type||e.event_type, amount:metaEventAmount(e,off)}; })
         .concat((a.events||[]).filter(function(x){return x.date<(a.since||t);})).slice(0,40);
@@ -1202,7 +1254,8 @@ function syncMeta(quiet){
       var paid=0, ln=metaLine(a);
       // The linked expense line was deleted: bring it back so the opex projection keeps Meta in it.
       if(ln.b&&!ln.o){ var no={id:uid(),name:'Meta Ads',amount:0,freq:'month',day:daysIn(cm),from:todayISO()}; ln.b.opex.push(no); a.lineId=no.id; ln=metaLine(a); }
-      if(prev&&!now.prepay&&now.spent>=prev.spent-0.01) paid=prev.balance+(now.spent-prev.spent)-now.balance;
+      // Meta adds VAT on top of the spend when it charges the card.
+      if(prev&&!now.prepay&&now.spent>=prev.spent-0.01) paid=(prev.balance+(now.spent-prev.spent)-now.balance)*metaTax(a);
       var fresh=a.events.filter(function(e){return META_CHARGES.indexOf(e.type)>=0&&e.key>(a.lastEventKey||'')&&e.date>=(a.since||t);});
       if(now.prepay) fresh.forEach(function(e){ if(e.amount>0) paid+=e.amount; });
       if(paid>0.5&&ln.b){
@@ -1215,7 +1268,7 @@ function syncMeta(quiet){
       a.last=now; a.error=null;
       // The linked line's monthly amount is the projected month of ad spend.
       if(ln.o&&a.autoAmount!==false&&Object.keys(a.daily).length){
-        ln.o.amount=Math.round(metaProjection(a).month); ln.o.freq='month'; ln.o.meta=a.id; if(!ln.o.day) ln.o.day=daysIn(cm);
+        ln.o.amount=Math.round(metaProjection(a).month*metaTax(a)); ln.o.freq='month'; ln.o.meta=a.id; if(!ln.o.day) ln.o.day=daysIn(cm);
       }
     }).catch(function(e){ a.error=e.message; errs.push((a.name||a.id)+': '+e.message); });
   }); },Promise.resolve()).then(function(){
@@ -1240,9 +1293,10 @@ function metaCard(){
       return '<div class="metaacct"><div class="row between"><b>'+esc(a.name||a.id)+'</b><button class="sm" data-act="metasync">🔄 Sync</button></div>'+
         '<small class="muted">'+(ln.b?'→ '+esc(ln.b.name)+(ln.o?' · '+esc(ln.o.name):''):'not linked to a business')+(L?' · synced '+esc(new Date(L.at).toLocaleString('en-PH',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})):'')+'</small>'+
         (a.error?'<div class="note bad">'+esc(a.error)+(/token|session|OAuth|expired/i.test(a.error)?' — paste a new token in Profile → Meta Ads.':'')+'</div>':'')+
-        (L?'<div class="grid g3" style="margin:8px 0">'+tile(L.prepay?'Prepaid funds':'Owed to Meta',shortMoney(L.balance),L.prepay?'prepaid account':'charged on the bill date')+
-          tile('Spent '+monthLabel(cm).split(' ')[0],shortMoney(mtd),shortMoney(pj.pace)+'/day lately')+
-          tile('Projected',shortMoney(pj.month),'next month ≈'+shortMoney(pj.next))+'</div>'+
+        (L?'<div class="grid g3" style="margin:8px 0">'+tile(L.prepay?'Prepaid funds':'Owed to Meta',shortMoney(L.prepay?L.balance:metaOwed(a)),L.prepay?'prepaid account':'not charged yet · incl. VAT')+
+          tile('Ad cost '+monthLabel(cm).split(' ')[0],shortMoney(mtd*metaTax(a)),shortMoney(mtd)+' + '+Math.round((metaTax(a)-1)*100)+'% VAT')+
+          tile('Projected',shortMoney(pj.month*metaTax(a)),'incl. VAT · next ≈'+shortMoney(pj.next*metaTax(a)))+'</div>'+
+          '<small class="muted" style="display:block;margin-bottom:6px">Counted in '+(ln.b?esc(ln.b.name)+'\'s':'the')+' opex as actual ad spend + VAT, day by day — not an estimate.</small>'+
           (L.cap>0?'<small class="muted num">Spending limit '+money(L.spent)+' of '+money(L.cap)+'</small>'+barHTML(pct(L.spent,L.cap),pct(L.spent,L.cap)>90?'bad':pct(L.spent,L.cap)>75?'warn':''):'')+
           barChart(pts,{aria:'Meta ad spend per day'}):'<p class="muted">Not synced yet.</p>')+
         ((a.events||[]).length?'<div class="k" style="margin-top:8px">Billing</div>'+a.events.slice(0,6).map(function(e){
@@ -1254,6 +1308,151 @@ function W(){ return S.wallets||(S.wallets={}); }
 function wlogo(key, icon, big){
   var i=W()[key]||{};
   return i.logo?'<img class="wlogo'+(big?' big':'')+'" src="'+esc(i.logo)+'" alt="">':'<span class="wlogo e'+(big?' big':'')+'" aria-hidden="true">'+icon+'</span>';
+}
+/* ===== Accounts =====
+   The real places money sits (e.g. GCash, Maya, GSave). Every purpose in the
+   app — each business, the salary tank, family spending, debt savings,
+   protection, dreams, and any budget or opex line paid from another account —
+   is kept in one account. An account SHOULD HAVE the sum of its purposes; it
+   HAS what the real money says (sales in, spending and payments out, recorded
+   transfers, balance matches). The difference is what to transfer — and
+   purposes sharing one account never need a transfer. */
+function ACC(){ return S.accounts||(S.accounts=[]); }
+function asg(){ return S.assign||(S.assign={}); }
+function accById(id){ return ACC().find(function(a){return a.id===id;}); }
+function mainBiz(){ return S.businesses[0]||null; }
+function acctOf(p){
+  var a=asg()[p]; if(a&&accById(a)) return a;
+  if(p.indexOf('line:')===0) return acctOf('family');
+  if(p.indexOf('opex:')===0){ var bz=S.businesses.find(function(b){return b.opex.some(function(o){return 'opex:'+o.id===p;});}); return acctOf(bz?'biz:'+bz.id:'family'); }
+  return ACC()[0]?ACC()[0].id:'none';
+}
+// Budget/opex lines explicitly kept in a different account than their parent.
+function lineAway(b){ var a=asg()['line:'+b.id]; return a&&accById(a)&&a!==acctOf('family')?a:null; }
+function opexAway(o,b){ var a=asg()['opex:'+o.id]; return a&&accById(a)&&a!==acctOf('biz:'+b.id)?a:null; }
+function acctFees(pre, mk){
+  return sum(S.moves.filter(function(m){return m.kind==='acctx'&&String(m.feeTo||'family').indexOf(pre)===0&&(!mk||monthKey(m.date)===mk);}),function(m){return num(m.fee);});
+}
+// Allotted to a budget line and not yet spent, over every month.
+function lineUnspent(b){
+  var months={}; Object.keys(S.alloc||{}).forEach(function(mk){months[mk]=1;});
+  S.spend.forEach(function(x){ if(x.catId===b.id) months[monthKey(x.date)]=1; });
+  return sum(Object.keys(months),function(mk){
+    var sp=sum(S.spend.filter(function(x){return x.catId===b.id&&monthKey(x.date)===mk;}),function(x){return num(x.amount);});
+    return Math.max(0,fundedLine(b,mk)-sp); });
+}
+// Salary money not yet spent (all purposes on the family side).
+function familyTotal(){
+  var draws=sum(S.moves.filter(function(m){return m.kind==='draw';}),function(m){return num(m.amount);});
+  var sp=sum(S.spend.filter(function(x){return x.catId!=='tithe';}),function(x){return num(x.amount);});
+  var debt=sum(S.moves.filter(function(m){return m.kind==='debtsave'||m.kind==='debtpay'||m.kind==='debtrelease';}),
+    function(m){ return m.kind==='debtsave'?num(m.amount):m.kind==='debtrelease'?-num(m.amount):num(m.amount)-num(m.fromJar); });
+  return draws-sp-debt+xferNet('family')-acctFees('family');
+}
+// Business money each business should hold (after the family share left for the tank).
+function bizLogical(){
+  var tot=bizWallet().balance, out={}, list=S.businesses; if(!list.length) return out;
+  var rest=0, fm=flowMonths();
+  list.slice(1).forEach(function(b){
+    var v=xferNet('biz:'+b.id)-acctFees('biz:'+b.id);
+    fm.forEach(function(mk){ var f=monthFlow(mk,b.name); v+=f.revenue-f.family; });
+    v-=sum(S.bizExp.filter(function(e){return e.bizId===b.id;}),function(e){return num(e.amount);});
+    out[b.id]=v; rest+=v;
+  });
+  out[list[0].id]=tot-rest;
+  return out;
+}
+// Every purpose with what it should hold and the account keeping it.
+function purposes(){
+  var L=[], bl=bizLogical();
+  S.businesses.forEach(function(b){
+    var away=0;
+    b.opex.forEach(function(o){ var a=opexAway(o,b); if(a){ var j=opexJar(o); away+=j; L.push({key:'opex:'+o.id, icon:'🏪', name:o.name+' ('+b.name+')', amt:j, acct:a}); } });
+    L.push({key:'biz:'+b.id, icon:'🏪', name:b.name, amt:num(bl[b.id])-away, acct:acctOf('biz:'+b.id)});
+  });
+  L.push({key:'tank', icon:'🛢️', name:'Salary tank', amt:holding(), acct:acctOf('tank')});
+  var awayL=0;
+  S.budget.forEach(function(b){ var a=lineAway(b); if(a){ var u=lineUnspent(b); awayL+=u; L.push({key:'line:'+b.id, icon:'🧾', name:b.name, amt:u, acct:a}); } });
+  L.push({key:'family', icon:'👪', name:'Family spending', amt:familyTotal()-awayL, acct:acctOf('family')});
+  L.push({key:'debt', icon:'💰', name:'Debt savings', amt:sum(S.debts,debtJar), acct:acctOf('debt')});
+  L.push({key:'protect', icon:'🛡️', name:'Protection funds', amt:sum(Object.keys(S.funds||{}),function(k){return num(S.funds[k]);}), acct:acctOf('protect')});
+  L.push({key:'dreams', icon:'⭐', name:'Dream savings', amt:sum((S.dreams||[]).filter(function(d){return d.status!=='bought';}),function(d){return num(d.saved);}), acct:acctOf('dreams')});
+  return L;
+}
+// What each account really has.
+function acctHas(){
+  var h={}, add=function(a,v){ h[a]=(h[a]||0)+v; };
+  ACC().forEach(function(a){ h[a.id]=0; });
+  var mb=mainBiz(), mbA=mb?acctOf('biz:'+mb.id):acctOf('family');
+  add(mbA,num(S.walletStart)); add(acctOf('tank'),num(S.holdingStart));
+  S.incomes.forEach(function(x){ var b=bizByName(x.source); add(b?acctOf('biz:'+b.id):mbA, num(x.amount)); });
+  S.bizExp.forEach(function(e){
+    var b=S.businesses.find(function(y){return y.id===e.bizId;}), o=b&&b.opex.find(function(y){return y.id===e.itemId;});
+    add(o&&opexAway(o,b)?opexAway(o,b):b?acctOf('biz:'+b.id):mbA, -num(e.amount)); });
+  S.spend.forEach(function(x){
+    if(x.catId==='tithe'){ add(mbA,-num(x.amount)); return; }
+    var b=S.budget.find(function(y){return y.id===x.catId;}); add(b&&lineAway(b)?lineAway(b):acctOf('family'), -num(x.amount)); });
+  S.moves.forEach(function(m){
+    var a=num(m.amount), f=num(m.fee);
+    if(m.kind==='draw'){ add(acctOf('tank'),-a-f); add(acctOf('family'),a); }
+    else if(m.kind==='sweep') add(acctOf('tank'),-a);
+    else if(m.kind==='debtpay'){ add(acctOf('debt'),-num(m.fromJar)); add(acctOf('family'),-(a-num(m.fromJar))); }
+    else if(m.kind==='acctx'){ add(m.from,-a-f); add(m.to,a); }
+    else if(m.kind==='acctadj') add(m.acct,a);
+    else if(m.kind==='xfer'){
+      var fr=String(m.from), to=String(m.to), held=function(k){return k.indexOf('fund:')===0||k.indexOf('dream:')===0||k==='outside';};
+      if(!held(fr)) add(acctOf(walletOf(fr)),-a-f); else if(fr!=='outside') add(acctOf(walletOf(fr)),-f);
+      if(!held(to)) add(acctOf(walletOf(to)),a);
+    }
+  });
+  add(acctOf('protect'),sum(Object.keys(S.funds||{}),function(k){return num(S.funds[k]);}));
+  add(acctOf('dreams'),sum((S.dreams||[]).filter(function(d){return d.status!=='bought';}),function(d){return num(d.saved);}));
+  return h;
+}
+// Should have, has, and the transfers that settle the difference.
+function acctPlan(){
+  var P=purposes(), H=acctHas(), rows=ACC().map(function(a){
+    var ps=P.filter(function(p){return p.acct===a.id;}), should=sum(ps,function(p){return p.amt;});
+    return {a:a, ps:ps, should:should, has:num(H[a.id]), diff:should-num(H[a.id])};
+  });
+  var need=rows.filter(function(r){return r.diff>0.5;}).map(function(r){return {r:r,v:r.diff};}).sort(function(x,y){return y.v-x.v;});
+  var give=rows.filter(function(r){return r.diff<-0.5;}).map(function(r){return {r:r,v:-r.diff};}).sort(function(x,y){return y.v-x.v;});
+  var tx=[];
+  need.forEach(function(n){ give.forEach(function(g){ var v=Math.min(n.v,g.v); if(v>0.5){ tx.push({from:g.r.a, to:n.r.a, amount:Math.round(v*100)/100, for:n.r.ps.map(function(p){return p.name;})}); n.v-=v; g.v-=v; } }); });
+  return {rows:rows, tx:tx, short:sum(need,function(n){return n.v;})};
+}
+function acctLogo(a, big){ return a&&a.logo?'<img class="wlogo'+(big?' big':'')+'" src="'+esc(a.logo)+'" alt="">':'<span class="wlogo e'+(big?' big':'')+'" aria-hidden="true">🏦</span>'; }
+// Home: the day's routine in four steps.
+function todayCard(){
+  var t=todayISO(), sales=sum(S.incomes.filter(function(x){return x.date===t;}),function(x){return num(x.amount);});
+  var dT=sum(debtSavings(),function(x){return x.today;}), bT=sum(budgetDaily(),function(x){return x.today;}), oT=sum(opexSavings(),function(x){return x.today;});
+  var allT=dT+bT+oT, pl=ACC().length?acctPlan():null, nTx=pl?pl.tx.length:0, sd=salaryDueSoFar(), hold=holding();
+  var step=function(n,done,title,sub,btn){ return '<div class="tstep'+(done?' done':'')+'"><span class="tn">'+(done?'✓':n)+'</span><span class="tl"><b>'+title+'</b><small class="num">'+sub+'</small></span>'+(btn||'')+'</div>'; };
+  return '<div class="card"><h2>✅ Today</h2>'+
+    step(1,sales>0,'Log sales',sales>0?money(sales)+' logged today':'all business income → '+esc(ACC().length?(accById(acctOf(mainBiz()?'biz:'+mainBiz().id:'family'))||{name:'business account'}).name:'business account'),'<button class="sm'+(sales>0?'':' primary')+'" data-act="income">+ Sales</button>')+
+    step(2,sd<0.5||hold<0.5,'Pay salary',sd>0.5?money(sd)+' due so far · tank '+money(Math.max(0,hold)):'up to date','<button class="sm" data-act="draw" '+(hold>0.5?'':'disabled')+'>Pay</button>')+
+    step(3,allT<0.5,'Allot today',allT<0.5?'debts, budget and opex are on track':[dT>0.5?'debts '+shortMoney(dT):'',bT>0.5?'budget '+shortMoney(bT):'',oT>0.5?'opex '+shortMoney(oT):''].filter(Boolean).join(' · '),allT>0.5?'<button class="sm primary" data-act="allotevery">Allot all</button>':'')+
+    step(4,pl&&!nTx,'Transfer',!pl?'set up your accounts below':nTx?nTx+' transfer'+(nTx>1?'s':'')+' waiting — see Accounts':'nothing to move','')+
+    '</div>';
+}
+function accountsCard(){
+  if(!ACC().length) return '<div class="card"><h2>💳 Where is your money kept?</h2>'+
+    '<p class="muted" style="font-size:14px">Tell the app your real accounts and it will say exactly what to transfer where. Money kept in the same account never needs a transfer.</p>'+
+    '<div class="row" style="gap:6px;flex-wrap:wrap"><button class="primary sm" data-act="acctpreset">GCash · Maya · GSave</button><button class="sm" data-act="acctsetup">Set up my own</button></div>'+
+    '<small class="muted" style="display:block;margin-top:6px">GCash: business sales, salary tank and family money · Maya: subscriptions · GSave: debt savings.</small></div>';
+  var pl=acctPlan(), tot=sum(pl.rows,function(r){return r.has;});
+  return '<div class="card"><div class="row between"><h2>💳 Accounts</h2><span class="row" style="gap:8px"><b class="num">'+money(tot)+'</b><button class="icon" data-act="acctsetup" aria-label="Set up accounts">⚙</button></span></div>'+
+    (pl.tx.length?'<div class="xnow"><div class="k">⇄ Transfer now</div>'+pl.tx.map(function(t){
+        return '<div class="row between ptx"><span class="pxt"><b>'+esc(t.from.name)+' → '+esc(t.to.name)+'</b><small class="muted">for '+esc(t.for.join(', ')||'balance')+'</small></span>'+
+          '<button class="primary sm" data-act="acctxfer" data-from="'+t.from.id+'" data-to="'+t.to.id+'" data-amt="'+t.amount+'">'+money(t.amount)+'</button></div>'; }).join('')+
+        '<small class="muted" style="display:block;margin-top:4px">These grow as you allot. Send whenever you like — one transfer for several days means one fee. Tap after sending.</small></div>'
+      :'<div class="note good" style="margin:8px 0">✓ Every account has what it should — nothing to transfer.</div>')+
+    (pl.short>0.5?'<div class="note warn">'+money(pl.short)+' is planned but not in any account yet — record sales or the salary payout, or match a balance.</div>':'')+
+    '<div class="wgrid">'+pl.rows.map(function(r){
+      var st=Math.abs(r.diff)<0.5?'<span class="pill good">✓</span>':r.diff>0?'<span class="pill warn">needs '+shortMoney(r.diff)+'</span>':'<span class="pill">extra '+shortMoney(-r.diff)+'</span>';
+      return '<button class="wtile" data-act="acct" data-id="'+r.a.id+'">'+acctLogo(r.a)+'<span class="wt"><b>'+esc(r.a.name)+'</b>'+
+        '<span class="wv num'+(r.has<-0.5?' neg':'')+'">'+money(r.has)+'</span><small class="num">should have '+money(r.should)+'</small>'+st+
+        '<small>'+esc(r.ps.map(function(p){return p.name;}).join(' · '))+'</small></span></button>'; }).join('')+'</div></div>';
 }
 function walletsCard(){
   var L=walletList(), tot=sum(L,function(w){return w.bal;});
@@ -1285,7 +1484,7 @@ function salarySpent(mk){
   var dp=sum(S.moves.filter(function(m){return monthKey(m.date)===mk&&(m.kind==='debtsave'||m.kind==='debtpay'||m.kind==='debtrelease');}),
     function(m){ return m.kind==='debtsave'?num(m.amount):m.kind==='debtrelease'?-num(m.amount):num(m.amount)-num(m.fromJar); });
   // Money moved out of the family wallet (net of money moved in).
-  var mv=-xferNet('family',mk);
+  var mv=-xferNet('family',mk)+acctFees('family',mk);
   return {spend:sp, debt:dp, moved:mv, total:sp+dp+mv};
 }
 function drawnThisMonth(){ var cm=thisMonth(); return sum(S.moves.filter(function(m){return m.kind==='draw'&&monthKey(m.date)===cm;}),function(m){return num(m.amount);}); }
@@ -1578,7 +1777,8 @@ V.home=function(){
     '<button class="icon" data-go="plan" aria-label="Open roadmap" style="margin-left:auto">›</button></div>'+
     '<div class="dots" aria-hidden="true">'+st.list.map(function(s){return '<i class="'+s.state+'"></i>';}).join('')+'</div></div>';
 
-  h+=walletsCard();
+  h+=todayCard();
+  h+=accountsCard();
 
   var salDue=salaryDueSoFar(), used=salarySpent(), salLeft=drawn-used.total, perDay=sal/daysIn(cm);
   h+='<div class="card salary"><div class="row between"><span class="k">👪 Salary · '+monthLabel(cm)+'</span>'+
@@ -1591,22 +1791,6 @@ V.home=function(){
     (drawn>0?'<div class="bar '+(used.total>drawn?'bad':used.total>drawn*0.85?'warn':'')+'"><i style="width:'+pct(used.total,drawn).toFixed(1)+'%"></i></div>':'')+
     (salLeft<0&&drawn<sal?'<div class="note warn" style="margin-bottom:0">More was spent than has been paid out — record the salary payout with <b>Pay salary</b>.</div>':'')+
     (salDue>0.5||hold>0.5?'<button class="primary sm" style="margin-top:10px" data-act="draw">Pay salary</button>':'')+'</div>';
-  var dsv=debtSavings(), dToday=sum(dsv,function(x){return x.today;});
-  if(dsv.length){
-    var freeH=Math.max(0,availableMoney()), canAllot=Math.min(dToday,freeH);
-    h+='<div class="card tight dtoday"><div class="row between"><span>💰 Debts to save today</span><b class="num">'+money(dToday)+'</b></div>'+
-      '<div class="row between" style="margin-top:6px"><small class="muted num">free salary money '+money(freeH)+'</small><span class="row" style="gap:6px">'+
-      (dToday>0.5?'<button class="primary sm" data-act="allotall" '+(canAllot>0.5?'':'disabled')+'>Allot all'+(canAllot>0.5&&canAllot<dToday-0.5?' '+shortMoney(canAllot):'')+'</button>':'<span class="pill good">✓ up to date</span>')+
-      '<button class="icon" data-go="debts" aria-label="See debts">›</button></span></div></div>';
-  }
-  var bdh=budgetDaily(), bT=sum(bdh,function(x){return x.today;});
-  if(bdh.length){
-    var bF=Math.max(0,availableMoney());
-    h+='<div class="card tight dtoday"><div class="row between"><span>🧾 Budget to allot today</span><b class="num">'+money(bT)+'</b></div>'+
-      '<div class="row between" style="margin-top:6px"><small class="muted num">'+(daysIn(cm)-dayOfMonth()+1)+' days left this month</small><span class="row" style="gap:6px">'+
-      (bT>0.5?'<button class="primary sm" data-act="budallotall" '+(bF>0.5?'':'disabled')+'>Allot all'+(bF>0.5&&bF<bT-0.5?' '+shortMoney(bF):'')+'</button>':'<span class="pill good">✓ up to date</span>')+
-      '<button class="icon" data-go="budget" aria-label="See budget">›</button></span></div></div>';
-  }
   var due=upcomingDues(14);
   if(due.length){
     h+='<div class="card"><div class="row between" style="margin-bottom:10px"><h2>📅 Due in 2 weeks</h2><span class="num"><b>'+money(sum(due,function(x){return x.amount;}))+'</b></span></div>'+dueList(due.slice(0,5))+
@@ -1637,7 +1821,7 @@ V.income=function(){
     (f.revenue>0?stackBar(parts)+
       '<div class="wf">'+
         wfRow('Sales',f.revenue,'')+
-        wfRow('− Opex <small>set aside'+(incMk===thisMonth()?' so far':'')+'</small>',-f.opex,slotColor(1))+
+        wfRow('− Opex <small>'+(incMk===thisMonth()?'so far':'for the month')+(metaOpex(incMk)>0.5?' · incl. Meta Ads '+shortMoney(metaOpex(incMk))+' (actual + VAT)':'')+'</small>',-f.opex,slotColor(1))+
         wfRow('= Profit <small>'+(f.revenue?Math.round(f.profit/f.revenue*100):0)+'% margin</small>',f.profit,'',true)+
         wfRow('− Tax <small>'+num(S.split.tax)+'% of sales</small>',-f.tax,slotColor(2))+
         wfRow('− 🙏 Tithe <small>'+num(S.tithe.pct)+'% of '+TITHE_BASES[S.tithe.base]+'</small>',-f.tithe,slotColor(3))+
@@ -1661,13 +1845,14 @@ V.income=function(){
   var osv=opexSavings(), oToday=sum(osv,function(x){return x.today;}), bfree=Math.max(0,wal.free);
   var firstOpen=osv.find(function(x){return !x.ready;});
   var oRow=function(x,i){
-    var behind=x.expected-x.jar>x.daily+0.5;
+    var behind=!x.meta&&x.expected-x.jar>x.daily+0.5;
     return '<div class="dsrow"><div class="dl"><b><span class="prio'+(x===firstOpen?' top':'')+'">'+(i+1)+'</span> '+esc(x.o.name)+'</b>'+
-      '<small class="num">Due '+shortDate(x.next)+(x.daysLeft?' · '+x.daysLeft+' day'+(x.daysLeft>1?'s':'')+' left':' · today')+' · '+money(x.due)+PER_LABEL[x.o.freq||'month']+'</small>'+
+      (x.meta?'<small class="num">Meta charges when it bills · not yet charged '+money(x.due)+' (incl. VAT)</small>':
+      '<small class="num">Due '+shortDate(x.next)+(x.daysLeft?' · '+x.daysLeft+' day'+(x.daysLeft>1?'s':'')+' left':' · today')+' · '+money(x.due)+PER_LABEL[x.o.freq||'month']+'</small>')+
       '<div class="bar thin '+(x.ready?'good':behind?'warn':'')+'" style="margin-top:5px"><i style="width:'+pct(x.jar,x.due).toFixed(1)+'%"></i></div>'+
       '<small class="num">saved '+money(x.jar)+' · '+(x.ready?'ready ✓':'needs '+money(x.needPerDay)+'/day from now')+(behind?' · <span class="neg">behind '+money(x.expected-x.jar)+'</span>':'')+'</small>'+
-      (x===firstOpen&&!behind&&bfree>0.5?'<button class="link" style="padding:2px 0;font-size:12px" data-act="opexahead" data-oid="'+x.o.id+'">⏩ Get ahead on this one</button>':'')+'</div>'+
-      (x.ready?'<button class="primary sm" data-act="bizexp" data-line="'+x.b.id+'|'+x.o.id+'" data-amt="'+Math.round(x.due)+'">Pay</button>'
+      (x===firstOpen&&!behind&&!x.meta&&bfree>0.5?'<button class="link" style="padding:2px 0;font-size:12px" data-act="opexahead" data-oid="'+x.o.id+'">⏩ Get ahead on this one</button>':'')+'</div>'+
+      (x.ready&&x.meta?'<span class="pill good">✓ set aside</span>':x.ready?'<button class="primary sm" data-act="bizexp" data-line="'+x.b.id+'|'+x.o.id+'" data-amt="'+Math.round(x.due)+'">Pay</button>'
         :x.today>0.5?(bfree>0.5?'<button class="primary sm" data-act="opexallot" data-oid="'+x.o.id+'" data-amt="'+Math.round(x.today*100)/100+'">Allot '+shortMoney(Math.min(x.today,bfree))+'</button>':'<button class="sm" disabled>No money free</button>')
         :'<span class="pill good">✓ today</span>')+'</div>';
   };
@@ -2345,6 +2530,8 @@ function txLabelOf(coll, x){
     var b=S.businesses.find(function(y){return y.id===x.bizId;}), o=b&&b.opex.find(function(y){return y.id===x.itemId;});
     return {kind:'bizexp', icon:'🏪', label:(b?b.name:'Business')+' · '+(o?o.name:x.note?'one-off: '+x.note:'Other / one-off')}; }
   if(coll==='spend') return x.catId==='tithe'?{kind:'tithe', icon:'🙏', label:'Tithe'}:{kind:'spend', icon:'🧾', label:pickedLabel(x.subId?x.catId+'|'+x.subId:x.catId)||'(deleted category)'};
+  if(x.kind==='acctx') return {kind:'xfer', icon:'⇄', label:((accById(x.from)||{}).name||'?')+' → '+((accById(x.to)||{}).name||'?')+(num(x.fee)>0?' · fee '+money(x.fee):'')+(x.note?' · '+x.note:'')};
+  if(x.kind==='acctadj') return {kind:'xfer', icon:'⚖️', label:'Balance match · '+((accById(x.acct)||{}).name||'?')+' '+(num(x.amount)<0?'−':'+')};
   if(x.kind==='xfer') return {kind:'xfer', icon:'⇄', label:walletName(x.from)+' → '+walletName(x.to)+(num(x.fee)>0?' · fee '+money(x.fee):'')+(x.note?' · '+x.note:'')};
   var icons={draw:'👪', debtpay:'📉', debtsave:'💰', debtrelease:'↺', opexsave:'🏪', opexrelease:'↺', sweep:'🛢️', dreamadd:'⭐'};
   return {kind:x.kind, icon:icons[x.kind]||'↔', label:x.note||x.kind};
@@ -2720,6 +2907,84 @@ ACT.pay=function(el){
 };
 // Set aside today's share for one debt (tapped by hand).
 ACT.undo1=function(){ undoLast(); };
+// ---- accounts actions
+ACT.acctpreset=function(){
+  checkpoint('set up accounts');
+  var g={id:uid(),name:'GCash'}, m={id:uid(),name:'Maya'}, s={id:uid(),name:'GSave'};
+  S.accounts=[g,m,s]; S.assign={family:g.id, tank:g.id, debt:s.id, protect:g.id, dreams:g.id};
+  S.businesses.forEach(function(b){ S.assign['biz:'+b.id]=g.id; b.opex.forEach(function(o){ if(/subscri|software|netflix|spotify|youtube|canva|icloud|google one|chatgpt|claude/i.test(o.name)) S.assign['opex:'+o.id]=m.id; }); });
+  S.budget.forEach(function(b){ if(/subscri/i.test(b.name+' '+b.group)) S.assign['line:'+b.id]=m.id; });
+  save(); render(); toast('Accounts set up — check ⚙ to adjust');
+};
+ACT.acctsetup=function(){
+  var acc=ACC().slice(); while(acc.length<4) acc.push({id:'new'+acc.length,name:''});
+  var opts=function(sel, dflt){ return (dflt?'<option value="">'+esc(dflt)+'</option>':'')+acc.map(function(a,i){return '<option value="'+i+'"'+(sel===a.id?' selected':'')+'>'+esc(a.name||'Account '+(i+1))+'</option>';}).join(''); };
+  var row=function(key,label,dflt){ var cur=asg()[key]||(dflt?'':acctOf(key)); return '<label class="f asgrow"><span>'+label+'</span><select name="as:'+key+'">'+opts(cur,dflt)+'</select></label>'; };
+  openDialog('💳 Your accounts',
+    '<div class="k">Accounts (e.g. GCash, Maya, GSave)</div>'+acc.map(function(a,i){return '<input name="acc'+i+'" value="'+esc(a.name)+'" placeholder="Account '+(i+1)+'" style="margin-bottom:6px">';}).join('')+
+    '<div class="k" style="margin-top:10px">Where each kind of money is kept</div>'+
+    S.businesses.map(function(b){return row('biz:'+b.id,'🏪 '+esc(b.name)+' sales');}).join('')+
+    row('tank','🛢️ Salary tank (family share waiting)')+row('family','👪 Family spending')+row('debt','💰 Debt savings')+row('protect','🛡️ Protection funds')+row('dreams','⭐ Dream savings')+
+    '<details class="more"><summary>Bills paid from a different account</summary>'+
+      S.budget.map(function(b){return row('line:'+b.id,'🧾 '+esc(b.name),'same as family');}).join('')+
+      S.businesses.map(function(bz){return bz.opex.map(function(o){return row('opex:'+o.id,'🏪 '+esc(o.name)+' · '+esc(bz.name),'same as '+bz.name);}).join('');}).join('')+'</details>'+
+    '<p class="muted" style="font-size:13px">Pick the account each one lives in. The app adds them up per account and tells you what to transfer.</p>',
+    function(v){
+      var ids=acc.map(function(a,i){ var n=(v['acc'+i]||'').trim(); if(!n) return null; var ex=accById(a.id); if(ex){ ex.name=n; return ex.id; } var na={id:uid(),name:n}; acc[i]=na; return na.id; });
+      S.accounts=acc.filter(function(a,i){return ids[i];});
+      if(!S.accounts.length){ toast('Add at least one account'); return false; }
+      var A={}; Object.keys(v).forEach(function(k){ if(k.indexOf('as:')!==0||v[k]==='') return; var id=ids[+v[k]]; if(id) A[k.slice(3)]=id; });
+      S.assign=A; toast('Accounts saved');
+    }, 'Save');
+};
+ACT.acct=function(el){
+  var pl=acctPlan(), r=pl.rows.find(function(x){return x.a.id===el.dataset.id;}); if(!r) return;
+  var recs=S.moves.filter(function(m){return (m.kind==='acctx'&&(m.from===r.a.id||m.to===r.a.id))||(m.kind==='acctadj'&&m.acct===r.a.id);}).slice(-12).reverse();
+  openDialog('🏦 '+r.a.name,
+    '<div class="row" style="gap:12px;align-items:center;margin-bottom:8px">'+acctLogo(r.a,true)+'<div><div class="v num" style="font-size:26px">'+money(r.has)+'</div><small class="muted num">should have '+money(r.should)+'</small></div></div>'+
+    '<div class="wparts">'+r.ps.map(function(p){return '<div class="row between"><span>'+p.icon+' '+esc(p.name)+'</span><span class="num">'+money(p.amt)+'</span></div>';}).join('')+'</div>'+
+    '<div class="row" style="gap:6px;flex-wrap:wrap;margin:10px 0">'+
+      '<button type="button" class="primary sm" data-act="acctmatch" data-id="'+r.a.id+'">⚖️ Match bank balance</button>'+
+      '<button type="button" class="sm" data-act="acctxfer" data-from="'+r.a.id+'">⇄ Transfer</button>'+
+      '<label class="sm btnlike">Logo…<input type="file" accept="image/*" hidden data-acctlogo="'+r.a.id+'"></label></div>'+
+    '<div class="k">Transfers &amp; matches</div>'+(recs.length?recs.map(function(m){ var l=txLabelOf('moves',m);
+      return '<div class="txrow" data-act="edittx" data-coll="moves" data-id="'+m.id+'"><span class="txi">'+l.icon+'</span><span class="txl"><b>'+esc(l.label)+'</b><small>'+esc(shortDate(m.date))+'</small></span><span class="num">'+money(m.amount)+'</span><span></span></div>'; }).join(''):'<p class="muted" style="font-size:13px">None yet.</p>'),
+    function(){}, 'Close');
+  var c=dlgForm.querySelector('button[value=cancel]'); if(c) c.hidden=true;
+};
+ACT.acctxfer=function(el){
+  var from=el.dataset.from||(ACC()[0]||{}).id, to=el.dataset.to||((ACC().find(function(a){return a.id!==from;})||{}).id);
+  var sel=function(n,v){ return '<select name="'+n+'">'+ACC().map(function(a){return '<option value="'+a.id+'"'+(a.id===v?' selected':'')+'>'+esc(a.name)+'</option>';}).join('')+'</select>'; };
+  openDialog('⇄ Record a transfer',
+    '<input class="bigamt num" name="amount" inputmode="decimal" required placeholder="₱0" aria-label="Amount" value="'+esc(el.dataset.amt||'')+'">'+
+    '<div class="grid g2"><label class="f"><span>From</span>'+sel('from',from)+'</label><label class="f"><span>To</span>'+sel('to',to)+'</label></div>'+
+    '<label class="f"><span>Transfer fee</span><input name="fee" inputmode="decimal" placeholder="0"></label>'+
+    '<div class="row" style="gap:6px;margin:-4px 0 8px">'+[0,10,15,25].map(function(n){return '<button type="button" class="chip" data-fee="'+n+'">'+(n?'₱'+n:'No fee')+'</button>';}).join('')+'</div>'+
+    '<details class="more"><summary>Date &amp; note</summary>'+field('date','Date','type="date" required',todayISO())+field('note','Note','placeholder="e.g. InstaPay"')+'</details>'+
+    '<p class="muted" style="font-size:13px">Send it in your bank app first, then record it here. This only moves money between accounts — the plan stays the same. The fee is counted as a cost.</p>',
+    function(v){ var a=num(v.amount), fee=num(v.fee); if(a<=0){ toast('Enter the amount'); return false; } if(v.from===v.to){ toast('Choose two different accounts'); return false; }
+      var ps=purposes().filter(function(p){return p.acct===v.from;}), feeTo=ps.some(function(p){return p.key==='family';})?'family':((ps.find(function(p){return p.key.indexOf('biz:')===0;})||{}).key||'family');
+      S.moves.push({id:uid(),date:v.date||todayISO(),kind:'acctx',from:v.from,to:v.to,amount:Math.round(a*100)/100,fee:fee,feeTo:feeTo,note:v.note||''});
+      toast(money(a)+' '+accById(v.from).name+' → '+accById(v.to).name+(fee?' · fee '+money(fee):'')); }, 'Record');
+};
+ACT.acctmatch=function(el){
+  var pl=acctPlan(), r=pl.rows.find(function(x){return x.a.id===el.dataset.id;}); if(!r) return;
+  openDialog('⚖️ Match '+r.a.name,
+    '<small class="muted num">The app counts '+money(r.has)+' in '+esc(r.a.name)+'</small>'+
+    field('actual','Balance in the '+esc(r.a.name)+' app now','inputmode="decimal" required',Math.round(r.has*100)/100)+
+    '<p class="muted" style="font-size:13px">Use this once when you start, and whenever the real balance drifts. The difference is saved as an adjustment (see Transactions).</p>',
+    function(v){ var d=num(v.actual)-r.has; if(Math.abs(d)<0.5){ toast('Already matches ✓'); return; }
+      S.moves.push({id:uid(),date:todayISO(),kind:'acctadj',acct:r.a.id,amount:Math.round(d*100)/100,note:'Matched to '+r.a.name});
+      toast(r.a.name+' '+(d>0?'+':'−')+money(Math.abs(d))+' to match'); }, 'Match');
+};
+// Everything due today in one tap: debts, budget lines and business opex.
+ACT.allotevery=function(){
+  checkpoint('allot everything for today');
+  var q={dataset:{quiet:1}}, d=ACT.allotall(q)||0, b=ACT.budallotall(q)||0, o=ACT.opexallotall(q)||0;
+  save(); render();
+  toast(d+b+o>0.5?'Allotted '+[d>0.5?'debts '+money(d):'',b>0.5?'budget '+money(b):'',o>0.5?'opex '+money(o):''].filter(Boolean).join(' · '):'Nothing to allot — up to date or no free money');
+};
+
 ACT.budallot=function(el){
   var x=budgetDaily().find(function(y){return y.key===el.dataset.key;}); if(!x) return;
   var a=Math.min(x.today,Math.max(0,availableMoney()));
@@ -2728,13 +2993,14 @@ ACT.budallot=function(el){
   save(); render(); toast(money(a)+' → '+x.name);
 };
 // Needs first, then the rest, each line's share for today, until the free money runs out.
-ACT.budallotall=function(){
+ACT.budallotall=function(el){
+  var quiet=el&&el.dataset&&el.dataset.quiet;
   var list=budgetDaily().filter(function(x){return x.today>0.5;}), free=Math.max(0,availableMoney()), total=0, n=0;
-  if(!list.length){ toast('Budget is allotted for today ✓'); return; }
-  if(free<=0.5){ toast('No money free — pay out salary first'); return; }
-  checkpoint('allot today\'s budget');
+  if(!list.length){ if(quiet) return 0; toast('Budget is allotted for today ✓'); return; }
+  if(free<=0.5){ if(quiet) return 0; toast('No money free — pay out salary first'); return; }
+  if(!quiet) checkpoint('allot today\'s budget');
   list.forEach(function(x){ var a=Math.round(Math.min(x.today,free-total)*100)/100; if(a>0.5){ addAlloc(x,a); total+=a; n++; } });
-  save(); render(); toast(money(total)+' allotted to '+n+' line'+(n>1?'s':'')+(total<sum(list,function(x){return x.today;})-0.5?' (all the free money)':''));
+  if(quiet) return total; save(); render(); toast(money(total)+' allotted to '+n+' line'+(n>1?'s':'')+(total<sum(list,function(x){return x.today;})-0.5?' (all the free money)':''));
 };
 
 // Connect Meta Ads: paste a token, pick the ad accounts, link each to a business line.
@@ -2944,11 +3210,12 @@ ACT.debtinfo=function(el){
   var c=dlgForm.querySelector('button[value=cancel]'); if(c) c.hidden=true;
 };
 // Set aside today's share for every debt at once, as far as the free money goes.
-ACT.allotall=function(){
+ACT.allotall=function(el){
+  var quiet=el&&el.dataset&&el.dataset.quiet;
   var free=Math.max(0,availableMoney()), list=debtSavings().filter(function(x){return x.today>0.5;}), n=0, total=0;
-  if(!list.length){ toast('All debts are up to date today ✓'); return; }
-  if(free<=0.5){ toast('No money free — pay out salary first'); return; }
-  checkpoint('allot all debts');
+  if(!list.length){ if(quiet) return 0; toast('All debts are up to date today ✓'); return; }
+  if(free<=0.5){ if(quiet) return 0; toast('No money free — pay out salary first'); return; }
+  if(!quiet) checkpoint('allot all debts');
   // Pass 1 keeps every debt on pace (its daily share), soonest due first;
   // pass 2 puts what's left on the catch-up of the soonest due, then the next.
   var got={};
@@ -2956,7 +3223,7 @@ ACT.allotall=function(){
     list.forEach(function(x){ var a=Math.min(want(x),free-total); if(a>0.5){ got[x.d.id]=(got[x.d.id]||0)+a; total+=a; } });
   });
   list.forEach(function(x){ var a=got[x.d.id]; if(a>0.5){ S.moves.push({id:uid(),date:todayISO(),kind:'debtsave',to:x.d.id,amount:Math.round(a*100)/100,note:'Saved for '+x.d.name}); n++; } });
-  save(); render(); toast(money(total)+' set aside for '+n+' debt'+(n>1?'s':'')+(total<sum(list,function(x){return x.today;})-0.5?' (all the free money)':''));
+  if(quiet) return total; save(); render(); toast(money(total)+' set aside for '+n+' debt'+(n>1?'s':'')+(total<sum(list,function(x){return x.today;})-0.5?' (all the free money)':''));
 };
 // ---- opex savings actions (business money)
 function bizFree(){ return Math.max(0,bizWallet().free); }
@@ -2970,15 +3237,16 @@ ACT.opexallot=function(el){
 };
 // Two passes, like the debts: every line's daily share (soonest due first), then catch-up.
 ACT.opexallotall=function(el){
+  var quiet=el&&el.dataset&&el.dataset.quiet;
   var list=opexSavings(el&&el.dataset.biz||null).filter(function(x){return x.today>0.5;}), free=bizFree(), total=0, got={};
-  if(!list.length){ toast('All opex is up to date today ✓'); return; }
-  if(free<=0.5){ toast('No free business money — log sales first'); return; }
-  checkpoint('allot all opex');
+  if(!list.length){ if(quiet) return 0; toast('All opex is up to date today ✓'); return; }
+  if(free<=0.5){ if(quiet) return 0; toast('No free business money — log sales first'); return; }
+  if(!quiet) checkpoint('allot all opex');
   [function(x){return Math.min(x.daily,x.today);}, function(x){return x.today-(got[x.o.id]||0);}].forEach(function(want){
     list.forEach(function(x){ var a=Math.min(want(x),free-total); if(a>0.5){ got[x.o.id]=(got[x.o.id]||0)+a; total+=a; } });
   });
   var n=0; list.forEach(function(x){ var a=got[x.o.id]; if(a>0.5){ S.moves.push({id:uid(),date:todayISO(),kind:'opexsave',to:x.o.id,bizId:x.b.id,amount:Math.round(a*100)/100,note:'Set aside · '+x.o.name}); n++; } });
-  save(); render(); toast(money(total)+' set aside for '+n+' opex line'+(n>1?'s':'')+(total<sum(list,function(x){return x.today;})-0.5?' (all the free money)':''));
+  if(quiet) return total; save(); render(); toast(money(total)+' set aside for '+n+' opex line'+(n>1?'s':'')+(total<sum(list,function(x){return x.today;})-0.5?' (all the free money)':''));
 };
 ACT.opexreset=function(){
   var held=[]; S.businesses.forEach(function(b){ b.opex.forEach(function(o){ var j=opexJar(o); if(j>0.5) held.push({o:o,b:b,j:j}); }); });
@@ -3216,6 +3484,10 @@ document.addEventListener('input',function(e){
 });
 document.addEventListener('change',function(e){
   var el=e.target;
+  if(el.dataset&&el.dataset.acctlogo&&el.files&&el.files[0]){
+    readLogo(el.files[0],function(url){ var a=accById(el.dataset.acctlogo); if(!url||!a) return; a.logo=url; save(); if(dlg.open) dlg.close(); render(); toast('Logo saved'); });
+    return;
+  }
   if(el.name==='logofile'&&el.files&&el.files[0]){
     readLogo(el.files[0],function(url){ if(!url){ toast('Could not read that image'); return; }
       var f=el.closest('form'); f.querySelector('[name=logo]').value=url; f.querySelector('.logoprev').innerHTML='<img class="wlogo big" src="'+url+'" alt="">'; });
