@@ -230,8 +230,8 @@ details.dueg[open] .chev{transform:rotate(90deg)}
 details.grp{padding:12px 16px}
 details.grp summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;font-weight:700;color:var(--ink)}
 details.grp summary::-webkit-details-marker{display:none}
-details.grp summary::after{content:'›';color:var(--muted);transition:transform .2s;font-size:20px;line-height:1}
-details.grp[open] summary::after{transform:rotate(90deg)}
+details.grp > summary::after{content:'›';color:var(--muted);transition:transform .2s;font-size:20px;line-height:1}
+details.grp[open] > summary::after{transform:rotate(90deg)}
 details.grp .gn{flex:1;min-width:0} details.grp .gn small{background:var(--bar);border-radius:99px;padding:0 7px;font-size:11px;color:var(--muted)}
 details.grp > .bar{margin:10px 0 4px;height:6px}
 .drow{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
@@ -341,10 +341,11 @@ tr.tap{cursor:pointer}
 .bigamt{font-size:28px;font-weight:700;text-align:center;padding:10px;margin:2px 0 8px}
 .metaacct{border-top:1px solid var(--line);padding-top:10px;margin-top:8px}.metaacct:first-child{border-top:0;margin-top:0}
 .metapick{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:8px}
-.bar3{position:relative;height:8px;border-radius:6px;background:var(--line);margin:6px 0 3px;overflow:hidden}
+.bar3{position:relative;height:10px;border-radius:6px;background:var(--line);margin:6px 0 3px;overflow:hidden}
 .bar3 i{position:absolute;top:0;bottom:0;left:0;border-radius:6px}
-.bar3 .a{background:var(--brand);opacity:.3}.bar3 .s{background:var(--brand)}.bar3 .s.bad{background:var(--bad)}
-.bar3 .p{width:2px;background:var(--ink,#333);opacity:.6;border-radius:0}
+.bar3 .p{background:var(--brand);opacity:.16}.bar3 .a{background:var(--brand);opacity:.42}
+.bar3 .s{background:var(--brand)}.bar3 .s.bad{background:var(--bad)}.bar3 .s.warn{background:var(--warn)}
+.b3leg{display:flex;gap:12px;font-size:12px;color:var(--muted);margin:2px 0 10px}.b3leg i{display:inline-block;width:12px;height:8px;border-radius:3px;background:var(--brand);margin-right:4px;vertical-align:middle}
 .pas{display:flex;justify-content:space-between;gap:6px;font-size:11px;color:var(--muted)}.pas b{color:var(--ink,inherit);font-weight:600}
 .bline .chip,.subl .chip{padding:2px 8px;font-size:12px;min-height:0}
 .ptx{padding:6px 0;border-top:1px solid var(--line);gap:8px}.ptx span{min-width:0;font-size:13px}
@@ -355,6 +356,15 @@ tr.tap{cursor:pointer}
 .pxt{display:flex;flex-direction:column;min-width:0}.pxt b{font-size:15px}
 .xnow{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:8px 0}
 .asgrow{display:grid;grid-template-columns:1fr 120px;align-items:center;gap:8px}.asgrow span{font-size:13px}
+.spday{border-top:1px solid var(--line)}.spday>summary{display:flex;justify-content:space-between;align-items:center;padding:10px 0;cursor:pointer;list-style:none}
+.spday>summary::-webkit-details-marker{display:none}.spday>summary span::before{content:'▸ ';color:var(--muted)}.spday[open]>summary span::before{content:'▾ '}
+.unitq{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:8px}
+.quickq{padding:6px 0 10px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.ocat{border-top:1px solid var(--line)}.ocat>summary{display:flex;justify-content:space-between;align-items:center;padding:10px 2px;cursor:pointer;list-style:none;font-weight:600}
+.ocat>summary::-webkit-details-marker{display:none}.ocat>summary>span:first-child::before{content:'▸ ';color:var(--muted)}.ocat[open]>summary>span:first-child::before{content:'▾ '}
+.oline{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:1px solid var(--line);border-radius:12px;padding:9px 11px;margin:6px 0;font-weight:400}
+.oline .ol{display:flex;flex-direction:column;min-width:0}.oline small{font-size:12px}
+.subsum{font-size:12px;color:var(--muted);background:var(--line);border-radius:10px;padding:6px 10px;margin:2px 0 4px}
 .wgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .wtile{display:flex;gap:8px;align-items:flex-start;text-align:left;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--card);min-width:0;font-weight:400}
 .wt{display:flex;flex-direction:column;min-width:0;gap:1px}
@@ -565,6 +575,11 @@ function migrate(){
   S.bizExp=S.bizExp||[];
   if(!S.saveStart) S.saveStart=thisMonth()+'-01';
   S.wallets=S.wallets||{};
+  if(!S.salaryFrom) S.salaryFrom=thisMonth()+'-01';
+  if(!S.salarySplit) S.salarySplit={debt:50, from:todayISO()};
+  S.fees=S.fees||{};
+  if(S.accounts&&S.accounts.length&&S.flowV!==2&&['gcash','maya','gsave'].every(function(n){return S.accounts.some(function(a){return a.name.toLowerCase()===n;});})){ applyFlow(); S.flowV=2; }
+  (S.businesses||[]).forEach(function(b){ if(!b.unit&&/nav\s*club/i.test(b.name||'')) b.unit={name:'client',price:3250}; });
   if(!S.accounts){
     var byBank={}; S.accounts=[]; S.assign={};
     Object.keys(S.wallets).forEach(function(k){ var w=S.wallets[k], n=(w.bank||'').trim(); if(!n) return;
@@ -679,6 +694,21 @@ function bizByName(n){ return S.businesses.find(function(b){return b.name===n;})
 // the full amount has built up out of daily sales.
 var OPEN_DAYS={all:[0,1,2,3,4,5,6], monsat:[1,2,3,4,5,6], monfri:[1,2,3,4,5]};
 var OPEN_LABEL={all:'Every day', monsat:'Mon–Sat', monfri:'Mon–Fri'};
+// Business expense categories (each opex line has one; guessed from its name if not set).
+var OPEX_CATS=[['subs','🔁','Subscriptions & apps'],['marketing','📣','Marketing & ads'],['rent','🏠','Rent & space'],['utilities','💡','Utilities & internet'],
+  ['staff','👥','Staff & wages'],['supplies','📦','Supplies & inventory'],['transport','🚚','Transport & delivery'],['fees','🧾','Permits, fees & platforms'],['other','•','Other']];
+function opexCat(o){
+  if(o.cat) return o.cat; var n=(o.name||'').toLowerCase();
+  if(o.meta||/meta|facebook|\bfb\b|\bads?\b|boost|tiktok|google ads|marketing|promo/.test(n)) return 'marketing';
+  if(/subscri|netflix|canva|spotify|adobe|icloud|google one|workspace|chatgpt|claude|capcut|\bapp\b|software|domain|hosting|zoom|notion|shopify|plan\b/.test(n)) return 'subs';
+  if(/rent|lease|space|stall fee/.test(n)) return 'rent';
+  if(/electric|meralco|power|water|internet|wifi|pldt|globe|converge|smart|load|utilit/.test(n)) return 'utilities';
+  if(/staff|wage|salary|sss|philhealth|pag-?ibig|helper|payroll|crew/.test(n)) return 'staff';
+  if(/suppl|stock|inventory|ingredient|packag|material/.test(n)) return 'supplies';
+  if(/transport|deliver|gas|fuel|grab|lalamove|shipping|courier/.test(n)) return 'transport';
+  if(/permit|fee|tax|bir|platform|commission|license/.test(n)) return 'fees';
+  return 'other';
+}
 var FREQ_LABEL={day:'daily', week:'weekly', '2week':'every 2 weeks', semi:'15th & end of month', month:'monthly', quarter:'quarterly', year:'yearly', once:'once'};
 var PER_LABEL={day:'/day', week:'/week', '2week':'/2 wks', semi:'/half-month', month:'/month', quarter:'/quarter', year:'/year', once:' once'};
 var WEEKDAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -1009,8 +1039,26 @@ function availableMoney(mk){
   var sp=salarySpent(mk);
   return paid-sp.debt-sp.moved-lines;
 }
-function salaryEarnedSoFar(){ var cm=thisMonth(); return salary()*dayOfMonth()/daysIn(cm); }
-function salaryDueSoFar(){ return Math.max(0, salaryEarnedSoFar()-drawnThisMonth()); }
+// Salary is earned day by day (the month's salary ÷ its days) from S.salaryFrom
+// and waits until it's paid out — unpaid days carry over, even into a new month.
+function salaryDay(iso){ var mk=monthKey(iso); return salary()/daysIn(mk); }
+function salaryEarnedSoFar(){
+  var from=S.salaryFrom||thisMonth()+'-01', t=todayISO(), x=from, tot=0, g=0;
+  while(x<=t&&g++<800){ tot+=salaryDay(x); x=addDays(x,1); }
+  return tot;
+}
+function salaryPaidSince(){ var from=S.salaryFrom||thisMonth()+'-01'; return sum(S.moves.filter(function(m){return m.kind==='draw'&&m.date>=from;}),function(m){return num(m.amount);}); }
+function salaryDueSoFar(){ return Math.max(0, salaryEarnedSoFar()-salaryPaidSince()); }
+function salaryDaysDue(){ var d=salaryDay(todayISO()); return d>0?Math.round(salaryDueSoFar()/d*10)/10:0; }
+// Share of each salary payout that goes straight to debt savings (stays with the tank).
+function salaryDebtPct(){ return S.salarySplit?num(S.salarySplit.debt):0; }
+// Spread money for debts like the daily savings do: soonest due first, then extra to the soonest.
+function splitToDebtJars(a){
+  var legs=[], rem=a, list=debtSavings();
+  list.forEach(function(x){ var g=Math.min(rem,Math.max(0,x.amount-x.saved)); if(g>0.5){ legs.push([x.d,g]); rem-=g; } });
+  if(rem>0.5){ var first=list[0]?list[0].d:activeDebts()[0]; if(first){ var l=legs.find(function(y){return y[0]===first;}); if(l) l[1]+=rem; else legs.push([first,rem]); rem=0; } }
+  return {legs:legs, left:rem};
+}
 function daysBetween(a,b){ return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/864e5); }
 // Money set aside for a debt (allotted, not yet used by a payment).
 function debtJar(d){
@@ -1396,7 +1444,7 @@ function acctHas(){
     var b=S.budget.find(function(y){return y.id===x.catId;}); add(b&&lineAway(b)?lineAway(b):acctOf('family'), -num(x.amount)); });
   S.moves.forEach(function(m){
     var a=num(m.amount), f=num(m.fee);
-    if(m.kind==='draw'){ add(acctOf('tank'),-a-f); add(acctOf('family'),a); }
+    if(m.kind==='draw'){ if(m.noMove) return; var td=num(m.toDebt); add(acctOf('tank'),-a-f); add(acctOf('family'),a-td); add(acctOf('debt'),td); }
     else if(m.kind==='sweep') add(acctOf('tank'),-a);
     else if(m.kind==='debtpay'){ add(acctOf('debt'),-num(m.fromJar)); add(acctOf('family'),-(a-num(m.fromJar))); }
     else if(m.kind==='acctx'){ add(m.from,-a-f); add(m.to,a); }
@@ -1421,7 +1469,9 @@ function acctPlan(){
   var give=rows.filter(function(r){return r.diff<-0.5;}).map(function(r){return {r:r,v:-r.diff};}).sort(function(x,y){return y.v-x.v;});
   var tx=[];
   need.forEach(function(n){ give.forEach(function(g){ var v=Math.min(n.v,g.v); if(v>0.5){ tx.push({from:g.r.a, to:n.r.a, amount:Math.round(v*100)/100, for:n.r.ps.map(function(p){return p.name;})}); n.v-=v; g.v-=v; } }); });
-  return {rows:rows, tx:tx, short:sum(need,function(n){return n.v;})};
+  var due=Math.min(salaryDueSoFar(),Math.max(0,holding()));
+  var sal=due>0.5&&acctOf('tank')!==acctOf('family')?{from:accById(acctOf('tank')), to:accById(acctOf('family')), amount:due, budget:due*(1-salaryDebtPct()/100), days:salaryDaysDue()}:null;
+  return {rows:rows, tx:tx, sal:sal, short:sum(need,function(n){return n.v;})};
 }
 function acctLogo(a, big){ return a&&a.logo?'<img class="wlogo'+(big?' big':'')+'" src="'+esc(a.logo)+'" alt="">':'<span class="wlogo e'+(big?' big':'')+'" aria-hidden="true">🏦</span>'; }
 // Home: the day's routine in four steps.
@@ -1431,8 +1481,10 @@ function todayCard(){
   var allT=dT+bT+oT, pl=ACC().length?acctPlan():null, nTx=pl?pl.tx.length:0, sd=salaryDueSoFar(), hold=holding();
   var step=function(n,done,title,sub,btn){ return '<div class="tstep'+(done?' done':'')+'"><span class="tn">'+(done?'✓':n)+'</span><span class="tl"><b>'+title+'</b><small class="num">'+sub+'</small></span>'+(btn||'')+'</div>'; };
   return '<div class="card"><h2>✅ Today</h2>'+
-    step(1,sales>0,'Log sales',sales>0?money(sales)+' logged today':'all business income → '+esc(ACC().length?(accById(acctOf(mainBiz()?'biz:'+mainBiz().id:'family'))||{name:'business account'}).name:'business account'),'<button class="sm'+(sales>0?'':' primary')+'" data-act="income">+ Sales</button>')+
-    step(2,sd<0.5||hold<0.5,'Pay salary',sd>0.5?money(sd)+' due so far · tank '+money(Math.max(0,hold)):'up to date','<button class="sm" data-act="draw" '+(hold>0.5?'':'disabled')+'>Pay</button>')+
+    S.businesses.filter(function(b){return b.unit&&num(b.unit.price)>0;}).map(function(b){ var n=sum(S.incomes.filter(function(x){return x.source===b.name&&x.date===t;}),function(x){return num(x.qty);});
+      return '<div class="row between quickq"><span>'+esc(b.name)+' <small class="muted">'+n+' '+esc(b.unit.name)+(n===1?'':'s')+' today</small></span><button class="sm primary" data-act="quicksale" data-biz="'+b.id+'">+1 '+esc(b.unit.name)+' · '+money(b.unit.price)+'</button></div>'; }).join('')+
+    step(1,sales>0,'Log sales',sales>0?money(sales)+' logged today':'all business income → '+esc(ACC().length?(accById(acctOf(mainBiz()?'in:biz:'+mainBiz().id:'family'))||{name:'business account'}).name:'business account'),'<button class="sm'+(sales>0?'':' primary')+'" data-act="income">+ Sales</button>')+
+    step(2,sd<0.5||hold<0.5,'Pay salary',sd>0.5?money(sd)+' waiting ('+salaryDaysDue()+' days)'+(salaryDebtPct()>0?' · '+salaryDebtPct()+'% to debts':''):'up to date','<button class="sm" data-act="draw" '+(hold>0.5?'':'disabled')+'>Pay</button>')+
     step(3,allT<0.5,'Allot today',allT<0.5?'debts, budget and opex are on track':[dT>0.5?'debts '+shortMoney(dT):'',bT>0.5?'budget '+shortMoney(bT):'',oT>0.5?'opex '+shortMoney(oT):''].filter(Boolean).join(' · '),allT>0.5?'<button class="sm primary" data-act="allotevery">Allot all</button>':'')+
     step(4,pl&&!nTx,'Transfer',!pl?'set up your accounts below':nTx?nTx+' transfer'+(nTx>1?'s':'')+' waiting — see Accounts':'nothing to move','')+
     '</div>';
@@ -1441,14 +1493,17 @@ function accountsCard(){
   if(!ACC().length) return '<div class="card"><h2>💳 Where is your money kept?</h2>'+
     '<p class="muted" style="font-size:14px">Tell the app your real accounts and it will say exactly what to transfer where. Money kept in the same account never needs a transfer.</p>'+
     '<div class="row" style="gap:6px;flex-wrap:wrap"><button class="primary sm" data-act="acctpreset">GCash · Maya · GSave</button><button class="sm" data-act="acctsetup">Set up my own</button></div>'+
-    '<small class="muted" style="display:block;margin-top:6px">Sales arrive in GCash · business money and subscriptions in Maya · family money and the salary tank in GCash · debt savings in GSave.</small></div>';
+    '<small class="muted" style="display:block;margin-top:6px">Sales arrive in GCash → business share to Maya (pays all business expenses) · family share to GSave (salary tank, debt savings) · salary paid out to GCash for family spending.</small></div>';
   var pl=acctPlan(), tot=sum(pl.rows,function(r){return r.has;});
   return '<div class="card"><div class="row between"><h2>💳 Accounts</h2><span class="row" style="gap:8px"><b class="num">'+money(tot)+'</b><button class="icon" data-act="acctsetup" aria-label="Set up accounts">⚙</button></span></div>'+
     (pl.tx.length?'<div class="xnow"><div class="k">⇄ Transfer now</div>'+pl.tx.map(function(t){
         return '<div class="row between ptx"><span class="pxt"><b>'+esc(t.from.name)+' → '+esc(t.to.name)+'</b><small class="muted">for '+esc(t.for.join(', ')||'balance')+'</small></span>'+
-          '<button class="primary sm" data-act="acctxfer" data-from="'+t.from.id+'" data-to="'+t.to.id+'" data-amt="'+t.amount+'">'+money(t.amount)+'</button></div>'; }).join('')+
+          '<button class="primary sm" data-act="acctxfer" data-from="'+t.from.id+'" data-to="'+t.to.id+'" data-amt="'+t.amount+'">'+money(t.amount)+(num((S.fees||{})[t.from.id+'>'+t.to.id])>0?'<small> +'+money(S.fees[t.from.id+'>'+t.to.id])+' fee</small>':'')+'</button></div>'; }).join('')+
         '<small class="muted" style="display:block;margin-top:4px">These grow as you allot. Send whenever you like — one transfer for several days means one fee. Tap after sending.</small></div>'
-      :'<div class="note good" style="margin:8px 0">✓ Every account has what it should — nothing to transfer.</div>')+
+      :'<div class="note good" style="margin:8px 0">✓ Every account has what it should'+(pl.sal?' — only the salary is waiting.':' — nothing to transfer.')+'</div>')+
+    (pl.sal&&pl.sal.from&&pl.sal.to?'<div class="xnow"><div class="row between ptx" style="border:0"><span class="pxt"><b>👪 Salary · '+esc(pl.sal.from.name)+' → '+esc(pl.sal.to.name)+'</b>'+
+        '<small class="muted">'+pl.sal.days+' days waiting · '+money(pl.sal.amount)+' total'+(salaryDebtPct()>0?' · '+salaryDebtPct()+'% stays for debts':'')+'</small></span>'+
+        '<button class="primary sm" data-act="draw">Pay '+money(pl.sal.budget)+'</button></div></div>':'')+
     (pl.short>0.5?'<div class="note warn">'+money(pl.short)+' is planned but not in any account yet — record sales or the salary payout, or match a balance.</div>':'')+
     '<div class="wgrid">'+pl.rows.map(function(r){
       var st=Math.abs(r.diff)<0.5?'<span class="pill good">✓</span>':r.diff>0?'<span class="pill warn">needs '+shortMoney(r.diff)+'</span>':'<span class="pill">extra '+shortMoney(-r.diff)+'</span>';
@@ -1678,11 +1733,13 @@ function slotColor(slot){ return 'var(--c'+(slot||0)+')'; }
 function info(summary, body){ return '<details class="info"><summary>ⓘ '+summary+'</summary><div class="info-b">'+body+'</div></details>'; }
 // Planned (track), allocated (light fill) and spent (solid fill) in one bar.
 function bar3(plan, alloc, spent){
-  var base=Math.max(plan,alloc,spent,1), over=spent>Math.max(plan,alloc)&&spent>0;
-  return '<div class="bar3" role="img" aria-label="Spent '+money(spent)+', allocated '+money(alloc)+', planned '+money(plan)+'">'+
-    '<i class="a" style="width:'+(alloc/base*100).toFixed(1)+'%"></i><i class="s'+(over?' bad':'')+'" style="width:'+(spent/base*100).toFixed(1)+'%"></i>'+
-    (plan>0&&plan<base?'<i class="p" style="left:'+(plan/base*100).toFixed(1)+'%"></i>':'')+'</div>';
+  var base=Math.max(plan,1), over=spent>plan+0.5&&spent>0, warn=!over&&spent>alloc+0.5;
+  if(plan<=0) base=Math.max(alloc,spent,1);
+  var w=function(v){ return Math.min(100,Math.max(0,v)/base*100).toFixed(1); };
+  return '<div class="bar3" role="img" aria-label="Spent '+money(spent)+', allotted '+money(alloc)+', planned '+money(plan)+'">'+
+    '<i class="p" style="width:'+(plan>0?100:0)+'%"></i><i class="a" style="width:'+w(alloc)+'%"></i><i class="s'+(over?' bad':warn?' warn':'')+'" style="width:'+w(spent)+'%"></i></div>';
 }
+
 function tile(k,v,h,extra){ return '<div class="stat"'+(extra||'')+'><div class="k">'+k+'</div><div class="v">'+v+'</div>'+(h?'<div class="h">'+h+'</div>':'')+'</div>'; }
 
 // Proportional stacked bar; every segment keeps a sliver so small debts show.
@@ -1698,11 +1755,8 @@ function legend(parts){
     return '<div class="lg"><span class="sw" style="background:'+p.color+'"></span><span class="ln">'+esc(p.label)+'</span><span class="lv num">'+money(p.v)+'</span><span class="lp num">'+(p.v/tot*100).toFixed(p.v/tot<0.01?1:0)+'%</span></div>';
   }).join('')+'</div>';
 }
-function shortMoney(v){
-  if(v>=1e6) return S.currency+(v/1e6).toFixed(v>=1e7?0:1).replace(/\.0$/,'')+'M';
-  if(v>=1e3) return S.currency+Math.round(v/1e3)+'k';
-  return S.currency+Math.round(v);
-}
+function shortMoney(v){ return money(v); }
+
 function barPath(x,y,w,h,r){ r=Math.min(r,h,w/2); return 'M'+x+','+(y+h)+'V'+(y+r)+'Q'+x+','+y+' '+(x+r)+','+y+'H'+(x+w-r)+'Q'+(x+w)+','+y+' '+(x+w)+','+(y+r)+'V'+(y+h)+'Z'; }
 
 // Column chart: one series, rounded data-ends on the baseline, hover tips,
@@ -2105,6 +2159,7 @@ V.budget=function(){
     (bToday>0.5?'<button class="primary sm" data-act="budallotall" '+(bFree>0.5?'':'disabled')+'>Allot all'+(bFree>0.5&&bFree<bToday-0.5?' '+shortMoney(bFree):'')+'</button>':'<span class="pill good">✓ today</span>')+'</div>'+
     '<small class="muted" style="display:block;margin-top:4px">Each line gets what\'s left of its plan ÷ days left — a missed day is spread over the rest of the month.</small></div>';
 
+  h+='<div class="b3leg"><span><i style="opacity:.16"></i>Planned</span><span><i style="opacity:.42"></i>Allotted</span><span><i></i>Spent</span><span><i style="background:var(--bad)"></i>Over plan</span></div>';
   // Each category: progress bars by default, the editor behind ✎.
   groups.forEach(function(g){
     var items=S.budget.filter(function(b){return b.group===g;});
@@ -2114,7 +2169,7 @@ V.budget=function(){
     h+='<div class="card bgrp'+(editing?' editing':'')+'"><div class="row between"><b>'+esc(g)+'</b>'+
       '<span class="row" style="gap:8px"><span class="num'+(gs>Math.max(ga,gp)?' neg':'')+'">'+money(gs)+' <small class="muted">/ '+money(gp)+'</small></span>'+
       '<button class="icon'+(editing?' on':'')+'" data-bedit="'+esc(g)+'" aria-pressed="'+editing+'" aria-label="'+(editing?'Done editing ':'Edit ')+esc(g)+'">'+(editing?'✓':'✎')+'</button></span></div>'+
-      bar3(gp,ga,gs)+'<div class="pas num"><span>Planned <b>'+shortMoney(gp)+'</b></span><span>Allocated <b>'+shortMoney(ga)+'</b></span><span>Spent <b class="'+(gs>Math.max(ga,gp)?'neg':'')+'">'+shortMoney(gs)+'</b></span></div>';
+      bar3(gp,ga,gs)+'<div class="pas num"><span>Planned <b>'+shortMoney(gp)+'</b></span><span>Allotted <b>'+shortMoney(ga)+'</b></span><span>Spent <b class="'+(gs>Math.max(ga,gp)?'neg':'')+'">'+shortMoney(gs)+'</b></span></div>';
     if(editing){
       h+=items.map(function(b){
         var sp=spentThisMonth(b.id), ov=sp>planOf(b)&&sp>0, subs=hasSubs(b);
@@ -2139,7 +2194,7 @@ V.budget=function(){
         var tdy=sum(bd.filter(function(x){return x.b===b;}),function(x){return x.today;});
         return '<div class="bline" data-act="allocate" data-key="'+b.id+'" role="button" tabindex="0"><div class="row between"><span>'+esc(b.name)+'</span>'+
             (tdy>0.5&&!hasSubs(b)?'<button class="chip" data-act="budallot" data-key="'+b.id+'">+'+shortMoney(tdy)+' today</button>':tdy>0.5?'<small class="muted num">+'+shortMoney(tdy)+' today</small>':'')+'</div>'+
-          bar3(pn,fa,sp)+'<div class="pas num"><span>Planned <b>'+shortMoney(pn)+'</b></span><span>Allocated <b>'+shortMoney(fa)+'</b></span><span>Spent <b class="'+(sp>Math.max(fa,pn)?'neg':'')+'">'+shortMoney(sp)+'</b></span></div>'+
+          bar3(pn,fa,sp)+'<div class="pas num"><span>Planned <b>'+shortMoney(pn)+'</b></span><span>Allotted <b>'+shortMoney(fa)+'</b></span><span>Spent <b class="'+(sp>Math.max(fa,pn)?'neg':'')+'">'+shortMoney(sp)+'</b></span></div>'+
           (hasSubs(b)?'<div class="subs">'+b.subs.filter(function(x){return targetSub(b,x,cm)>0||spentSub(x.id)>0;}).map(function(x){
             var ss=spentSub(x.id), sa=targetSub(b,x,cm), so=ss>sa;
             return '<div class="subl" data-tip="'+esc(x.name+': '+money(ss)+' of '+money(sa))+'"><span>'+esc(x.name)+'</span>'+
@@ -2157,13 +2212,16 @@ V.budget=function(){
 
   var recent=S.spend.filter(function(x){return monthKey(x.date)===cm;}).sort(function(a,b){return b.date.localeCompare(a.date);});
   if(recent.length){
-    h+='<div class="card"><h2>Spending log · '+monthLabel(cm,true)+'</h2><div class="scroll"><table><tbody>'+recent.map(function(x){
-      var c=x.catId==='tithe'?{name:'🙏 Tithe'}:S.budget.find(function(b){return b.id===x.catId;});
-      var sub=c&&x.subId&&c.subs?c.subs.find(function(y){return y.id===x.subId;}):null;
-      if(sub) c={name:c.name+' › '+sub.name};
-      return '<tr class="tap" data-act="edittx" data-coll="spend" data-id="'+x.id+'"><td class="num" style="white-space:nowrap">'+esc(shortDate(x.date))+'</td><td>'+esc(c?c.name:'(deleted)')+(x.note?'<br><small>'+esc(x.note)+'</small>':'')+'</td><td class="r num">'+money(x.amount)+'</td>'+
-        '<td class="r"><button class="icon danger" data-act="deltx" data-coll="spend" data-id="'+x.id+'" aria-label="Delete">✕</button></td></tr>';
-    }).join('')+'</tbody></table></div></div>';
+    var days=[]; recent.forEach(function(x){ if(days.indexOf(x.date)<0) days.push(x.date); });
+    h+='<div class="card"><div class="row between"><h2>Spending log · '+monthLabel(cm,true)+'</h2><b class="num">'+money(sum(recent,function(x){return num(x.amount);}))+'</b></div>'+days.map(function(d,di){
+      var rows=recent.filter(function(x){return x.date===d;}), key='spd:'+d, op=openGroups[key]!=null?openGroups[key]:di===0;
+      return '<details class="spday" data-g="'+key+'"'+(op?' open':'')+'><summary><span>'+esc(new Date(d+'T00:00:00').toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric'}))+' <small class="muted">'+rows.length+' item'+(rows.length>1?'s':'')+'</small></span><b class="num">'+money(sum(rows,function(x){return num(x.amount);}))+'</b></summary>'+
+        rows.map(function(x){
+          var c=x.catId==='tithe'?{name:'🙏 Tithe'}:S.budget.find(function(b){return b.id===x.catId;});
+          var sub=c&&x.subId&&c.subs?c.subs.find(function(y){return y.id===x.subId;}):null;
+          return '<div class="txrow" data-act="edittx" data-coll="spend" data-id="'+x.id+'" role="button" tabindex="0"><span class="txi">🧾</span><span class="txl"><b>'+esc(c?(sub?c.name+' › '+sub.name:c.name):'(deleted)')+'</b>'+(x.note?'<small>'+esc(x.note)+'</small>':'')+'</span>'+
+            '<span class="num">'+money(x.amount)+'</span><button class="icon danger" data-act="deltx" data-coll="spend" data-id="'+x.id+'" aria-label="Delete">✕</button></div>';
+        }).join('')+'</details>'; }).join('')+'</div>';
   }
   h+=info('Budget tips for this family','<ul>'+
     '<li><b>Tithe first:</b> it comes off income before the salary, so it grows and shrinks with the business.</li>'+
@@ -2194,7 +2252,7 @@ function debtSavingsCard(){
       '<small class="num">saved '+money(x.saved)+' · '+(x.ready?'ready ✓':'needs '+money(x.needPerDay)+'/day from now')+(behind?' · <span class="neg">behind '+money(x.expected-x.saved)+'</span>':'')+'</small>'+
       (x===firstOpen&&!behind&&free>0.5?'<button class="link" style="padding:2px 0;font-size:12px" data-act="getahead" data-id="'+x.d.id+'">⏩ Get ahead on this one</button>':'')+'</div>'+
       (ready?'<button class="primary sm" data-act="pay" data-id="'+x.d.id+'">Pay</button>'
-        :x.today>0.5?(free>0.5?'<button class="primary sm" data-act="allot" data-id="'+x.d.id+'" data-amt="'+Math.round(x.today*100)/100+'">Allot '+shortMoney(Math.min(x.today,free))+'</button>':'<button class="sm" disabled>No money free</button>')
+        :x.today>0.5?(free>0.5?'<button class="primary sm" data-act="allot" data-id="'+x.d.id+'">Save '+shortMoney(Math.min(x.today,free))+'</button>':'<button class="sm" disabled>No money free</button>')
         :'<span class="pill good">✓ today</span>')+'</div>';
   });
   return h+'</div>';
@@ -2599,26 +2657,23 @@ V.settings=function(){
         '<label class="f"><span>What it does</span><input data-bizf="desc" data-bid="'+b.id+'" value="'+esc(b.desc||'')+'" placeholder="e.g. online shop, food stall"></label></div>'+
       '<label class="f"><span>Open</span><select data-bizf="open" data-bid="'+b.id+'">'+Object.keys(OPEN_DAYS).map(function(k){
         return '<option value="'+k+'"'+(((b.open||'all')===k)?' selected':'')+'>'+OPEN_LABEL[k]+'</option>'; }).join('')+'</select></label>'+
-      '<div class="k" style="margin:4px 0">Operating expenses (opex)</div>'+
-      b.opex.map(function(o){
-        var f=o.freq||'month', attrs=' data-bid="'+b.id+'" data-oid="'+o.id+'"', when;
-        var dateIn=function(label){ return '<label class="duein"><span>'+label+'</span><input type="date" aria-label="'+label+'" data-opx="date"'+attrs+' value="'+esc(o.date||'')+'"></label>'; };
-        if(f==='week') when='<select aria-label="Due weekday" data-opx="wd"'+attrs+'>'+WEEKDAYS.map(function(w,i){return '<option value="'+i+'"'+((o.wd==null?6:+o.wd)===i?' selected':'')+'>due '+w+'</option>';}).join('')+'</select>';
-        else if(f==='month') when='<select aria-label="Due day of month" data-opx="day"'+attrs+'>'+Array.apply(null,{length:31}).map(function(_,i){return '<option value="'+(i+1)+'"'+((+o.day||1)===i+1?' selected':'')+'>due '+ordinal(i+1)+'</option>';}).join('')+'</select>';
-        else if(f==='2week'||f==='quarter'||f==='year') when=dateIn('first due');
-        else if(f==='once') when=dateIn('due');
-        else if(f==='semi') when='<span class="muted when">due 15th &amp; last day</span>';
-        else when='<span class="muted when">each open day</span>';
-        var nd=num(o.amount)?nextDue2(o,b,todayISO()):null;
-        return '<div class="oprow"><div class="row"><input class="bname" aria-label="Expense name" data-opx="name"'+attrs+' value="'+esc(o.name)+'" placeholder="Expense" style="flex:1">'+
-          (o.meta&&MA().some(function(a){return a.id===o.meta&&a.lineId===o.id&&a.autoAmount!==false;})?'<span class="pill good" title="Amount set from Meta Ads every sync">📣 auto</span>':'')+
-          '<button class="icon danger" data-delopx="'+o.id+'" data-bid="'+b.id+'" aria-label="Delete '+esc(o.name)+'">✕</button></div>'+
-          '<div class="opsched"><input class="amt num" inputmode="decimal" aria-label="Amount for '+esc(o.name)+'" data-opx="amount"'+attrs+' value="'+(num(o.amount)||'')+'" placeholder="0">'+
-          '<select aria-label="Per" data-opx="freq"'+attrs+'>'+Object.keys(FREQ_LABEL).map(function(k){return '<option value="'+k+'"'+(f===k?' selected':'')+'>'+FREQ_LABEL[k]+'</option>';}).join('')+'</select>'+when+'</div>'+
-          (num(o.amount)?'<small class="muted num">≈ '+money(dailyValue(o,b))+' set aside per open day'+(f!=='once'?' · ≈ '+money(opexMonthly(o,b))+'/month':'')+
-            (nd?' · next due '+new Date(nd+'T00:00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric'}):'')+'</small>':'')+'</div>';
+      '<div class="grid g2"><label class="f"><span>Sold per (optional)</span><input data-bizunit="name" data-bid="'+b.id+'" value="'+esc(b.unit?b.unit.name:'')+'" placeholder="e.g. client"></label>'+
+        '<label class="f"><span>Price each</span><input inputmode="decimal" data-bizunit="price" data-bid="'+b.id+'" value="'+(b.unit&&num(b.unit.price)?num(b.unit.price):'')+'" placeholder="0"></label></div>'+
+      '<div class="k" style="margin:8px 0 4px">Expenses by category</div>'+
+      OPEX_CATS.map(function(c){
+        var lines=b.opex.filter(function(o){return opexCat(o)===c[0];}); if(!lines.length&&c[0]!=='subs') return '';
+        var mo=sum(lines,function(o){return opexMonthly(o,b);}), key='ocat:'+b.id+':'+c[0];
+        return '<details class="ocat" data-g="'+key+'"'+(openGroups[key]?' open':'')+'><summary><span>'+c[1]+' '+c[2]+' <small class="muted">'+lines.length+'</small></span><span class="num">'+money(mo)+'<small class="muted">/mo</small></span></summary>'+
+          (c[0]==='subs'&&lines.length?'<div class="subsum num">'+money(mo)+' a month · '+money(mo*12)+' a year · paid from '+esc((accById(acctOf('biz:'+b.id))||{name:'the business account'}).name)+'</div>':'')+
+          lines.map(function(o){
+            var f=o.freq||'month', nd=num(o.amount)&&!metaFor(o)?nextDue2(o,b,todayISO()):null, auto=!!metaFor(o);
+            return '<button class="oline" data-act="opxedit" data-bid="'+b.id+'" data-oid="'+o.id+'"><span class="ol"><b>'+esc(o.name||'(no name)')+'</b>'+
+              '<small class="muted num">'+(auto?'actual ad spend + VAT · synced from Meta':num(o.amount)?money(o.amount)+' '+FREQ_LABEL[f]+(nd?' · next '+shortDate(nd):''):'no amount yet')+'</small></span>'+
+              '<span class="num">'+(auto?'<span class="pill good">📣 auto</span>':money(opexMonthly(o,b))+'<small class="muted">/mo</small>')+'</span></button>';
+          }).join('')+
+          '<button class="link" data-act="addopex" data-biz="'+b.id+'" data-cat="'+c[0]+'">+ Add '+(c[0]==='subs'?'subscription':'expense')+'</button></details>';
       }).join('')+
-      '<div class="row" style="margin-top:8px"><button class="sm" data-act="addopex" data-biz="'+b.id+'">+ Opex line</button><span class="spacer"></span>'+
+      '<div class="row" style="margin-top:8px"><button class="sm" data-act="addopex" data-biz="'+b.id+'">+ Expense</button><span class="spacer"></span>'+
       '<button class="sm danger" data-delbiz="'+i+'">Remove business</button></div></details>';
   }).join('')+'<button data-act="addbiz" style="margin-bottom:14px">+ Add business</button>'+
     '<div class="card tight" style="margin-bottom:14px"><label class="f" style="margin:0"><span>👛 Business wallet balance when you started using the app</span><input inputmode="decimal" data-bind="walletStart" data-num value="'+(num(S.walletStart)||'')+'" placeholder="0"></label></div>';
@@ -2654,6 +2709,7 @@ V.settings=function(){
 
 var dlg=document.getElementById('dlg'), dlgForm=document.getElementById('dlgForm'), dlgSubmit=null;
 function openDialog(title, fields, onSubmit, submitLabel){
+  dlgForm.oninput=null; dlgForm.onclick=null;
   dlgForm.innerHTML='<h2 style="margin-bottom:12px">'+esc(title)+'</h2>'+fields+
     '<div class="row" style="justify-content:flex-end;margin-top:12px"><button value="cancel" formnovalidate>Cancel</button><button class="primary" value="ok">'+esc(submitLabel||'Save')+'</button></div>';
   dlgSubmit=onSubmit;
@@ -2687,6 +2743,7 @@ ACT.deltx=function(el){
   checkpoint('delete transaction');
   if(coll==='moves') reverseMove(x);
   S[coll]=S[coll].filter(function(y){return y!==x;});
+  if(coll==='moves'&&x.kind==='draw') S.moves=S.moves.filter(function(y){return y.draw!==x.id;});
   if(dlg.open) dlg.close();
   save(); render(); toast('Deleted');
 };
@@ -2697,6 +2754,7 @@ ACT.edittx=function(el){
   if(coll==='incomes'){ var src=bizNames(); if(src.indexOf(x.source)<0) src.push(x.source); f+=selectField('source','Business',src,x.source); }
   if(coll==='spend'){ var cur=x.catId==='tithe'?'tithe':(x.subId?x.catId+'|'+x.subId:x.catId);
     f+='<div class="picked">'+esc(pickedLabel(cur))+'</div>'+catPicker(cur,{tithe:true,noRecent:true}); }
+  if(coll==='moves'&&(x.kind==='acctx'||x.kind==='xfer'||x.kind==='draw')) f+=field('fee','Transfer fee','inputmode="decimal"',num(x.fee));
   f+=field('date','Date','type="date" required',x.date);
   if(coll!=='moves') f+=field('note','Note','',x.note||'');
   f+='<button type="button" class="danger" data-act="deltx" data-coll="'+coll+'" data-id="'+x.id+'">Delete</button>';
@@ -2709,24 +2767,39 @@ ACT.edittx=function(el){
       x.amount=a; if(x.fromJar!=null) x.fromJar=Math.min(num(x.fromJar),a);
     } else { x.amount=a; if(x.fromJar!=null) x.fromJar=Math.min(num(x.fromJar),a); }
     x.date=v.date||x.date;
+    if(v.fee!=null&&coll==='moves'){ var nf=num(v.fee); if(x.kind==='xfer') adjustHeld(x.from,-(nf-num(x.fee))); x.fee=nf; }
     if(coll!=='moves') x.note=v.note||'';
     if(coll==='incomes') x.source=v.source;
     if(coll==='spend'&&v.catId){ var k=String(v.catId).split('|'); x.catId=k[0]; x.subId=k[1]||null; }
     toast('Updated');
   }, 'Save');
 };
-ACT.income=function(){
+ACT.income=function(el){
   var src=bizNames(); if(!src.length) src=['Business'];
+  var pre=el&&el.dataset&&el.dataset.biz?(S.businesses.find(function(b){return b.id===el.dataset.biz;})||{}).name:src[0];
+  var units=S.businesses.filter(function(b){return b.unit&&num(b.unit.price)>0;});
   openDialog('Add sales',
-    field('date','Date','type="date" required',todayISO())+
-    selectField('source','Business',src,src[0])+
+    selectField('source','Business',src,pre)+
+    units.map(function(b){ return '<div class="unitq" data-for="'+esc(b.name)+'"'+(b.name===pre?'':' hidden')+'><div class="k">'+esc(b.name)+' · '+money(b.unit.price)+' per '+esc(b.unit.name)+'</div>'+
+      '<div class="row" style="gap:6px;flex-wrap:wrap;margin:6px 0">'+[1,2,3,4,5].map(function(n){return '<button type="button" class="chip" data-qty="'+n+'" data-price="'+num(b.unit.price)+'">'+n+' '+esc(b.unit.name)+(n>1?'s':'')+'</button>';}).join('')+'</div>'+
+      '<label class="f"><span>How many '+esc(b.unit.name)+'s</span><input name="qty_'+b.id+'" inputmode="numeric" data-price="'+num(b.unit.price)+'" placeholder="0"></label></div>'; }).join('')+
     field('amount','Sales received','inputmode="decimal" required placeholder="0"')+
-    field('note','Note (optional)','placeholder="e.g. week 3 sales, client payment"'),
+    field('date','Date','type="date" required',todayISO())+
+    field('note','Note (optional)','placeholder="e.g. client name"'),
     function(d){ var a=num(d.amount); if(a<=0){ toast('Enter an amount'); return false; }
-      S.incomes.push({id:uid(),date:d.date||todayISO(),source:d.source,amount:a,note:d.note});
+      var b=bizByName(d.source), q=b&&b.unit?num(d['qty_'+b.id]):0;
+      S.incomes.push({id:uid(),date:d.date||todayISO(),source:d.source,amount:a,qty:q||undefined,note:d.note});
       incMk=monthKey(d.date||todayISO());
-      var f=monthFlow(incMk); toast(monthLabel(incMk)+': tithe '+money(f.tithe)+' · family share '+money(f.family)); }, 'Add');
+      toast(d.source+' +'+money(a)+(q?' · '+q+' '+b.unit.name+(q>1?'s':''):'')); }, 'Add');
 };
+// One tap: one more client at the usual price.
+ACT.quicksale=function(el){
+  var b=S.businesses.find(function(x){return x.id===el.dataset.biz;}); if(!b||!b.unit) return;
+  checkpoint('add '+b.unit.name);
+  S.incomes.push({id:uid(),date:todayISO(),source:b.name,amount:num(b.unit.price),qty:1,note:''});
+  save(); render(); toast(b.name+': +1 '+b.unit.name+' · '+money(b.unit.price));
+};
+
 // An actual business expense (opex) for a business, against one of its opex lines.
 // Business expense picker: every opex line grouped by business with what's
 // set aside and what's due next, plus one-off and BIR tax rows.
@@ -2909,19 +2982,49 @@ ACT.pay=function(el){
 };
 // Set aside today's share for one debt (tapped by hand).
 ACT.undo1=function(){ undoLast(); };
+// Allot for a line or a debt: today's share, a few days ahead, or everything still needed.
+function allotDialog(title, perDay, td, need, free, onSave){
+  var opt=function(k,label){ var v=Math.max(0,Math.min(need,perDay*k-td)); return v>0.5?'<button type="button" class="chip" data-setamt="'+Math.round(v)+'">'+label+' · '+money(v)+'</button>':''; };
+  var def=Math.max(0,Math.min(need,perDay-td,free));
+  openDialog(title,
+    '<div class="alloc-top num"><span>Free to allot</span><b>'+money(free)+'</b></div>'+
+    '<small class="muted num">'+money(perDay)+' a day keeps it on track · still needed '+money(need)+'</small>'+
+    '<input class="bigamt num" name="amount" inputmode="decimal" required aria-label="Amount" value="'+Math.round(def)+'">'+
+    '<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">'+opt(1,'Today')+opt(3,'3 days')+opt(7,'7 days')+(need>0.5?'<button type="button" class="chip" data-setamt="'+Math.round(need)+'">All · '+money(need)+'</button>':'')+'</div>'+
+    '<small class="muted">Saving ahead lowers the daily amount for the days after. Missed days are spread over the days left.</small>',
+    function(v){ var a=num(v.amount); if(a<=0) return false;
+      if(a>free+0.5){ toast('Only '+money(free)+' is free'); return false; }
+      onSave(Math.min(a,need)); }, 'Allot');
+}
+ACT.budallot=function(el){
+  var x=budgetDaily().find(function(y){return y.key===el.dataset.key;}); if(!x) return;
+  var left=x.daysLeft, td=allottedToday(x.key), have=Math.max(x.funded,x.spent), need=Math.max(0,x.plan-have);
+  allotDialog('Allot · '+x.name,(need+td)/left,td,need,Math.max(0,availableMoney()),function(a){ addAlloc(x,Math.round(a*100)/100); toast(money(a)+' → '+x.name); });
+};
+ACT.allot=function(el){
+  var x=debtSavings().find(function(y){return y.d.id===el.dataset.id;}); if(!x) return;
+  var t=todayISO(), td=sum(S.moves.filter(function(m){return m.kind==='debtsave'&&m.to===x.d.id&&m.date===t;}),function(m){return num(m.amount);});
+  var need=Math.max(0,x.amount-x.saved);
+  allotDialog('Save for · '+x.d.name,(need+td)/(x.daysLeft+1),td,need,Math.max(0,availableMoney()),function(a){
+    S.moves.push({id:uid(),date:t,kind:'debtsave',to:x.d.id,amount:Math.round(a*100)/100,note:'Saved for '+x.d.name}); toast(money(a)+' saved for '+x.d.name); });
+};
+
 // ---- accounts actions
-ACT.acctpreset=function(){
-  checkpoint('set up accounts');
+function applyFlow(){
   var get=function(n){ var a=ACC().find(function(x){return x.name.toLowerCase()===n.toLowerCase();}); if(!a){ a={id:uid(),name:n}; ACC().push(a); } return a; };
   var g=get('GCash'), m=get('Maya'), s2=get('GSave');
-  // Sales come into GCash; the business keeps its money (and pays its bills and
-  // subscriptions) in Maya; family money stays in GCash; debt savings in GSave.
-  S.assign={family:g.id, tank:g.id, debt:s2.id, protect:g.id, dreams:g.id};
+  // Sales come into GCash. The family share goes to GSave (salary tank, debt
+  // savings, funds and dreams); the business share goes to Maya, which pays
+  // every business expense. Salary paid out goes to GCash for family spending.
+  S.assign={family:g.id, tank:s2.id, debt:s2.id, protect:s2.id, dreams:s2.id};
   S.businesses.forEach(function(b){ S.assign['biz:'+b.id]=m.id; S.assign['in:biz:'+b.id]=g.id; });
-  S.budget.forEach(function(b){ if(/subscri/i.test(b.name+' '+b.group)) S.assign['line:'+b.id]=m.id; });
+}
+ACT.acctpreset=function(){
+  checkpoint('set up accounts'); applyFlow();
   if(dlg.open) dlg.close();
-  save(); render(); toast('Accounts set: sales → GCash, business → Maya, debts → GSave');
+  save(); render(); toast('Sales → GCash · business → Maya · family share → GSave · spending from GCash');
 };
+
 
 ACT.acctsetup=function(){
   var acc=ACC().slice(); while(acc.length<4) acc.push({id:'new'+acc.length,name:''});
@@ -2936,7 +3039,7 @@ ACT.acctsetup=function(){
       S.budget.map(function(b){return row('line:'+b.id,'🧾 '+esc(b.name),'same as family');}).join('')+
       S.businesses.map(function(bz){return bz.opex.map(function(o){return row('opex:'+o.id,'🏪 '+esc(o.name)+' · '+esc(bz.name),'same as '+bz.name);}).join('');}).join('')+'</details>'+
     '<p class="muted" style="font-size:13px">Pick the account each one lives in. The app adds them up per account and tells you what to transfer.</p>'+
-    '<button type="button" class="sm" data-act="acctpreset">Reset to: sales → GCash · business → Maya · debts → GSave</button>',
+    '<button type="button" class="sm" data-act="acctpreset">Reset to: sales → GCash · business → Maya · family share → GSave</button>',
     function(v){
       var ids=acc.map(function(a,i){ var n=(v['acc'+i]||'').trim(); if(!n) return null; var ex=accById(a.id); if(ex){ ex.name=n; return ex.id; } var na={id:uid(),name:n}; acc[i]=na; return na.id; });
       S.accounts=acc.filter(function(a,i){return ids[i];});
@@ -2966,12 +3069,13 @@ ACT.acctxfer=function(el){
   openDialog('⇄ Record a transfer',
     '<input class="bigamt num" name="amount" inputmode="decimal" required placeholder="₱0" aria-label="Amount" value="'+esc(el.dataset.amt||'')+'">'+
     '<div class="grid g2"><label class="f"><span>From</span>'+sel('from',from)+'</label><label class="f"><span>To</span>'+sel('to',to)+'</label></div>'+
-    '<label class="f"><span>Transfer fee</span><input name="fee" inputmode="decimal" placeholder="0"></label>'+
+    '<label class="f"><span>Transfer fee (remembered for this route)</span><input name="fee" inputmode="decimal" value="'+num((S.fees||{})[from+'>'+to])+'"></label>'+
     '<div class="row" style="gap:6px;margin:-4px 0 8px">'+[0,10,15,25].map(function(n){return '<button type="button" class="chip" data-fee="'+n+'">'+(n?'₱'+n:'No fee')+'</button>';}).join('')+'</div>'+
     '<details class="more"><summary>Date &amp; note</summary>'+field('date','Date','type="date" required',todayISO())+field('note','Note','placeholder="e.g. InstaPay"')+'</details>'+
     '<p class="muted" style="font-size:13px">Send it in your bank app first, then record it here. This only moves money between accounts — the plan stays the same. The fee is counted as a cost.</p>',
     function(v){ var a=num(v.amount), fee=num(v.fee); if(a<=0){ toast('Enter the amount'); return false; } if(v.from===v.to){ toast('Choose two different accounts'); return false; }
       var ps=purposes().filter(function(p){return p.acct===v.from;}), feeTo=ps.some(function(p){return p.key==='family';})?'family':((ps.find(function(p){return p.key.indexOf('biz:')===0;})||{}).key||'family');
+      S.fees=S.fees||{}; S.fees[v.from+'>'+v.to]=fee;
       S.moves.push({id:uid(),date:v.date||todayISO(),kind:'acctx',from:v.from,to:v.to,amount:Math.round(a*100)/100,fee:fee,feeTo:feeTo,note:v.note||''});
       toast(money(a)+' '+accById(v.from).name+' → '+accById(v.to).name+(fee?' · fee '+money(fee):'')); }, 'Record');
 };
@@ -2993,13 +3097,7 @@ ACT.allotevery=function(){
   toast(d+b+o>0.5?'Allotted '+[d>0.5?'debts '+money(d):'',b>0.5?'budget '+money(b):'',o>0.5?'opex '+money(o):''].filter(Boolean).join(' · '):'Nothing to allot — up to date or no free money');
 };
 
-ACT.budallot=function(el){
-  var x=budgetDaily().find(function(y){return y.key===el.dataset.key;}); if(!x) return;
-  var a=Math.min(x.today,Math.max(0,availableMoney()));
-  if(!(a>0.5)){ toast('No money free — pay out salary first'); return; }
-  checkpoint('allot '+x.name); addAlloc(x,Math.round(a*100)/100);
-  save(); render(); toast(money(a)+' → '+x.name);
-};
+
 // Needs first, then the rest, each line's share for today, until the free money runs out.
 ACT.budallotall=function(el){
   var quiet=el&&el.dataset&&el.dataset.quiet;
@@ -3302,27 +3400,35 @@ ACT.getahead=function(el){
       S.moves.push({id:uid(),date:todayISO(),kind:'debtsave',to:x.d.id,amount:Math.round(a*100)/100,note:'Saved ahead for '+x.d.name});
       toast(money(a)+' saved ahead for '+x.d.name); }, 'Save ahead');
 };
-ACT.allot=function(el){
-  var d=S.debts.find(function(x){return x.id===el.dataset.id;}); if(!d) return;
-  var a=Math.min(num(el.dataset.amt),Math.max(0,availableMoney()));
-  if(!(a>0.5)){ toast('No money free — pay out salary first'); return; }
-  checkpoint('allot '+d.name);
-  S.moves.push({id:uid(),date:todayISO(),kind:'debtsave',to:d.id,amount:Math.round(a*100)/100,note:'Saved for '+d.name});
-  save(); render(); toast(money(a)+' set aside for '+d.name);
+
+ACT.draw=function(el){
+  var need=salaryDueSoFar(), h=Math.max(0,holding()), def=Math.min(h,need), pctD=salaryDebtPct();
+  var ta=accById(acctOf('tank')), fa=accById(acctOf('family')), da=accById(acctOf('debt')), route=acctOf('tank')+'>'+acctOf('family');
+  openDialog('👪 Pay salary',
+    '<div class="alloc-top num"><span>Salary waiting</span><b>'+money(need)+'</b></div>'+
+    '<small class="muted num">'+money(salaryDay(todayISO()))+' a day · '+salaryDaysDue()+' days not yet paid out · tank has '+money(h)+'</small>'+
+    '<input class="bigamt num" name="amount" inputmode="decimal" required aria-label="Amount" value="'+Math.round(def)+'">'+
+    '<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">'+[1,3,7].map(function(k){ var v=Math.min(h,need,salaryDay(todayISO())*k); return v>0.5?'<button type="button" class="chip" data-setamt="'+Math.round(v)+'">'+k+' day'+(k>1?'s':'')+'</button>':''; }).join('')+
+      (need>0.5?'<button type="button" class="chip" data-setamt="'+Math.round(Math.min(h,need))+'">All waiting</button>':'')+'</div>'+
+    '<label class="f"><span>Debt share %</span><input name="pct" inputmode="decimal" value="'+pctD+'"></label>'+
+    '<div class="note splitprev" style="margin-top:0"></div>'+
+    (ta&&fa&&ta.id!==fa.id?'<label class="check"><input type="checkbox" name="nomove"'+(acctHas()[ta.id]<def*(1-pctD/100)-0.5?' checked':'')+'><span>The money is still in '+esc(fa.name)+' — no transfer needed (the app nets it from the family-share transfer)</span></label>':'')+
+    '<label class="f"><span>Transfer fee'+(ta&&fa?' ('+esc(ta.name)+' → '+esc(fa.name)+')':'')+'</span><input name="fee" inputmode="decimal" value="'+num((S.fees||{})[route])+'"></label>'+
+    '<p class="muted" style="font-size:13px">The debt share is saved for your debts right away'+(da&&ta&&da.id===ta.id?' and stays in '+esc(da.name):'')+'. Send the budget share in your bank app'+(fa?' to '+esc(fa.name):'')+', then record it here.</p>',
+    function(v){ var a=num(v.amount), fee=num(v.fee), pc=Math.max(0,Math.min(100,num(v.pct))); if(a<=0) return false;
+      if(a+(v.nomove?0:fee)>h+0.5){ toast('The tank only has '+money(h)); return false; }
+      var sp=splitToDebtJars(a*pc/100), D=a*pc/100-sp.left;
+      S.salarySplit=S.salarySplit||{}; S.salarySplit.debt=pc; S.fees=S.fees||{}; S.fees[route]=fee;
+      if(v.nomove) fee=0;
+      var dm={id:uid(),date:todayISO(),kind:'draw',amount:a,fee:fee,toDebt:Math.round(D*100)/100,noMove:!!v.nomove||undefined,note:'Salary'};
+      S.moves.push(dm);
+      sp.legs.forEach(function(l){ S.moves.push({id:uid(),date:todayISO(),kind:'debtsave',to:l[0].id,amount:Math.round(l[1]*100)/100,note:'Salary share → '+l[0].name,draw:dm.id}); });
+      toast('Salary '+money(a)+(D>0.5?' · '+money(D)+' to debts, '+money(a-D)+' to budget':'')); }, 'Record');
+  var upd=function(){ var f=dlgForm, sp=f.querySelector('.splitprev'); if(!sp) return; var a=num(f.querySelector('[name=amount]').value), pc=num(f.querySelector('[name=pct]').value), d=a*pc/100;
+    f.querySelector('.splitprev').innerHTML='💰 Debts <b>'+money(d)+'</b>'+(da?' (stays in '+esc(da.name)+')':'')+' · 🧾 Budget <b>'+money(a-d)+'</b>'+(fa?' → send to '+esc(fa.name):''); };
+  dlgForm.oninput=upd; dlgForm.onclick=function(){ setTimeout(upd,0); }; upd();
 };
-ACT.draw=function(){
-  var need=salaryDueSoFar(), h=Math.max(0,holding()), def=Math.min(h,need>0.5?need:h);
-  openDialog('Pay the family salary',
-    '<div class="alloc-top num"><span>In the tank</span><b>'+money(h)+'</b></div>'+
-    '<small class="muted num">Salary due so far this month: '+money(need)+' ('+money(salary()/daysIn(thisMonth()))+' a day)</small>'+
-    field('amount','Amount to transfer to the spending account','inputmode="decimal" required',Math.round(def*100)/100)+
-    field('fee','Transfer fee (optional)','inputmode="decimal" placeholder="0"')+
-    '<p class="muted" style="font-size:13px">Do the real transfer in your bank app, then record it here.</p>'+
-    (h<need-0.5?'<div class="note warn">The tank has less than the salary due so far — pay out what\'s there; the rest follows as sales come in.</div>':''),
-    function(v){ var a=num(v.amount); if(a<=0) return false;
-      if(a+num(v.fee)>h+0.5){ toast('The tank only has '+money(h)); return false; }
-      S.moves.push({id:uid(),date:todayISO(),kind:'draw',amount:a,fee:num(v.fee),note:'Salary for '+monthLabel(thisMonth(),true)}); toast('Salary recorded'); }, 'Record');
-};
+
 ACT.sweep=function(el){
   var step=currentMoneyStep(), h=Math.max(0,holding());
   var opts=[['emergency','Emergency fund'],['education','Kids\' education fund'],['retirement','Retirement']];
@@ -3422,7 +3528,36 @@ ACT.addsub=function(el){
 };
 ACT.addfam=function(){ checkpoint('add family member'); S.family.push({id:uid(),name:'',age:''}); save(); render(); };
 ACT.addbiz=function(){ checkpoint('add business'); S.businesses.push(newBiz('Business '+(S.businesses.length+1))); save(); render(); };
-ACT.addopex=function(el){ checkpoint('add opex line'); var b=S.businesses.find(function(x){return x.id===el.dataset.biz;}); if(!b) return; b.opex.push({id:uid(),name:'',amount:0,freq:'month',day:30,from:todayISO()}); save(); render(); };
+ACT.addopex=function(el){ ACT.opxedit({dataset:{bid:el.dataset.biz, cat:el.dataset.cat||''}}); };
+ACT.opxedit=function(el){
+  var b=S.businesses.find(function(x){return x.id===el.dataset.bid;}); if(!b) return;
+  var o=el.dataset.oid?b.opex.find(function(x){return x.id===el.dataset.oid;}):null, isNew=!o;
+  o=o||{name:'',amount:0,freq:'month',day:+todayISO().slice(8,10),cat:el.dataset.cat||'other'};
+  var f=o.freq||'month', auto=!!metaFor(o);
+  openDialog((isNew?'Add':'Edit')+' expense · '+b.name,
+    field('name','Name','required placeholder="e.g. Canva Pro, Rent, Meta Ads"',o.name)+
+    '<label class="f"><span>Category</span><select name="cat">'+OPEX_CATS.map(function(c){return '<option value="'+c[0]+'"'+(opexCat(o)===c[0]?' selected':'')+'>'+c[1]+' '+c[2]+'</option>';}).join('')+'</select></label>'+
+    (auto?'<div class="note">📣 Linked to Meta Ads: the amount is your actual ad spend + VAT, updated on every sync.</div>':
+    '<div class="grid g2"><label class="f"><span>Amount</span><input name="amount" inputmode="decimal" value="'+(num(o.amount)||'')+'" placeholder="0"></label>'+
+    '<label class="f"><span>Every</span><select name="freq">'+Object.keys(FREQ_LABEL).map(function(k){return '<option value="'+k+'"'+(f===k?' selected':'')+'>'+FREQ_LABEL[k]+'</option>';}).join('')+'</select></label></div>'+
+    '<label class="f due-month"><span>Due day of the month</span><select name="day">'+Array.apply(null,{length:31}).map(function(_,i){return '<option value="'+(i+1)+'"'+((+o.day||1)===i+1?' selected':'')+'>'+ordinal(i+1)+'</option>';}).join('')+'</select></label>'+
+    '<label class="f due-week"><span>Due weekday</span><select name="wd">'+WEEKDAYS.map(function(w,i){return '<option value="'+i+'"'+((o.wd==null?6:+o.wd)===i?' selected':'')+'>'+w+'</option>';}).join('')+'</select></label>'+
+    '<label class="f due-date"><span>Next due date</span><input type="date" name="date" value="'+esc(o.date||'')+'"></label>'+
+    '<small class="muted due-none">Set aside each open day.</small>')+
+    (isNew?'':'<button type="button" class="danger" data-delopx="'+o.id+'" data-bid="'+b.id+'" style="margin-top:8px">Delete this expense</button>'),
+    function(v){
+      if(!(v.name||'').trim()){ toast('Give it a name'); return false; }
+      var line=isNew?{id:uid(),from:todayISO()}:o;
+      line.name=v.name.trim(); line.cat=v.cat;
+      if(!auto){ line.amount=num(v.amount); line.freq=v.freq; line.day=+v.day||1; line.wd=+v.wd; line.date=v.date||''; }
+      if(isNew) b.opex.push(line);
+      toast(isNew?'Expense added':'Saved');
+    }, isNew?'Add':'Save');
+  var sync=function(){ var fr=dlgForm.querySelector('[name=freq]'); if(!fr) return; var v=fr.value;
+    dlgForm.querySelector('.due-month').hidden=v!=='month'; dlgForm.querySelector('.due-week').hidden=v!=='week';
+    dlgForm.querySelector('.due-date').hidden=['2week','quarter','year','once'].indexOf(v)<0; dlgForm.querySelector('.due-none').hidden=v!=='day'; };
+  dlgForm.oninput=sync; sync();
+};
 ACT.export=function(){
   // Inside the Android app the WebView can't download blobs; hand the JSON to
   // the native side, which opens the system "save as" picker.
@@ -3485,6 +3620,7 @@ function setPath(path,val){ var p=path.split('.'), o=S; for(var i=0;i<p.length-1
 var rerenderT;
 document.addEventListener('keydown',function(e){ if(e.key==='Enter'&&e.target.classList&&e.target.classList.contains('cpsearch')) e.preventDefault(); });
 document.addEventListener('input',function(e){
+  if(e.target.name&&e.target.name.indexOf('qty_')===0&&e.target.dataset.price){ var af=e.target.closest('form').querySelector('[name=amount]'); var qn=num(e.target.value); if(qn>0) af.value=qn*num(e.target.dataset.price); return; }
   if(!e.target.classList.contains('cpsearch')) return;
   var q=e.target.value.trim().toLowerCase(), box=e.target.closest('.cpick');
   box.querySelectorAll('.cpi').forEach(function(x){ x.hidden=!!q&&x.dataset.name.indexOf(q)<0; });
@@ -3492,6 +3628,9 @@ document.addEventListener('input',function(e){
 });
 document.addEventListener('change',function(e){
   var el=e.target;
+  if(el.dataset&&el.dataset.bizunit){ var ub=S.businesses.find(function(x){return x.id===el.dataset.bid;}); if(ub){ checkpoint('edit unit',true); ub.unit=ub.unit||{name:'',price:0};
+      ub.unit[el.dataset.bizunit]=el.dataset.bizunit==='price'?num(el.value):el.value.trim(); if(!ub.unit.name&&!num(ub.unit.price)) delete ub.unit; save(); } return; }
+  if(el.name==='source'&&el.closest('#dlgForm')){ el.closest('form').querySelectorAll('.unitq').forEach(function(u){ u.hidden=u.dataset.for!==el.value; }); }
   if(el.dataset&&el.dataset.acctlogo&&el.files&&el.files[0]){
     readLogo(el.files[0],function(url){ var a=accById(el.dataset.acctlogo); if(!url||!a) return; a.logo=url; save(); if(dlg.open) dlg.close(); render(); toast('Logo saved'); });
     return;
@@ -3555,6 +3694,11 @@ document.addEventListener('change',function(e){
   }
 });
 document.addEventListener('click',function(e){
+  var qb=e.target.closest('[data-qty]');
+  if(qb){ var qf=qb.closest('form'), qi=qb.closest('.unitq').querySelector('input'); qi.value=qb.dataset.qty; qf.querySelector('[name=amount]').value=+qb.dataset.qty*+qb.dataset.price;
+    qb.parentNode.querySelectorAll('.chip').forEach(function(x){x.classList.toggle('on',x===qb);}); return; }
+  var sa=e.target.closest('[data-setamt]');
+  if(sa){ var ai=sa.closest('form').querySelector('[name=amount]'); ai.value=sa.dataset.setamt; sa.parentNode.querySelectorAll('.chip').forEach(function(x){x.classList.toggle('on',x===sa);}); return; }
   var fc=e.target.closest('[data-fee]');
   if(fc){ var fi=fc.closest('form').querySelector('[name=fee]'); fi.value=+fc.dataset.fee?fc.dataset.fee:''; fc.parentNode.querySelectorAll('.chip').forEach(function(x){x.classList.toggle('on',x===fc);}); return; }
   // Category picker rows/chips inside dialogs
@@ -3596,7 +3740,7 @@ document.addEventListener('click',function(e){
     if(!bl2.subs.length) bl2.amount=0;
     save(); render(); return;
   }
-  if(el.dataset.delopx){ checkpoint('delete opex line'); var bz3=S.businesses.find(function(x){return x.id===el.dataset.bid;}); if(bz3){ bz3.opex=bz3.opex.filter(function(x){return x.id!==el.dataset.delopx;}); save(); render(); } return; }
+  if(el.dataset.delopx){ if(dlg.open) dlg.close(); checkpoint('delete opex line'); var bz3=S.businesses.find(function(x){return x.id===el.dataset.bid;}); if(bz3){ bz3.opex=bz3.opex.filter(function(x){return x.id!==el.dataset.delopx;}); save(); render(); } return; }
   if(el.dataset.del){
     var coll=el.dataset.del;
     checkpoint('delete');
