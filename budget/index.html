@@ -365,6 +365,11 @@ tr.tap{cursor:pointer}
 .oline{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:1px solid var(--line);border-radius:12px;padding:9px 11px;margin:6px 0;font-weight:400}
 .oline .ol{display:flex;flex-direction:column;min-width:0}.oline small{font-size:12px}
 .subsum{font-size:12px;color:var(--muted);background:var(--line);border-radius:10px;padding:6px 10px;margin:2px 0 4px}
+.dstrip{display:flex;flex-wrap:wrap;gap:2px;margin:5px 0 3px}
+.ds{width:7px;height:10px;border-radius:2px;background:var(--line)}
+.ds.ok{background:var(--good)}.ds.miss{background:var(--bad);opacity:.75}.ds.off{opacity:.35}
+.ds.now{background:transparent;box-shadow:inset 0 0 0 1.5px var(--brand)}.ds.today.ok{box-shadow:0 0 0 1.5px var(--brand)}
+.dsrow.tap{cursor:pointer}.dsrow.tap:active{background:var(--line)}
 .wgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .wtile{display:flex;gap:8px;align-items:flex-start;text-align:left;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--card);min-width:0;font-weight:400}
 .wt{display:flex;flex-direction:column;min-width:0;gap:1px}
@@ -822,8 +827,8 @@ function opexSaving(o, b){
   // Even share of what's left over the open days left (today included).
   var share=isOpen(b,t)||t===next?Math.max(0,Math.min(st.due-jar,(st.due-jar+jarToday)/openLeft-jarToday)):0;
   return {o:o, b:b, next:next, due:st.due, expected:expected, jar:jar, daily:dailyValue(o,b),
-    today:share, needPerDay:Math.max(0,st.due-jar)/openLeft,
-    ready:jar>=st.due-0.5, daysLeft:Math.max(0,daysBetween(t,next))};
+    today:share, needPerDay:share>0.5?(st.due-jar+jarToday)/openLeft:Math.max(0,st.due-jar)/Math.max(1,openLeft-(isOpen(b,t)?1:0)), fromTomorrow:share<=0.5,
+    ready:jar>=st.due-0.5, daysLeft:Math.max(0,daysBetween(t,next)), start:addDays(start,1)};
 }
 function opexSavings(bizId){
   var out=[];
@@ -1085,7 +1090,8 @@ function debtSaving(d){
   var savedToday=sum(S.moves.filter(function(m){return m.kind==='debtsave'&&m.to===d.id&&m.date===t;}),function(m){return num(m.amount);});
   var today=t<start?0:Math.max(0,Math.min(A-saved,(A-saved+savedToday)/(daysLeft+1)-savedToday));
   return {d:d, due:due, amount:A, start:start, days:days, daily:daily, elapsed:elapsed, expected:expected, saved:saved, today:today, daysLeft:daysLeft,
-    needPerDay:Math.max(0,A-saved)/(daysLeft+1), ready:saved>=A-0.5};
+    // Per day from now: today's share still open → spread over today and the rest; done for today → from tomorrow.
+    needPerDay:today>0.5?(A-saved+savedToday)/(daysLeft+1):Math.max(0,A-saved)/Math.max(1,daysLeft), fromTomorrow:today<=0.5&&daysLeft>0, ready:saved>=A-0.5};
 }
 /* Wallets: where the money physically sits. Balances come from the app's own
    records; a transfer ('xfer' move) carries money between wallets and its fee
@@ -1903,15 +1909,14 @@ V.income=function(){
   var osv=opexSavings(), oToday=sum(osv,function(x){return x.today;}), bfree=Math.max(0,wal.free);
   var firstOpen=osv.find(function(x){return !x.ready;});
   var oRow=function(x,i){
-    var behind=!x.meta&&x.expected-x.jar>x.daily+0.5;
-    return '<div class="dsrow"><div class="dl"><b><span class="prio'+(x===firstOpen?' top':'')+'">'+(i+1)+'</span> '+esc(x.o.name)+'</b>'+
+    var b0=x.b, ds=x.meta?null:dayStrip(x.start||todayISO(),x.next,savedByDay('opexsave',x.o.id),function(d){return isOpen(b0,d)||d===x.next;});
+    return '<div class="dsrow tap" data-act="opexsave" data-oid="'+x.o.id+'" role="button" tabindex="0"><div class="dl"><b><span class="prio'+(x===firstOpen?' top':'')+'">'+(i+1)+'</span> '+esc(x.o.name)+'</b>'+
       (x.meta?'<small class="num">Meta charges when it bills · not yet charged '+money(x.due)+' (incl. VAT)</small>':
       '<small class="num">Due '+shortDate(x.next)+(x.daysLeft?' · '+x.daysLeft+' day'+(x.daysLeft>1?'s':'')+' left':' · today')+' · '+money(x.due)+PER_LABEL[x.o.freq||'month']+'</small>')+
-      '<div class="bar thin '+(x.ready?'good':behind?'warn':'')+'" style="margin-top:5px"><i style="width:'+pct(x.jar,x.due).toFixed(1)+'%"></i></div>'+
-      '<small class="num">saved '+money(x.jar)+' · '+(x.ready?'ready ✓':'needs '+money(x.needPerDay)+'/day from now')+(behind?' · <span class="neg">behind '+money(x.expected-x.jar)+'</span>':'')+'</small>'+
-      (x===firstOpen&&!behind&&!x.meta&&bfree>0.5?'<button class="link" style="padding:2px 0;font-size:12px" data-act="opexahead" data-oid="'+x.o.id+'">⏩ Get ahead on this one</button>':'')+'</div>'+
+      '<div class="bar thin'+(x.ready?' good':'')+'" style="margin-top:5px"><i style="width:'+pct(x.jar,x.due).toFixed(1)+'%"></i></div>'+(ds?ds.html:'')+
+      '<small class="num">saved '+money(x.jar)+' · '+(x.ready?'ready ✓':'save <b>'+money(x.needPerDay)+(x.meta?'</b> now':'/day</b> '+(x.fromTomorrow?'from tomorrow':'from now'))+(ds&&ds.missed?' <span class="muted">('+ds.missed+' missed day'+(ds.missed>1?'s':'')+' spread in)</span>':''))+'</small></div>'+
       (x.ready&&x.meta?'<span class="pill good">✓ set aside</span>':x.ready?'<button class="primary sm" data-act="bizexp" data-line="'+x.b.id+'|'+x.o.id+'" data-amt="'+Math.round(x.due)+'">Pay</button>'
-        :x.today>0.5?(bfree>0.5?'<button class="primary sm" data-act="opexallot" data-oid="'+x.o.id+'" data-amt="'+Math.round(x.today*100)/100+'">Allot '+shortMoney(Math.min(x.today,bfree))+'</button>':'<button class="sm" disabled>No money free</button>')
+        :x.today>0.5?(bfree>0.5?'<button class="primary sm" data-act="opexsave" data-oid="'+x.o.id+'">Save '+money(Math.min(x.today,bfree))+'</button>':'<button class="sm" disabled>No money free</button>')
         :'<span class="pill good">✓ today</span>')+'</div>';
   };
   var idx={}; osv.forEach(function(x,i){ idx[x.o.id]=i; });
@@ -2235,6 +2240,22 @@ V.budget=function(){
 };
 
 // Payments falling due in the next n days, soonest first.
+// One mark per day of the saving window: saved, missed (a past day with
+// nothing set aside), today, still to come, or closed (business days off).
+function dayStrip(from, to, savedOn, openFn){
+  var t=todayISO(), out=[], x=from, g=0, missed=0;
+  if(daysBetween(from,to)>40) x=addDays(to,-40);
+  while(x<=to&&g++<45){
+    var open=!openFn||openFn(x), cls=!open?'off':savedOn[x]?'ok':x<t?'miss':x===t?'now':'fut';
+    if(cls==='miss') missed++;
+    out.push('<i class="ds '+cls+(x===t?' today':'')+'" title="'+esc(shortDate(x))+(cls==='ok'?' · saved '+money(savedOn[x]):cls==='miss'?' · missed':cls==='off'?' · closed':'')+'"></i>');
+    x=addDays(x,1);
+  }
+  return {html:'<div class="dstrip" aria-hidden="true">'+out.join('')+'</div>', missed:missed};
+}
+function savedByDay(kind, id){
+  var m={}; S.moves.forEach(function(x){ if(x.kind===kind&&x.to===id&&num(x.amount)>0) m[x.date]=(m[x.date]||0)+num(x.amount); }); return m;
+}
 function debtSavingsCard(){
   var list=debtSavings(); if(!list.length) return '';
   var today=sum(list,function(x){return x.today;}), free=Math.max(0,availableMoney());
@@ -2242,19 +2263,19 @@ function debtSavingsCard(){
     '<div class="row between" style="margin:4px 0"><small class="muted num">Free salary money: '+money(free)+'</small><span class="row" style="gap:6px">'+
       (list.some(function(x){return x.saved>0.5;})?'<button class="sm" data-act="resetdebtsave" title="Return unused savings to free money">↺ Reset</button>':'')+
       (today>0.5?'<button class="sm primary" data-act="allotall" '+(free>0.5?'':'disabled')+'>Allot all</button>':'')+'</span></div>'+
-    info('How priority works','<ol><li><b>Everyone stays on pace:</b> each debt first gets its daily share, soonest due first.</li>'+
-      '<li><b>Soonest due catches up first:</b> what\'s left goes to the nearest due date until it\'s on track, then the next.</li>'+
-      '<li><b>Get ahead</b> on the next due when you have extra, so it\'s ready early.</li></ol>'+
+    info('How it works','<ol><li><b>Daily amount:</b> what\'s still needed ÷ the days left to the due date (today included). Missed days are spread over the days left — there\'s no catching up in one go.</li>'+
+      '<li><b>Day marks:</b> green = saved that day, red = missed, outlined = today, grey = still to come.</li>'+
+      '<li><b>Tap any debt</b> to save today\'s share, a few days ahead, or everything still needed.</li>'+
+      '<li><b>Allot all</b> fills the soonest due first.</li></ol>'+
       '<p>Each payment is spread over the days until it\'s due'+(S.saveStart?' (saving since '+shortDate(S.saveStart)+')':'')+'. “Needs ₱X/day” is what it takes from today to be ready on time.</p>');
   var firstOpen=list.find(function(x){return !x.ready;});
   list.forEach(function(x,i){
-    var ready=x.saved>=x.amount-0.5, behind=x.expected-x.saved>x.daily+0.5;
-    h+='<div class="dsrow"><div class="dl"><b><span class="prio'+(x===firstOpen?' top':'')+'">'+(i+1)+'</span> '+esc(x.d.name)+'</b><small class="num">Due '+shortDate(x.due)+(x.daysLeft?' · '+x.daysLeft+' day'+(x.daysLeft>1?'s':'')+' left':' · today')+' · '+money(x.amount)+'</small>'+
-      '<div class="bar thin '+(ready?'good':behind?'warn':'')+'" style="margin-top:5px"><i style="width:'+pct(x.saved,x.amount).toFixed(1)+'%"></i></div>'+
-      '<small class="num">saved '+money(x.saved)+' · '+(x.ready?'ready ✓':'needs '+money(x.needPerDay)+'/day from now')+(behind?' · <span class="neg">behind '+money(x.expected-x.saved)+'</span>':'')+'</small>'+
-      (x===firstOpen&&!behind&&free>0.5?'<button class="link" style="padding:2px 0;font-size:12px" data-act="getahead" data-id="'+x.d.id+'">⏩ Get ahead on this one</button>':'')+'</div>'+
+    var ready=x.saved>=x.amount-0.5, ds=dayStrip(x.start,x.due,savedByDay('debtsave',x.d.id));
+    h+='<div class="dsrow tap" data-act="'+(ready?'debtinfo':'allot')+'" data-id="'+x.d.id+'" role="button" tabindex="0"><div class="dl"><b><span class="prio'+(x===firstOpen?' top':'')+'">'+(i+1)+'</span> '+esc(x.d.name)+'</b><small class="num">Due '+shortDate(x.due)+(x.daysLeft?' · '+x.daysLeft+' day'+(x.daysLeft>1?'s':'')+' left':' · today')+' · '+money(x.amount)+'</small>'+
+      '<div class="bar thin'+(ready?' good':'')+'" style="margin-top:5px"><i style="width:'+pct(x.saved,x.amount).toFixed(1)+'%"></i></div>'+ds.html+
+      '<small class="num">saved '+money(x.saved)+' · '+(ready?'ready ✓':'save <b>'+money(x.needPerDay)+'/day</b> '+(x.fromTomorrow?'from tomorrow':'from now')+(ds.missed?' <span class="muted">('+ds.missed+' missed day'+(ds.missed>1?'s':'')+' spread in)</span>':''))+'</small></div>'+
       (ready?'<button class="primary sm" data-act="pay" data-id="'+x.d.id+'">Pay</button>'
-        :x.today>0.5?(free>0.5?'<button class="primary sm" data-act="allot" data-id="'+x.d.id+'">Save '+shortMoney(Math.min(x.today,free))+'</button>':'<button class="sm" disabled>No money free</button>')
+        :x.today>0.5?(free>0.5?'<button class="primary sm" data-act="allot" data-id="'+x.d.id+'">Save '+money(Math.min(x.today,free))+'</button>':'<button class="sm" disabled>No money free</button>')
         :'<span class="pill good">✓ today</span>')+'</div>';
   });
   return h+'</div>';
@@ -2998,6 +3019,15 @@ function allotDialog(title, perDay, td, need, free, onSave){
       if(a>free+0.5){ toast('Only '+money(free)+' is free'); return false; }
       onSave(Math.min(a,need)); }, 'Allot');
 }
+ACT.opexsave=function(el){
+  var x=opexSavings().find(function(y){return y.o.id===el.dataset.oid;}); if(!x) return;
+  var t=todayISO(), td=sum(S.moves.filter(function(m){return m.kind==='opexsave'&&m.to===x.o.id&&m.date===t;}),function(m){return num(m.amount);});
+  var need=Math.max(0,x.due-x.jar);
+  if(need<=0.5){ toast(x.o.name+' is fully set aside ✓'); return; }
+  var left=x.meta?1:Math.max(1,openCount(x.b,addDays(t,-1),x.next));
+  allotDialog('Set aside · '+x.o.name,(need+td)/left,td,need,bizFree(),function(a){
+    S.moves.push({id:uid(),date:t,kind:'opexsave',to:x.o.id,bizId:x.b.id,amount:Math.round(a*100)/100,note:'Set aside · '+x.o.name}); toast(money(a)+' set aside for '+x.o.name); });
+};
 ACT.budallot=function(el){
   var x=budgetDaily().find(function(y){return y.key===el.dataset.key;}); if(!x) return;
   var left=x.daysLeft, td=allottedToday(x.key), have=Math.max(x.funded,x.spent), need=Math.max(0,x.plan-have);
