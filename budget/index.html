@@ -578,7 +578,7 @@ function migrate(){
   if(!S.salaryFrom) S.salaryFrom=thisMonth()+'-01';
   if(!S.salarySplit) S.salarySplit={debt:50, from:todayISO()};
   S.fees=S.fees||{};
-  if(S.accounts&&S.accounts.length&&S.flowV!==2&&['gcash','maya','gsave'].every(function(n){return S.accounts.some(function(a){return a.name.toLowerCase()===n;});})){ applyFlow(); S.flowV=2; }
+  if(S.accounts&&S.accounts.length&&S.flowV!==3&&['gcash','maya','gsave'].every(function(n){return S.accounts.some(function(a){return a.name.toLowerCase()===n;});})){ applyFlow(); S.flowV=3; }
   (S.businesses||[]).forEach(function(b){ if(!b.unit&&/nav\s*club/i.test(b.name||'')) b.unit={name:'client',price:3250}; });
   if(!S.accounts){
     var byBank={}; S.accounts=[]; S.assign={};
@@ -1023,7 +1023,7 @@ function extraToDebt(){ return S.extraOverride!=null ? num(S.extraOverride) : Ma
 function holding(){
   var inflow=sum(flowMonths(),function(mk){return monthFlow(mk).family;});
   var out=sum(S.moves.filter(function(m){return m.kind==='draw'||m.kind==='sweep';}),function(m){return num(m.amount)+num(m.fee);});
-  return num(S.holdingStart)+inflow-out+xferNet('tank');
+  return num(S.holdingStart)+inflow-out+xferNet('tank')-acctFees('tank');
 }
 /* Daily living. Income arrives daily, so nothing asks for a month's money up
    front: the salary is earned day by day, and each debt with a due date is
@@ -1492,23 +1492,25 @@ function todayCard(){
 function accountsCard(){
   if(!ACC().length) return '<div class="card"><h2>💳 Where is your money kept?</h2>'+
     '<p class="muted" style="font-size:14px">Tell the app your real accounts and it will say exactly what to transfer where. Money kept in the same account never needs a transfer.</p>'+
-    '<div class="row" style="gap:6px;flex-wrap:wrap"><button class="primary sm" data-act="acctpreset">GCash · Maya · GSave</button><button class="sm" data-act="acctsetup">Set up my own</button></div>'+
-    '<small class="muted" style="display:block;margin-top:6px">Sales arrive in GCash → business share to Maya (pays all business expenses) · family share to GSave (salary tank, debt savings) · salary paid out to GCash for family spending.</small></div>';
+    '<div class="row" style="gap:6px;flex-wrap:wrap"><button class="primary sm" data-act="acctpreset">Use our 5 wallets</button><button class="sm" data-act="acctsetup">Set up my own</button></div>'+
+    '<small class="muted" style="display:block;margin-top:6px">GCash: income tank (all sales) · Maya: business wallet · Maya Savings: debt repayment · GCash - Wife: budget wallet · GSave: emergency &amp; protection.</small></div>';
   var pl=acctPlan(), tot=sum(pl.rows,function(r){return r.has;});
-  return '<div class="card"><div class="row between"><h2>💳 Accounts</h2><span class="row" style="gap:8px"><b class="num">'+money(tot)+'</b><button class="icon" data-act="acctsetup" aria-label="Set up accounts">⚙</button></span></div>'+
+  var matched=S.moves.some(function(m){return m.kind==='acctadj';});
+  return '<div class="card"><div class="row between"><h2>💳 Wallets</h2><span class="row" style="gap:8px"><b class="num">'+money(tot)+'</b><button class="icon" data-act="acctsetup" aria-label="Set up wallets">⚙</button></span></div>'+
+    '<div class="row" style="gap:6px;margin:4px 0 6px"><button class="sm'+(matched?'':' primary')+'" data-act="matchall">⚖️ Match all balances</button>'+(matched?'':'<small class="muted" style="align-self:center">do this once with your real balances</small>')+'</div>'+
     (pl.tx.length?'<div class="xnow"><div class="k">⇄ Transfer now</div>'+pl.tx.map(function(t){
         return '<div class="row between ptx"><span class="pxt"><b>'+esc(t.from.name)+' → '+esc(t.to.name)+'</b><small class="muted">for '+esc(t.for.join(', ')||'balance')+'</small></span>'+
           '<button class="primary sm" data-act="acctxfer" data-from="'+t.from.id+'" data-to="'+t.to.id+'" data-amt="'+t.amount+'">'+money(t.amount)+(num((S.fees||{})[t.from.id+'>'+t.to.id])>0?'<small> +'+money(S.fees[t.from.id+'>'+t.to.id])+' fee</small>':'')+'</button></div>'; }).join('')+
         '<small class="muted" style="display:block;margin-top:4px">These grow as you allot. Send whenever you like — one transfer for several days means one fee. Tap after sending.</small></div>'
       :'<div class="note good" style="margin:8px 0">✓ Every account has what it should'+(pl.sal?' — only the salary is waiting.':' — nothing to transfer.')+'</div>')+
-    (pl.sal&&pl.sal.from&&pl.sal.to?'<div class="xnow"><div class="row between ptx" style="border:0"><span class="pxt"><b>👪 Salary · '+esc(pl.sal.from.name)+' → '+esc(pl.sal.to.name)+'</b>'+
-        '<small class="muted">'+pl.sal.days+' days waiting · '+money(pl.sal.amount)+' total'+(salaryDebtPct()>0?' · '+salaryDebtPct()+'% stays for debts':'')+'</small></span>'+
-        '<button class="primary sm" data-act="draw">Pay '+money(pl.sal.budget)+'</button></div></div>':'')+
+    (pl.sal&&pl.sal.from&&pl.sal.to?'<div class="xnow"><div class="row between ptx" style="border:0"><span class="pxt"><b>👪 Salary waiting · '+pl.sal.days+' days</b>'+
+        '<small class="muted">record it first: '+(salaryDebtPct()>0?salaryDebtPct()+'% to debts, the rest to the budget — the transfers then appear below':'the transfer then appears below')+'</small></span>'+
+        '<button class="primary sm" data-act="draw">Pay '+money(pl.sal.amount)+'</button></div></div>':'')+
     (pl.short>0.5?'<div class="note warn">'+money(pl.short)+' is planned but not in any account yet — record sales or the salary payout, or match a balance.</div>':'')+
     '<div class="wgrid">'+pl.rows.map(function(r){
       var st=Math.abs(r.diff)<0.5?'<span class="pill good">✓</span>':r.diff>0?'<span class="pill warn">needs '+shortMoney(r.diff)+'</span>':'<span class="pill">extra '+shortMoney(-r.diff)+'</span>';
       return '<button class="wtile" data-act="acct" data-id="'+r.a.id+'">'+acctLogo(r.a)+'<span class="wt"><b>'+esc(r.a.name)+'</b>'+
-        '<span class="wv num'+(r.has<-0.5?' neg':'')+'">'+money(r.has)+'</span><small class="num">should have '+money(r.should)+'</small>'+st+
+        '<small>should hold</small><span class="wv num">'+money(r.should)+'</span><small class="num">has now '+money(r.has)+'</small>'+st+
         '<small>'+esc(r.ps.map(function(p){return p.name;}).join(' · '))+'</small></span></button>'; }).join('')+'</div></div>';
 }
 function walletsCard(){
@@ -3012,17 +3014,21 @@ ACT.allot=function(el){
 // ---- accounts actions
 function applyFlow(){
   var get=function(n){ var a=ACC().find(function(x){return x.name.toLowerCase()===n.toLowerCase();}); if(!a){ a={id:uid(),name:n}; ACC().push(a); } return a; };
-  var g=get('GCash'), m=get('Maya'), s2=get('GSave');
-  // Sales come into GCash. The family share goes to GSave (salary tank, debt
-  // savings, funds and dreams); the business share goes to Maya, which pays
-  // every business expense. Salary paid out goes to GCash for family spending.
-  S.assign={family:g.id, tank:s2.id, debt:s2.id, protect:s2.id, dreams:s2.id};
+  var g=get('GCash'), m=get('Maya'), ms=get('Maya Savings'), w=get('GCash - Wife'), s2=get('GSave');
+  // GCash is the income tank: every sale lands there and the family share waits
+  // there until salary is paid out. Maya is the business wallet (pays every
+  // business expense). Maya Savings holds debt repayment savings. GCash - Wife
+  // is the budget wallet for family spending. GSave keeps emergency and other
+  // protection funds (and dream savings).
+  S.assign={tank:g.id, family:w.id, debt:ms.id, protect:s2.id, dreams:s2.id};
   S.businesses.forEach(function(b){ S.assign['biz:'+b.id]=m.id; S.assign['in:biz:'+b.id]=g.id; });
+  var order=[g,m,ms,w,s2]; S.accounts=order.concat(ACC().filter(function(a){return order.indexOf(a)<0;}));
 }
+
 ACT.acctpreset=function(){
-  checkpoint('set up accounts'); applyFlow();
+  checkpoint('set up accounts'); applyFlow(); S.flowV=3;
   if(dlg.open) dlg.close();
-  save(); render(); toast('Sales → GCash · business → Maya · family share → GSave · spending from GCash');
+  save(); render(); toast('GCash income · Maya business · Maya Savings debts · GCash - Wife budget · GSave protection');
 };
 
 
@@ -3039,7 +3045,7 @@ ACT.acctsetup=function(){
       S.budget.map(function(b){return row('line:'+b.id,'🧾 '+esc(b.name),'same as family');}).join('')+
       S.businesses.map(function(bz){return bz.opex.map(function(o){return row('opex:'+o.id,'🏪 '+esc(o.name)+' · '+esc(bz.name),'same as '+bz.name);}).join('');}).join('')+'</details>'+
     '<p class="muted" style="font-size:13px">Pick the account each one lives in. The app adds them up per account and tells you what to transfer.</p>'+
-    '<button type="button" class="sm" data-act="acctpreset">Reset to: sales → GCash · business → Maya · family share → GSave</button>',
+    '<button type="button" class="sm" data-act="acctpreset">Reset to: GCash income · Maya business · Maya Savings debts · GCash - Wife budget · GSave protection</button>',
     function(v){
       var ids=acc.map(function(a,i){ var n=(v['acc'+i]||'').trim(); if(!n) return null; var ex=accById(a.id); if(ex){ ex.name=n; return ex.id; } var na={id:uid(),name:n}; acc[i]=na; return na.id; });
       S.accounts=acc.filter(function(a,i){return ids[i];});
@@ -3074,10 +3080,22 @@ ACT.acctxfer=function(el){
     '<details class="more"><summary>Date &amp; note</summary>'+field('date','Date','type="date" required',todayISO())+field('note','Note','placeholder="e.g. InstaPay"')+'</details>'+
     '<p class="muted" style="font-size:13px">Send it in your bank app first, then record it here. This only moves money between accounts — the plan stays the same. The fee is counted as a cost.</p>',
     function(v){ var a=num(v.amount), fee=num(v.fee); if(a<=0){ toast('Enter the amount'); return false; } if(v.from===v.to){ toast('Choose two different accounts'); return false; }
-      var ps=purposes().filter(function(p){return p.acct===v.from;}), feeTo=ps.some(function(p){return p.key==='family';})?'family':((ps.find(function(p){return p.key.indexOf('biz:')===0;})||{}).key||'family');
+      // The fee is a cost to the money in the sending account: family, tank, or that business.
+      var ps=purposes().filter(function(p){return p.acct===v.from;}), has=function(k){return ps.some(function(p){return p.key===k;});};
+      var feeTo=has('family')?'family':has('tank')?'tank':((ps.find(function(p){return p.key.indexOf('biz:')===0;})||{}).key||'family');
       S.fees=S.fees||{}; S.fees[v.from+'>'+v.to]=fee;
       S.moves.push({id:uid(),date:v.date||todayISO(),kind:'acctx',from:v.from,to:v.to,amount:Math.round(a*100)/100,fee:fee,feeTo:feeTo,note:v.note||''});
       toast(money(a)+' '+accById(v.from).name+' → '+accById(v.to).name+(fee?' · fee '+money(fee):'')); }, 'Record');
+};
+ACT.matchall=function(){
+  var pl=acctPlan();
+  openDialog('⚖️ Match all balances',
+    '<p class="muted" style="font-size:13px;margin-top:0">Open each app and type the balance you see right now. The app records the difference as an adjustment, so from here on it knows exactly what each wallet contains.</p>'+
+    pl.rows.map(function(r,i){ return '<label class="f"><span>'+esc(r.a.name)+' <small class="muted">· app counts '+money(r.has)+'</small></span><input name="bal'+i+'" inputmode="decimal" placeholder="leave blank to skip"></label>'; }).join(''),
+    function(v){ var n=0;
+      pl.rows.forEach(function(r,i){ var raw=(v['bal'+i]||'').trim(); if(raw==='') return; var d=num(raw)-r.has; if(Math.abs(d)<0.5) return;
+        S.moves.push({id:uid(),date:todayISO(),kind:'acctadj',acct:r.a.id,amount:Math.round(d*100)/100,note:'Matched to '+r.a.name}); n++; });
+      toast(n?n+' wallet'+(n>1?'s':'')+' matched — Transfer now shows what to send':'Nothing to change'); }, 'Match');
 };
 ACT.acctmatch=function(el){
   var pl=acctPlan(), r=pl.rows.find(function(x){return x.a.id===el.dataset.id;}); if(!r) return;
@@ -3403,31 +3421,29 @@ ACT.getahead=function(el){
 
 ACT.draw=function(el){
   var need=salaryDueSoFar(), h=Math.max(0,holding()), def=Math.min(h,need), pctD=salaryDebtPct();
-  var ta=accById(acctOf('tank')), fa=accById(acctOf('family')), da=accById(acctOf('debt')), route=acctOf('tank')+'>'+acctOf('family');
+  var fa=accById(acctOf('family')), da=accById(acctOf('debt')), ta=accById(acctOf('tank'));
   openDialog('👪 Pay salary',
     '<div class="alloc-top num"><span>Salary waiting</span><b>'+money(need)+'</b></div>'+
-    '<small class="muted num">'+money(salaryDay(todayISO()))+' a day · '+salaryDaysDue()+' days not yet paid out · tank has '+money(h)+'</small>'+
+    '<small class="muted num">'+money(salaryDay(todayISO()))+' a day · '+salaryDaysDue()+' days not yet paid out · family share in the tank '+money(h)+'</small>'+
     '<input class="bigamt num" name="amount" inputmode="decimal" required aria-label="Amount" value="'+Math.round(def)+'">'+
     '<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">'+[1,3,7].map(function(k){ var v=Math.min(h,need,salaryDay(todayISO())*k); return v>0.5?'<button type="button" class="chip" data-setamt="'+Math.round(v)+'">'+k+' day'+(k>1?'s':'')+'</button>':''; }).join('')+
       (need>0.5?'<button type="button" class="chip" data-setamt="'+Math.round(Math.min(h,need))+'">All waiting</button>':'')+'</div>'+
     '<label class="f"><span>Debt share %</span><input name="pct" inputmode="decimal" value="'+pctD+'"></label>'+
     '<div class="note splitprev" style="margin-top:0"></div>'+
-    (ta&&fa&&ta.id!==fa.id?'<label class="check"><input type="checkbox" name="nomove"'+(acctHas()[ta.id]<def*(1-pctD/100)-0.5?' checked':'')+'><span>The money is still in '+esc(fa.name)+' — no transfer needed (the app nets it from the family-share transfer)</span></label>':'')+
-    '<label class="f"><span>Transfer fee'+(ta&&fa?' ('+esc(ta.name)+' → '+esc(fa.name)+')':'')+'</span><input name="fee" inputmode="decimal" value="'+num((S.fees||{})[route])+'"></label>'+
-    '<p class="muted" style="font-size:13px">The debt share is saved for your debts right away'+(da&&ta&&da.id===ta.id?' and stays in '+esc(da.name):'')+'. Send the budget share in your bank app'+(fa?' to '+esc(fa.name):'')+', then record it here.</p>',
-    function(v){ var a=num(v.amount), fee=num(v.fee), pc=Math.max(0,Math.min(100,num(v.pct))); if(a<=0) return false;
-      if(a+(v.nomove?0:fee)>h+0.5){ toast('The tank only has '+money(h)); return false; }
+    '<p class="muted" style="font-size:13px">This records the payout. The money then shows under <b>Transfer now</b>'+(ta?' from '+esc(ta.name):'')+' — send it in your bank app, add the fee, and tap it.</p>',
+    function(v){ var a=num(v.amount), pc=Math.max(0,Math.min(100,num(v.pct))); if(a<=0) return false;
+      if(a>h+0.5){ toast('The tank only has '+money(h)); return false; }
       var sp=splitToDebtJars(a*pc/100), D=a*pc/100-sp.left;
-      S.salarySplit=S.salarySplit||{}; S.salarySplit.debt=pc; S.fees=S.fees||{}; S.fees[route]=fee;
-      if(v.nomove) fee=0;
-      var dm={id:uid(),date:todayISO(),kind:'draw',amount:a,fee:fee,toDebt:Math.round(D*100)/100,noMove:!!v.nomove||undefined,note:'Salary'};
+      S.salarySplit=S.salarySplit||{}; S.salarySplit.debt=pc;
+      var dm={id:uid(),date:todayISO(),kind:'draw',amount:a,fee:0,toDebt:Math.round(D*100)/100,noMove:true,note:'Salary'};
       S.moves.push(dm);
       sp.legs.forEach(function(l){ S.moves.push({id:uid(),date:todayISO(),kind:'debtsave',to:l[0].id,amount:Math.round(l[1]*100)/100,note:'Salary share → '+l[0].name,draw:dm.id}); });
-      toast('Salary '+money(a)+(D>0.5?' · '+money(D)+' to debts, '+money(a-D)+' to budget':'')); }, 'Record');
+      toast('Salary '+money(a)+' recorded — now send it (see Transfer now)'); }, 'Record payout');
   var upd=function(){ var f=dlgForm, sp=f.querySelector('.splitprev'); if(!sp) return; var a=num(f.querySelector('[name=amount]').value), pc=num(f.querySelector('[name=pct]').value), d=a*pc/100;
-    f.querySelector('.splitprev').innerHTML='💰 Debts <b>'+money(d)+'</b>'+(da?' (stays in '+esc(da.name)+')':'')+' · 🧾 Budget <b>'+money(a-d)+'</b>'+(fa?' → send to '+esc(fa.name):''); };
+    sp.innerHTML='💰 Debts <b>'+money(d)+'</b>'+(da?' → '+esc(da.name):'')+'<br>🧾 Budget <b>'+money(a-d)+'</b>'+(fa?' → '+esc(fa.name):''); };
   dlgForm.oninput=upd; dlgForm.onclick=function(){ setTimeout(upd,0); }; upd();
 };
+
 
 ACT.sweep=function(el){
   var step=currentMoneyStep(), h=Math.max(0,holding());
