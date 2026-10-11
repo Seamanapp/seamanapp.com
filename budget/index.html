@@ -118,7 +118,7 @@ label.f{display:block;font-size:13px;color:var(--muted);margin-bottom:8px}
 label.f > span{display:block;margin-bottom:3px}
 input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;
   padding:8px 10px;width:100%;min-height:40px}
-input[type=checkbox]{width:20px;height:20px;min-height:0;accent-color:var(--brand)}
+input[type=checkbox],input[type=radio]{width:20px;height:20px;min-height:0;accent-color:var(--brand)}
 table{width:100%;border-collapse:collapse;font-size:14px}
 th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
 th{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
@@ -166,6 +166,7 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 .check{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line)}
 .check:last-child{border-bottom:0}
 .check input{margin-top:2px;flex:none}
+.check>span{flex:1;min-width:0}
 /* visual layer */
 .big{font-size:22px;line-height:1}
 .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
