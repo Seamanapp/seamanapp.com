@@ -584,6 +584,12 @@ function migrate(){
   if(!S.salarySplit) S.salarySplit={debt:50, from:todayISO()};
   S.fees=S.fees||{};
   if(!S.opc){ S.opc={from:'2026-10'}; if(S.salary.method!=='manual'){ S.salary.manual=suggestedSalary(); S.salary.method='manual'; } }
+  if(S.salaryAuto==null) S.salaryAuto=true;
+  if(S.opc&&S.opc.from&&S.businesses&&S.businesses[0]){
+    var mb0=S.businesses[0], pl1=mb0.opex.find(function(o){return o.auto==='president';});
+    if(!pl1){ pl1={id:'pres'+uid(),name:'Salary as President',amount:0,freq:'month',day:28,cat:'staff',auto:'president',from:S.opc.from+'-01'}; mb0.opex.unshift(pl1); }
+    pl1.amount=num(S.salary.manual);
+  }
   if(S.opc&&S.opc.from){
     var ptl=S.budget.find(function(b){return b.auto==='tithe';});
     if(!ptl){ ptl={id:'ptithe',group:'Giving',name:'Tithe (salary)',amount:0,essential:true,auto:'tithe'}; S.budget.unshift(ptl); }
@@ -591,7 +597,7 @@ function migrate(){
     // Payouts already made since the OPC month get their tithe allotted once.
     S.moves.forEach(function(m){ if(m.kind==='draw'&&m.tithe==null&&monthKey(m.date)>=S.opc.from){ var T=Math.round(num(m.amount)*num(S.tithe.pct)/100*100)/100; m.tithe=T; var tk=monthKey(m.date); setAlloc('ptithe',num(allocMap(tk)['ptithe'])+T,tk); } });
   }
-  if(S.accounts&&S.accounts.length&&S.flowV!==3&&['gcash','maya','gsave'].every(function(n){return S.accounts.some(function(a){return a.name.toLowerCase()===n;});})){ applyFlow(); S.flowV=3; }
+  if(S.accounts&&S.accounts.length&&S.flowV!==4&&['gcash','maya','gsave'].every(function(n){return S.accounts.some(function(a){return a.name.toLowerCase()===n;});})){ applyFlow(); S.flowV=4; }
   (S.businesses||[]).forEach(function(b){ if(!b.unit&&/nav\s*club/i.test(b.name||'')) b.unit={name:'client',price:3250}; });
   if(!S.accounts){
     var byBank={}; S.accounts=[]; S.assign={};
@@ -763,6 +769,7 @@ function prevDue2(o, b, due){
 // Set aside for one line over (fromExcl, toIncl]: each cycle's amount spread
 // evenly over the open days in that cycle. Nothing before the line started.
 function accrued(o, b, fromExcl, toIncl){
+  if(o.auto==='president') return presAccrued(fromExcl, toIncl);
   var ma=metaFor(o); if(ma) return metaAccrued(ma, fromExcl, toIncl);
   var amt=num(o.amount); if(!(amt>0)) return 0;
   if(o.from&&fromExcl<addDays(o.from,-1)) fromExcl=addDays(o.from,-1);
@@ -794,6 +801,7 @@ function opexDue(o, b, mk){
 // One line right now: next due date and amount, how much of this cycle is
 // set aside, what has been paid, and what is held for it overall.
 function opexLineStatus(o, b){
+  if(o.auto==='president') return {next:null, due:0, cycleAside:0, cyclePaid:0, reserve:0, daily:salaryDay(todayISO()), president:true};
   var ma=metaFor(o);
   if(ma){ var paid=sum(S.bizExp.filter(function(e){return e.itemId===o.id;}),function(e){return num(e.amount);});
     return {next:null, due:metaOwed(ma), cycleAside:0, cyclePaid:0, reserve:accrued(o,b,'2000-01-01',todayISO())-paid, daily:metaProjection(ma).pace*metaTax(ma), meta:true}; }
@@ -818,6 +826,7 @@ function opexJar(o){
 // One line's daily saving toward its next due date: what should be saved by
 // today (its daily slices so far this cycle), what's saved, what to allot now.
 function opexSaving(o, b){
+  if(o.auto==='president') return null;
   var ma=metaFor(o);
   if(ma){
     // Meta bills when it decides to: set aside what's been spent (with VAT)
@@ -851,7 +860,6 @@ function opexReport(mk, onlyBizId){
     var iso=mk+'-'+pad(d), prev=addDays(iso,-1), bud=0, sales=0;
     bizs.forEach(function(b){
       b.opex.forEach(function(o){ bud+=accrued(o,b,prev,iso); });
-      if(opcOn(mk)&&mainBiz()&&b.id===mainBiz().id&&iso<=todayISO()) bud+=salaryDay(iso);
       sales+=sum(S.incomes.filter(function(i){return i.source===b.name&&i.date===iso;}),function(i){return num(i.amount);});
     });
     cumB+=bud; cumS+=sales; days.push({d:d, iso:iso, bud:bud, sales:sales, cumB:cumB, cumS:cumS});
@@ -876,6 +884,7 @@ function bizWallet(){
 }
 // A typical full month of a line (for the Profile summary).
 function opexMonthly(o, b){
+  if(o.auto==='president') return num(S.salary.manual);
   var ma=metaFor(o); if(ma) return metaProjection(ma).month*metaTax(ma);
   var a=num(o.amount), f=o.freq||'month', openPerMonth=openDaysOf(b).length*52/12;
   return {day:a*openPerMonth, week:a*52/12, '2week':a*26/12, semi:a*2, month:a, quarter:a/3, year:a/12, once:0}[f]||0;
@@ -900,13 +909,13 @@ function monthFlow(mk, onlyBiz){
     var planned=0;
     // Planned lines cost what is set aside for them as days pass (only in months
     // the business ran); paying them later on the due date draws on that set-aside.
-    if(b) b.opex.forEach(function(o){ if(num(o.amount)>0) planned+=opexDue(o,b,mk); });
+    if(b) b.opex.forEach(function(o){ if(isPlannedLine(o)) planned+=opexDue(o,b,mk); });
     // Lines with no plan (or since deleted) count when they're paid.
-    var actual=sum(acts.filter(function(e){ var o=b&&b.opex.find(function(x){return x.id===e.itemId;}); return !o||!(num(o.amount)>0); }),function(e){return num(e.amount);});
+    var actual=sum(acts.filter(function(e){ var o=b&&b.opex.find(function(x){return x.id===e.itemId;}); return !o||!isPlannedLine(o); }),function(e){return num(e.amount);});
     r.revenue+=rev; r.actual=(r.actual||0)+actual; r.planned=(r.planned||0)+planned;
     // OPC: the President's salary is an expense of the main business.
-    var pres=b&&mainBiz()&&b.id===mainBiz().id?presidentSalary(mk):0;
-    planned+=pres; r.president=(r.president||0)+pres; r.planned=(r.planned||0)+pres;
+    var pl0=b?b.opex.find(function(o){return o.auto==='president';}):null, pres=pl0?opexDue(pl0,b,mk):0;
+    r.president=(r.president||0)+pres;
     r.byBiz.push({name:name, biz:b, revenue:rev, opex:actual+planned, actual:actual, planned:planned, president:pres, est:planned>0, profit:rev-actual-planned});
   });
   var calc=function(planned){
@@ -967,6 +976,16 @@ function presidentSalary(mk){
   return num(S.salary.manual)/daysIn(mk)*days;
 }
 function personalTithePct(){ return num(S.tithe.pct); }
+// The salary earned over (fromExcl, toIncl]: monthly salary ÷ that month's days, for OPC days through today.
+function presAccrued(fromExcl, toIncl){
+  var t=todayISO(), x=addDays(fromExcl,1), tot=0, g=0; if(toIncl>t) toIncl=t;
+  while(x<=toIncl&&g++<800){ if(opcOn(monthKey(x))) tot+=salaryDay(x); x=addDays(x,1); }
+  return tot;
+}
+// Lines counted as they accrue (not when paid): any with an amount, the Meta
+// line (actual spend + VAT) and the President's salary.
+function isPlannedLine(o){ return num(o.amount)>0||o.auto==='president'||!!metaFor(o); }
+function presLine(){ var b=mainBiz(); return b?b.opex.find(function(o){return o.auto==='president';})||null:null; }
 
 // A budget line may be split into sub-items (Subscriptions → Netflix, Spotify…);
 // then its plan is the sum of the sub-items.
@@ -1283,7 +1302,7 @@ function metaProjection(a){
   var left=daysIn(cm)-daysDone;
   return {mtd:mtd, pace:pace, month:done+Math.max(num(d[t]),pace)+pace*(left-1), next:pace*daysIn(addMonths(cm,1))};
 }
-function metaTax(a){ return 1+(a.vat==null?(a.currency==='PHP'?12:0):num(a.vat))/100; }
+function metaTax(a){ return 1+(a.vat==null||a.vat===''?12:num(a.vat))/100; }
 // The Meta account linked (with auto amount) to this opex line, if any.
 function metaFor(o){
   if(!o||!o.meta||!S.meta) return null;
@@ -1497,10 +1516,28 @@ function acctPlan(){
     var ps=P.filter(function(p){return p.acct===a.id;}), should=sum(ps,function(p){return p.amt;});
     return {a:a, ps:ps, should:should, has:num(H[a.id]), diff:should-num(H[a.id])};
   });
-  var need=rows.filter(function(r){return r.diff>0.5;}).map(function(r){return {r:r,v:r.diff};}).sort(function(x,y){return y.v-x.v;});
-  var give=rows.filter(function(r){return r.diff<-0.5;}).map(function(r){return {r:r,v:-r.diff};}).sort(function(x,y){return y.v-x.v;});
+  // Accounts are filled along their route (e.g. GCash → Maya → Maya Savings):
+  // the deepest account first, its need added to the account that feeds it.
+  var diff={}; rows.forEach(function(r){ diff[r.a.id]=r.diff; });
+  var feed=function(id){ var f=(S.feed||{})[id]; return f&&f!==id&&accById(f)?f:null; };
+  var depth=function(id){ var d=0,x=id,g=0; while(feed(x)&&g++<10){ x=feed(x); d++; } return d; };
+  var rowOf=function(id){ return rows.find(function(r){return r.a.id===id;}); };
   var tx=[];
-  need.forEach(function(n){ give.forEach(function(g){ var v=Math.min(n.v,g.v); if(v>0.5){ tx.push({from:g.r.a, to:n.r.a, amount:Math.round(v*100)/100, for:n.r.ps.map(function(p){return p.name;})}); n.v-=v; g.v-=v; } }); });
+  rows.map(function(r){return r.a.id;}).sort(function(a,b){return depth(b)-depth(a);}).forEach(function(id){
+    var f=feed(id); if(!f||diff[id]<=0.5) return;
+    var v=diff[id], rr=rowOf(id);
+    tx.push({from:accById(f), to:accById(id), amount:Math.round(v*100)/100, depth:depth(f), for:rr.ps.map(function(p){return p.name;})});
+    diff[f]+=v; diff[id]=0;
+  });
+  // Whatever is left: any account with extra fills any account still short.
+  var need=rows.filter(function(r){return diff[r.a.id]>0.5;}).map(function(r){return {r:r,v:diff[r.a.id]};}).sort(function(x,y){return y.v-x.v;});
+  var give=rows.filter(function(r){return diff[r.a.id]<-0.5;}).map(function(r){return {r:r,v:-diff[r.a.id]};}).sort(function(x,y){return y.v-x.v;});
+  need.forEach(function(n){ give.forEach(function(g){ var v=Math.min(n.v,g.v); if(v>0.5){ tx.push({from:g.r.a, to:n.r.a, amount:Math.round(v*100)/100, depth:-1, for:n.r.ps.map(function(p){return p.name;})}); n.v-=v; g.v-=v; } }); });
+  // Merge transfers on the same route and list them in the order they're done.
+  var merged=[]; tx.forEach(function(t){ var m=merged.find(function(x){return x.from===t.from&&x.to===t.to;}); if(m) m.amount=Math.round((m.amount+t.amount)*100)/100; else merged.push(t); });
+  tx=merged.sort(function(a,b){return a.depth-b.depth;});
+  // A transfer that only passes money on says so.
+  tx.forEach(function(t){ var onward=tx.filter(function(u){return u.from===t.to;}); if(onward.length) t.for=t.for.concat(onward.map(function(u){return 'then '+u.to.name;})); });
   var due=Math.min(salaryDueSoFar(),Math.max(0,holding()));
   var sal=due>0.5&&acctOf('tank')!==acctOf('family')?{from:accById(acctOf('tank')), to:accById(acctOf('family')), amount:due, budget:due*(1-salaryDebtPct()/100), days:salaryDaysDue()}:null;
   return {rows:rows, tx:tx, sal:sal, short:sum(need,function(n){return n.v;})};
@@ -1516,7 +1553,7 @@ function todayCard(){
     S.businesses.filter(function(b){return b.unit&&num(b.unit.price)>0;}).map(function(b){ var n=sum(S.incomes.filter(function(x){return x.source===b.name&&x.date===t;}),function(x){return num(x.qty);});
       return '<div class="row between quickq"><span>'+esc(b.name)+' <small class="muted">'+n+' '+esc(b.unit.name)+(n===1?'':'s')+' today</small></span><button class="sm primary" data-act="quicksale" data-biz="'+b.id+'">+1 '+esc(b.unit.name)+' · '+money(b.unit.price)+'</button></div>'; }).join('')+
     step(1,sales>0,'Log sales',sales>0?money(sales)+' logged today':'all business income → '+esc(ACC().length?(accById(acctOf(mainBiz()?'in:biz:'+mainBiz().id:'family'))||{name:'business account'}).name:'business account'),'<button class="sm'+(sales>0?'':' primary')+'" data-act="income">+ Sales</button>')+
-    step(2,sd<0.5||hold<0.5,'Pay salary',sd>0.5?money(sd)+' waiting ('+salaryDaysDue()+' days)'+(salaryDebtPct()>0?' · '+salaryDebtPct()+'% to debts':''):'up to date','<button class="sm" data-act="draw" '+(hold>0.5?'':'disabled')+'>Pay</button>')+
+    step(2,sd<0.5||hold<0.5,'Pay salary',S.salaryAuto&&sd<0.5?'paid automatically each day · '+money(salaryDay(t))+'/day':sd>0.5?money(sd)+' waiting ('+salaryDaysDue()+' days)'+(salaryDebtPct()>0?' · '+salaryDebtPct()+'% to debts':''):'up to date','<button class="sm" data-act="draw" '+(hold>0.5?'':'disabled')+'>Pay</button>')+
     step(3,allT<0.5,'Allot today',allT<0.5?'debts, budget and opex are on track':[dT>0.5?'debts '+shortMoney(dT):'',bT>0.5?'budget '+shortMoney(bT):'',oT>0.5?'opex '+shortMoney(oT):''].filter(Boolean).join(' · '),allT>0.5?'<button class="sm primary" data-act="allotevery">Allot all</button>':'')+
     step(4,pl&&!nTx,'Transfer',!pl?'set up your accounts below':nTx?nTx+' transfer'+(nTx>1?'s':'')+' waiting — see Accounts':'nothing to move','')+
     '</div>';
@@ -2708,7 +2745,8 @@ V.settings=function(){
   // The family businesses: what each one is, and what it costs to run.
   var ma=MA();
   h+='<div class="card"><div class="row between"><h2>📣 Meta Ads</h2>'+(ma.length?'<span class="pill'+(metaToken()?' good">Connected':' warn">Token missing')+'</span>':'')+'</div>'+
-    (ma.length?ma.map(function(a){ var ln=metaLine(a); return '<div class="row between" style="font-size:14px;margin-top:6px"><span>'+esc(a.name||a.id)+'</span><small class="muted">→ '+(ln.b?esc(ln.b.name)+(ln.o?' · '+esc(ln.o.name):''):'not linked')+'</small></div>'; }).join('')+
+    (ma.length?ma.map(function(a){ var ln=metaLine(a); return '<div class="row between" style="font-size:14px;margin-top:6px"><span>'+esc(a.name||a.id)+'</span><small class="muted">→ '+(ln.b?esc(ln.b.name)+(ln.o?' · '+esc(ln.o.name):''):'not linked')+'</small></div>'+
+      '<label class="f" style="margin-top:6px"><span>VAT added to ad spend (%)</span><input inputmode="decimal" data-metavat="'+a.id+'" value="'+(a.vat==null||a.vat===''?12:num(a.vat))+'"></label>'; }).join('')+
       '<div class="row" style="margin-top:10px;gap:6px"><button class="sm primary" data-act="metasync">🔄 Sync now</button><button class="sm" data-act="metaconnect">Change / new token</button><button class="sm danger" data-act="metadisconnect">Disconnect</button></div>'
      :'<p class="muted" style="font-size:14px">Auto-log what Meta charges for ads, see what you owe, and save for it daily.</p><button class="primary sm" data-act="metaconnect">Connect Meta Ads</button>')+'</div>';
   h+='<h2 style="margin:18px 2px 8px">🏪 Family businesses</h2>'+S.businesses.map(function(b,i){
@@ -2730,8 +2768,8 @@ V.settings=function(){
           lines.map(function(o){
             var f=o.freq||'month', nd=num(o.amount)&&!metaFor(o)?nextDue2(o,b,todayISO()):null, auto=!!metaFor(o);
             return '<button class="oline" data-act="opxedit" data-bid="'+b.id+'" data-oid="'+o.id+'"><span class="ol"><b>'+esc(o.name||'(no name)')+'</b>'+
-              '<small class="muted num">'+(auto?'actual ad spend + VAT · synced from Meta':num(o.amount)?money(o.amount)+' '+FREQ_LABEL[f]+(nd?' · next '+shortDate(nd):''):'no amount yet')+'</small></span>'+
-              '<span class="num">'+(auto?'<span class="pill good">📣 auto</span>':money(opexMonthly(o,b))+'<small class="muted">/mo</small>')+'</span></button>';
+              '<small class="muted num">'+(o.auto==='president'?money(o.amount)+' a month · '+money(salaryDay(todayISO()))+' a day this month · auto':auto?'actual ad spend + '+Math.round((metaTax(metaFor(o))-1)*100)+'% VAT · synced from Meta':num(o.amount)?money(o.amount)+' '+FREQ_LABEL[f]+(nd?' · next '+shortDate(nd):''):'no amount yet')+'</small></span>'+
+              '<span class="num">'+(o.auto==='president'?'<span class="pill good">👔 auto</span>':auto?'<span class="pill good">📣 auto</span>':money(opexMonthly(o,b))+'<small class="muted">/mo</small>')+'</span></button>';
           }).join('')+
           '<button class="link" data-act="addopex" data-biz="'+b.id+'" data-cat="'+c[0]+'">+ Add '+(c[0]==='subs'?'subscription':'expense')+'</button></details>';
       }).join('')+
@@ -2881,7 +2919,7 @@ function bizPicker(selected){
     '<input type="search" class="cpsearch" placeholder="🔍 Search expense" aria-label="Search expense" autocomplete="off">'+
     (recent.length?'<div class="cprecent">'+recent.map(function(k){return '<button type="button" class="chip'+(selected===k?' on':'')+'" data-val="'+k+'">'+esc(bizPickedLabel(k).split(' › ').pop())+'</button>';}).join('')+'</div>':'')+
     '<div class="cplist">'+S.businesses.map(function(b){
-      return '<div class="cpg"><div class="cpgh">'+esc(b.name)+'</div>'+b.opex.map(function(o){
+      return '<div class="cpg"><div class="cpgh">'+esc(b.name)+'</div>'+b.opex.filter(function(o){return o.auto!=='president';}).map(function(o){
         var st=opexLineStatus(o,b), jar=opexJar(o), left=Math.max(0,num(o.amount)-st.cyclePaid);
         var sub=[jar>0.5?'💰 '+shortMoney(jar):'', st.next&&num(o.amount)>0?(left>0.5?shortMoney(left)+' due '+shortDate(st.next):'paid ✓'):''].filter(Boolean).join(' · ');
         return row(b.id+'|'+o.id, esc(o.name), sub, b.name+' '+o.name+' '+(o.group||''), left>0.5?left:num(o.amount));
@@ -3093,12 +3131,15 @@ function applyFlow(){
   // is the budget wallet for family spending. GSave keeps emergency and other
   // protection funds (and dream savings).
   S.assign={tank:g.id, family:w.id, debt:ms.id, protect:s2.id, dreams:s2.id};
+  // Where each wallet gets its money from: sales come into GCash; the business
+  // wallet (Maya) is filled from GCash and fills Maya Savings for debts.
+  S.feed={}; S.feed[m.id]=g.id; S.feed[ms.id]=m.id; S.feed[w.id]=g.id; S.feed[s2.id]=g.id;
   S.businesses.forEach(function(b){ S.assign['biz:'+b.id]=m.id; S.assign['in:biz:'+b.id]=g.id; });
   var order=[g,m,ms,w,s2]; S.accounts=order.concat(ACC().filter(function(a){return order.indexOf(a)<0;}));
 }
 
 ACT.acctpreset=function(){
-  checkpoint('set up accounts'); applyFlow(); S.flowV=3;
+  checkpoint('set up accounts'); applyFlow(); S.flowV=4;
   if(dlg.open) dlg.close();
   save(); render(); toast('GCash income · Maya business · Maya Savings debts · GCash - Wife budget · GSave protection');
 };
@@ -3113,6 +3154,8 @@ ACT.acctsetup=function(){
     '<div class="k" style="margin-top:10px">Where each kind of money is kept</div>'+
     S.businesses.map(function(b){return row('in:biz:'+b.id,'📥 '+esc(b.name)+' sales arrive in')+row('biz:'+b.id,'🏪 '+esc(b.name)+' money kept in');}).join('')+
     row('tank','🛢️ Salary tank (family share waiting)')+row('family','👪 Family spending')+row('debt','💰 Debt savings')+row('protect','🛡️ Protection funds')+row('dreams','⭐ Dream savings')+
+    '<details class="more"><summary>Where each wallet is filled from</summary>'+acc.map(function(a,i){ var cur=(S.feed||{})[a.id];
+      return '<label class="f asgrow"><span>'+esc(a.name||'Account '+(i+1))+' ← from</span><select name="feed:'+i+'"><option value="">— (money arrives here)</option>'+acc.map(function(b2,j){return j===i?'':'<option value="'+j+'"'+(cur===b2.id?' selected':'')+'>'+esc(b2.name||'Account '+(j+1))+'</option>';}).join('')+'</select></label>'; }).join('')+'</details>'+
     '<details class="more"><summary>Bills paid from a different account</summary>'+
       S.budget.map(function(b){return row('line:'+b.id,'🧾 '+esc(b.name),'same as family');}).join('')+
       S.businesses.map(function(bz){return bz.opex.map(function(o){return row('opex:'+o.id,'🏪 '+esc(o.name)+' · '+esc(bz.name),'same as '+bz.name);}).join('');}).join('')+'</details>'+
@@ -3123,7 +3166,9 @@ ACT.acctsetup=function(){
       S.accounts=acc.filter(function(a,i){return ids[i];});
       if(!S.accounts.length){ toast('Add at least one account'); return false; }
       var A={}; Object.keys(v).forEach(function(k){ if(k.indexOf('as:')!==0||v[k]==='') return; var id=ids[+v[k]]; if(id) A[k.slice(3)]=id; });
-      S.assign=A; toast('Accounts saved');
+      S.assign=A;
+      var F={}; acc.forEach(function(a,i){ var fv=v['feed:'+i]; if(fv!=null&&fv!==''&&ids[i]&&ids[+fv]) F[ids[i]]=ids[+fv]; }); S.feed=F;
+      toast('Accounts saved');
     }, 'Save');
 };
 ACT.acct=function(el){
@@ -3491,6 +3536,26 @@ ACT.getahead=function(el){
       toast(money(a)+' saved ahead for '+x.d.name); }, 'Save ahead');
 };
 
+// Record a salary payout: tithe first (OPC), then the debt share into debt
+// savings (soonest due first), the rest is budget money.
+function paySalary(a, pc, date, auto){
+  var T=opcOn(monthKey(date))?Math.round(a*personalTithePct()/100*100)/100:0;
+  var sp=splitToDebtJars((a-T)*pc/100), D=(a-T)*pc/100-sp.left;
+  if(T>0.5) setAlloc('ptithe',num(allocMap(monthKey(date))['ptithe'])+T,monthKey(date));
+  S.salarySplit=S.salarySplit||{}; S.salarySplit.debt=pc;
+  var dm={id:uid(),date:date,kind:'draw',amount:Math.round(a*100)/100,fee:0,toDebt:Math.round(D*100)/100,tithe:T||undefined,noMove:true,auto:auto||undefined,note:auto?'Salary (daily)':'Salary'};
+  S.moves.push(dm);
+  sp.legs.forEach(function(l){ S.moves.push({id:uid(),date:date,kind:'debtsave',to:l[0].id,amount:Math.round(l[1]*100)/100,note:'Salary share → '+l[0].name,draw:dm.id}); });
+  return dm;
+}
+// Each day's salary is paid out on its own: the budget and debt wallets get
+// their money as days pass, and Transfer now shows what to send.
+function autoPaySalary(){
+  if(!S.salaryAuto) return false;
+  var a=Math.floor(Math.min(salaryDueSoFar(),Math.max(0,holding()))*100)/100;
+  if(a<1) return false;
+  paySalary(a,salaryDebtPct(),todayISO(),true); return true;
+}
 ACT.draw=function(el){
   var need=salaryDueSoFar(), h=Math.max(0,holding()), def=Math.min(h,need), pctD=salaryDebtPct();
   var fa=accById(acctOf('family')), da=accById(acctOf('debt')), ta=accById(acctOf('tank'));
@@ -3502,17 +3567,12 @@ ACT.draw=function(el){
       (need>0.5?'<button type="button" class="chip" data-setamt="'+Math.round(Math.min(h,need))+'">All waiting</button>':'')+'</div>'+
     '<label class="f"><span>Debt share %</span><input name="pct" inputmode="decimal" value="'+pctD+'"></label>'+
     '<div class="note splitprev" style="margin-top:0"></div>'+
+    '<label class="check"><input type="checkbox" name="auto"'+(S.salaryAuto?' checked':'')+'><span>Pay the salary automatically every day</span></label>'+
     '<p class="muted" style="font-size:13px">This records the payout. The money then shows under <b>Transfer now</b>'+(ta?' from '+esc(ta.name):'')+' — send it in your bank app, add the fee, and tap it.</p>',
     function(v){ var a=num(v.amount), pc=Math.max(0,Math.min(100,num(v.pct))); if(a<=0) return false;
       if(a>h+0.5){ toast('The tank only has '+money(h)); return false; }
-      // Tithe first (OPC): the salary's tithe goes to the personal Tithe line, then the debt/budget split.
-      var T=opcOn(thisMonth())?Math.round(a*personalTithePct()/100*100)/100:0;
-      var sp=splitToDebtJars((a-T)*pc/100), D=(a-T)*pc/100-sp.left;
-      if(T>0.5) setAlloc('ptithe',num(allocMap()['ptithe'])+T);
-      S.salarySplit=S.salarySplit||{}; S.salarySplit.debt=pc;
-      var dm={id:uid(),date:todayISO(),kind:'draw',amount:a,fee:0,toDebt:Math.round(D*100)/100,tithe:T||undefined,noMove:true,note:'Salary'};
-      S.moves.push(dm);
-      sp.legs.forEach(function(l){ S.moves.push({id:uid(),date:todayISO(),kind:'debtsave',to:l[0].id,amount:Math.round(l[1]*100)/100,note:'Salary share → '+l[0].name,draw:dm.id}); });
+      S.salaryAuto=!!v.auto;
+      paySalary(a,pc,todayISO(),false);
       toast('Salary '+money(a)+' recorded — now send it (see Transfer now)'); }, 'Record payout');
   var upd=function(){ var f=dlgForm, sp=f.querySelector('.splitprev'); if(!sp) return; var a=num(f.querySelector('[name=amount]').value), pc=num(f.querySelector('[name=pct]').value);
     var T=opcOn(thisMonth())?a*personalTithePct()/100:0, d=(a-T)*pc/100;
@@ -3626,6 +3686,13 @@ ACT.opxedit=function(el){
   var o=el.dataset.oid?b.opex.find(function(x){return x.id===el.dataset.oid;}):null, isNew=!o;
   o=o||{name:'',amount:0,freq:'month',day:+todayISO().slice(8,10),cat:el.dataset.cat||'other'};
   var f=o.freq||'month', auto=!!metaFor(o);
+  if(o.auto==='president'){
+    openDialog('👔 Salary as President',
+      '<label class="f"><span>Monthly salary</span><input name="amount" inputmode="decimal" required value="'+num(S.salary.manual)+'"></label>'+
+      '<p class="muted" style="font-size:13px">Counted as a business expense day by day: the monthly salary ÷ the days in that month ('+money(salaryDay(todayISO()))+' a day this month). It goes to the salary tank and is paid out automatically each day.</p>',
+      function(v){ var a=num(v.amount); if(a<=0) return false; S.salary.manual=a; S.salary.method='manual'; o.amount=a; var tl=S.budget.find(function(x){return x.auto==='tithe';}); if(tl) tl.amount=Math.round(a*num(S.tithe.pct)/100); toast('Salary set to '+money(a)+' a month'); }, 'Save');
+    return;
+  }
   openDialog((isNew?'Add':'Edit')+' expense · '+b.name,
     field('name','Name','required placeholder="e.g. Canva Pro, Rent, Meta Ads"',o.name)+
     '<label class="f"><span>Category</span><select name="cat">'+OPEX_CATS.map(function(c){return '<option value="'+c[0]+'"'+(opexCat(o)===c[0]?' selected':'')+'>'+c[1]+' '+c[2]+'</option>';}).join('')+'</select></label>'+
@@ -3720,6 +3787,7 @@ document.addEventListener('input',function(e){
 });
 document.addEventListener('change',function(e){
   var el=e.target;
+  if(el.dataset&&el.dataset.metavat){ var mv=MA().find(function(x){return x.id===el.dataset.metavat;}); if(mv){ checkpoint('Meta VAT',true); mv.vat=num(el.value); save(); render(); } return; }
   if(el.dataset&&el.dataset.bizunit){ var ub=S.businesses.find(function(x){return x.id===el.dataset.bid;}); if(ub){ checkpoint('edit unit',true); ub.unit=ub.unit||{name:'',price:0};
       ub.unit[el.dataset.bizunit]=el.dataset.bizunit==='price'?num(el.value):el.value.trim(); if(!ub.unit.name&&!num(ub.unit.price)) delete ub.unit; save(); } return; }
   if(el.name==='source'&&el.closest('#dlgForm')){ el.closest('form').querySelectorAll('.unitq').forEach(function(u){ u.hidden=u.dataset.for!==el.value; }); }
@@ -3887,6 +3955,7 @@ function isStandalone(){ return (window.matchMedia&&matchMedia('(display-mode: s
 function applyTheme(v){ if(v) document.documentElement.setAttribute('data-theme',v); else document.documentElement.removeAttribute('data-theme'); }
 
 function render(){
+  if(autoPaySalary()) save();
   // Remember which sections are open before redrawing (the toggle event can lag a click).
   document.querySelectorAll('details[data-g]').forEach(function(d){ openGroups[d.dataset.g]=d.open; });
   document.querySelectorAll('nav.tabs button').forEach(function(b){ b.setAttribute('aria-selected', String(b.dataset.tab===tab)); });
