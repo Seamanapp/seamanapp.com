@@ -3398,7 +3398,11 @@ ACT.opexsave=function(el){
     S.moves.push({id:uid(),date:t,kind:'opexsave',to:x.o.id,bizId:x.b.id,amount:Math.round(a*100)/100,note:'Set aside · '+x.o.name}); toast(money(a)+' set aside for '+x.o.name); });
 };
 ACT.budallot=function(el){
-  var x=budgetDaily().find(function(y){return y.key===el.dataset.key;}); if(!x) return;
+  var x=budgetDaily().find(function(y){return y.key===el.dataset.key;});
+  // Main budgets filled from the salary can still get extra, ahead of time.
+  if(!x&&String(el.dataset.key).indexOf('main:')===0){ var k=el.dataset.key.slice(5), cm=thisMonth();
+    x={key:el.dataset.key, main:k, name:mainsCfg()[k].name, plan:mainPlan(k), funded:mainFunded(k,cm), spent:mainSpent(k,cm), daysLeft:daysIn(cm)-dayOfMonth()+1}; }
+  if(!x) return;
   var left=x.daysLeft, td=allottedToday(x.key), have=Math.max(x.funded,x.spent), need=Math.max(0,x.plan-have);
   allotDialog('Allot · '+x.name,(need+td)/left,td,need,Math.max(0,availableMoney()),function(a){ addAlloc(x,Math.round(a*100)/100); toast(money(a)+' → '+x.name); });
 };
