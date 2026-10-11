@@ -1682,6 +1682,11 @@ function splitDashboard(){
     row('🧾 Budget',dad+mom,[{label:'👨 Dad',v:dad,color:slotColor(7)},{label:'👩 Mom',v:mom,color:slotColor(6)}],'budget')+
     '<small class="muted">Tithe = business '+money(bizT)+' + salary '+money(salT)+' · salary '+(100-salaryDebtPct())+'/'+salaryDebtPct()+' budget/debt · budget '+mainPct('dad')+'/'+mainPct('wife')+' Dad/Mom.</small></div>';
 }
+function resplitCard(){
+  if(!S.resplit) return '';
+  return '<div class="card"><div class="note warn" style="margin:0">↺ Account reset. The salary split is ready — <b>'+money(Math.min(salaryDueSoFar(),Math.max(0,holding())))+'</b> earned so far, split '+(100-salaryDebtPct())+'/'+salaryDebtPct()+' budget/debt and '+mainPct('dad')+'/'+mainPct('wife')+' Dad/Mom. Check it, adjust, then proceed.</div>'+
+    '<div class="row" style="gap:6px;margin-top:8px"><button class="primary sm" data-act="draw">Review &amp; proceed</button><button class="sm" data-act="resplitskip">Skip</button></div></div>';
+}
 function todayCard(){
   var t=todayISO(), sales=sum(S.incomes.filter(function(x){return x.date===t;}),function(x){return num(x.amount);});
   var dT=sum(debtSavings(),function(x){return x.today;}), bT=sum(budgetDaily(),function(x){return x.today;}), oT=sum(opexSavings(),function(x){return x.today;});
@@ -2057,7 +2062,7 @@ V.home=function(){
     '<button class="icon" data-go="plan" aria-label="Open roadmap" style="margin-left:auto">›</button></div>'+
     '<div class="dots" aria-hidden="true">'+st.list.map(function(s){return '<i class="'+s.state+'"></i>';}).join('')+'</div></div>';
 
-  h+=todayCard();
+  h+=resplitCard(); h+=todayCard();
   h+=splitDashboard();
   h+=accountsCard();
 
@@ -3011,7 +3016,7 @@ V.settings=function(){
     (tx.length?tx.slice(0,80).map(txRow).join(''):'<p class="muted">Nothing here yet.</p>')+'</div>';
 
   h+='<div class="card"><h2>Your data</h2><p class="muted">Saved only in this browser on this device. Nobody else can see it — which also means clearing the browser erases it. Export a backup regularly and keep it somewhere safe (it contains your family\'s finances).</p>'+
-    '<div class="row"><button class="primary" data-act="export">Export backup</button><button data-act="import">Import backup</button><button data-act="print">Print</button><span class="spacer"></span><button class="danger" data-act="reset">Erase everything</button></div>'+
+    '<div class="row"><button class="primary" data-act="export">Export backup</button><button data-act="import">Import backup</button><button data-act="print">Print</button><span class="spacer"></span><button data-act="resetacct">↺ Reset account</button><button class="danger" data-act="reset">Erase everything</button></div>'+
     '</div>';
   h+='<p class="muted" style="font-size:12px;text-align:center">This tool is a planning aid, not financial, tax or legal advice. Rates and rules (BIR, SSS, PhilHealth, Pag-IBIG) change — confirm with the agency or a licensed advisor.</p>';
   return h;
@@ -3937,6 +3942,7 @@ ACT.draw=function(el){
       (need>0.5?'<button type="button" class="chip" data-setamt="'+Math.round(Math.min(h,need))+'">All earned · '+money(Math.min(h,need))+'</button>':'')+
       [3,7,15].map(function(k){ var v=Math.round(Math.min(h,need)+day*k); return '<button type="button" class="chip" data-setamt="'+v+'">Advance '+k+' days</button>'; }).join('')+'</div>'+
     '<label class="check"><input type="checkbox" name="tankonly"><span>Only move it to the tank for now <small class="muted">(no split to debt, Mom or Dad yet)</small></span></label>'+
+    (S.resplit?'<div class="note good">↺ After the reset: this is the salary earned so far, split for you. Adjust any amount, then tap <b>Record payout</b>.</div>':'')+
     '<div class="note warn advnote" hidden></div>'+
     '<div class="splitbox"><div class="k" style="margin-top:6px">Split</div>'+
     (tp?'<div class="row between splitrow"><span>🙏 Tithe '+tp+'% <small class="muted">→ GSave</small></span><b class="num tval">₱0</b></div>':'')+
@@ -3945,7 +3951,7 @@ ACT.draw=function(el){
     '<div class="row between splitrow sub"><span>👨 Dad'+(dda?' <small class="muted">→ '+esc(dda.name)+'</small>':'')+'</span><input name="dad" inputmode="decimal" class="num" style="width:110px"></div>'+
     '<div class="row between splitrow sub"><span>👩 Mom <small class="muted">(send weekly)</small></span><b class="num mval">₱0</b></div>'+
     '<div class="row" style="gap:6px;margin:6px 0"><button type="button" class="chip" data-resplit="1">Reset to '+(100-salaryDebtPct())+'/'+salaryDebtPct()+' · '+mainPct('dad')+'/'+mainPct('wife')+'</button></div></div>'+
-    '<label class="check"><input type="checkbox" name="auto"'+(S.salaryAuto?' checked':'')+'><span>Pay the salary automatically every day</span></label>'+
+    '<label class="check"><input type="checkbox" name="auto"'+(S.salaryAuto||S.salaryAutoWas?' checked':'')+'><span>Pay the salary automatically every day</span></label>'+
     '<p class="muted" style="font-size:13px">This records the payout; the transfers then show under <b>Money flow</b>.</p>',
     function(v){ var a=num(v.amount); if(a<=0) return false;
       var room=advanceRoom(), need2=v.tankonly?a:a-h;
@@ -3954,7 +3960,7 @@ ACT.draw=function(el){
         S.moves.push({id:uid(),date:todayISO(),kind:'tankadv',amount:Math.round(a*100)/100,relTo:Math.round((tankLedger().rel+a)*100)/100,noMove:true,note:'Salary advance to tank'});
         toast(money(a)+' moved ahead into the tank — pay it out whenever you\'re ready'); return; }
       var T=a*tp/100, dbt=Math.max(0,Math.min(a-T,num(v.debt))), dad=Math.max(0,Math.min(a-T-dbt,num(v.dad)));
-      S.salaryAuto=!!v.auto;
+      S.salaryAuto=!!v.auto; delete S.salaryAutoWas; delete S.resplit;
       paySalary(a,salaryDebtPct(),todayISO(),false,{debt:dbt,dad:dad});
       var over=a-h;
       toast('Salary '+money(a)+' recorded'+(over>0.5?' · '+money(over)+' advance from the business':'')); }, 'Record payout');
@@ -4137,6 +4143,47 @@ ACT.export=function(){
 };
 ACT.import=function(){ document.getElementById('importFile').click(); };
 ACT.print=function(){ if(window.AndroidBridge) AndroidBridge.print(); else window.print(); };
+// Reset: clear every allotment and the salary split (optionally every record too),
+// then split the salary again — calculated for you, adjusted and confirmed by hand.
+ACT.resetacct=function(){
+  var cnt=function(f){ return S.moves.filter(f).length; };
+  var nA=cnt(function(m){return ['draw','debtsave','debtrelease','opexsave','opexrelease','sweep','tankadv'].indexOf(m.kind)>=0;});
+  openDialog('↺ Reset account',
+    '<p class="muted" style="font-size:13px;margin-top:0">Clears every allotted budget in every wallet and the salary split, so you can start the split over. Your setup stays: wallets, budget items, debts, businesses, products and Meta.</p>'+
+    '<label class="check"><input type="radio" name="mode" value="keep" checked><span><b>Keep recorded income &amp; expenses</b><br><small class="muted">'+S.incomes.length+' sales, '+S.bizExp.length+' business expenses, '+S.spend.length+' spends, debt payments, transfers and balance matches stay. '+nA+' salary payouts &amp; allotments are cleared.</small></span></label>'+
+    '<label class="check"><input type="radio" name="mode" value="all"><span><b>Reset all</b><br><small class="muted">Also erases every sale, expense, payment and transfer. Starts fresh from today — then match your real balances.</small></span></label>'+
+    '<label class="check"><input type="checkbox" name="funds"><span>Also clear emergency &amp; dream savings ('+money(sum(Object.keys(S.funds||{}),function(k){return num(S.funds[k]);})+sum(S.dreams||[],function(d){return num(d.saved);}))+')</span></label>'+
+    '<label class="f"><span>Type RESET to confirm</span><input name="ok" autocomplete="off" placeholder="RESET"></label>'+
+    '<p class="muted" style="font-size:13px">Tip: Export a backup first. You can also Undo right after.</p>',
+    function(v){
+      if(String(v.ok||'').trim().toUpperCase()!=='RESET'){ toast('Type RESET to confirm'); return false; }
+      checkpoint('reset account');
+      var all=v.mode==='all';
+      S.alloc={}; S.allocLog=[];
+      if(all){
+        S.incomes=[]; S.bizExp=[]; S.spend=[]; S.moves=[];
+        S.holdingStart=0; S.walletStart=0; S.salaryFrom=todayISO();
+      } else {
+        // Debt payments and expenses that used saved money keep their numbers right:
+        // the part paid from savings is kept as saved-and-paid.
+        var keep=[];
+        S.moves.forEach(function(m){
+          if(['draw','debtsave','debtrelease','opexsave','opexrelease','sweep','tankadv'].indexOf(m.kind)>=0) return;
+          if(m.kind==='debtpay'&&num(m.fromJar)>0) keep.push({id:uid(),date:m.date,kind:'debtsave',to:m.to,amount:num(m.fromJar),note:'Saved & paid (kept at reset)'});
+          keep.push(m); });
+        S.bizExp.forEach(function(e){ if(e.itemId&&num(e.fromJar)>0){ var b=S.businesses.find(function(y){return y.id===e.bizId;});
+          keep.push({id:uid(),date:e.date,kind:'opexsave',to:e.itemId,bizId:b?b.id:e.bizId,amount:num(e.fromJar),note:'Saved & paid (kept at reset)'}); } });
+        S.moves=keep;
+      }
+      if(v.funds){ Object.keys(S.funds||{}).forEach(function(k){ S.funds[k]=0; }); (S.dreams||[]).forEach(function(d){ if(d.status!=='bought') d.saved=0; }); S.moves=S.moves.filter(function(m){return m.kind!=='dreamadd';}); }
+      // Hold the automatic payout until the new split is confirmed.
+      if(S.salaryAuto){ S.salaryAutoWas=true; S.salaryAuto=false; }
+      S.resplit=true; tab='home';
+      toast(all?'Reset — fresh start from today':'Reset — allotments and split cleared');
+      setTimeout(function(){ all?ACT.matchall():ACT.draw(); },350);
+    }, 'Reset');
+};
+ACT.resplitskip=function(){ delete S.resplit; if(S.salaryAutoWas){ S.salaryAuto=true; delete S.salaryAutoWas; } save(); render(); };
 ACT.reset=function(){ if(confirm('Erase ALL data on this device? Export a backup first if you might need it.')){ checkpoint('erase everything'); S=freshState(); save(); tab='home'; render(); } };
 ACT.sample=function(){ checkpoint('sample numbers');
   // Illustrative numbers only, so the family can see how every screen works.
