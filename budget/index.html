@@ -386,6 +386,7 @@ tr.tap{cursor:pointer}
 .flowstep .pxt{flex:1}.fs{width:24px;height:24px;border-radius:50%;background:var(--brand);color:var(--brand-ink,#fff);display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
 .sdrow{padding:10px 0;border-top:1px solid var(--line);cursor:pointer}.sdrow:first-of-type{border-top:0}
 .sdleg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;margin-top:4px}.sdleg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:middle}.sdleg small{color:var(--muted)}
+.splitrow{padding:5px 0;font-size:14px}.splitrow.sub{padding-left:16px}.splitrow input{padding:6px 8px;text-align:right}
 .wgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .wtile{display:flex;gap:8px;align-items:flex-start;text-align:left;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--card);min-width:0;font-weight:400}
 .wt{display:flex;flex-direction:column;min-width:0;gap:1px}
@@ -1169,6 +1170,8 @@ function availableMoney(mk){
 }
 // Salary is earned day by day (the month's salary ÷ its days) from S.salaryFrom
 // and waits until it's paid out — unpaid days carry over, even into a new month.
+// Salary paid ahead of what's been earned (the tank below zero), carried by the business.
+function salaryAdvance(){ return Math.max(0,-holding()); }
 function salaryDay(iso){ var mk=monthKey(iso); return salary()/daysIn(mk); }
 function salaryEarnedSoFar(){
   var from=S.salaryFrom||thisMonth()+'-01', t=todayISO(), x=from, tot=0, g=0;
@@ -1558,7 +1561,8 @@ function purposes(){
     L.push({key:'biz:'+b.id, icon:'🏪', name:b.name+' (business)', amt:num(bl[b.id])-away-bt, acct:acctOf('biz:'+b.id)});
     if(bt>0.5) L.push({key:'tithe:biz', icon:'🙏', name:'Business tithe', amt:bt, acct:acctOf('tithe:biz')});
   });
-  L.push({key:'tank', icon:'🛢️', name:'Salary tank', amt:holding(), acct:acctOf('tank')});
+  L.push({key:'tank', icon:'🛢️', name:'Salary tank', amt:Math.max(0,holding()), acct:acctOf('tank')});
+  var advP=salaryAdvance(); if(advP>0.5) L.push({key:'adv', icon:'⏩', name:'Salary advance (paid ahead)', amt:-advP, acct:acctOf(mainBiz()?'biz:'+mainBiz().id:'family')});
   var awayL=0;
   S.budget.forEach(function(b){ var a=lineAway(b); if(a){ var u=lineUnspent(b); awayL+=u; L.push({key:'line:'+b.id, icon:b.auto==='tithe'?'🙏':'🧾', name:b.auto==='tithe'?'Tithe from salary':b.name, amt:u, acct:a}); } });
   var wU=mainUnspent('wife'), dU=mainUnspent('dad');
@@ -1675,8 +1679,8 @@ function todayCard(){
     S.businesses.filter(function(b){return (b.products||[]).length;}).map(function(b){ var n=sum(S.incomes.filter(function(x){return x.source===b.name&&x.date===t;}),function(x){return num(x.qty);});
       return '<div class="row between quickq"><span>'+esc(b.name)+' <small class="muted">'+n+' client'+(n===1?'':'s')+' today</small></span><span class="row" style="gap:6px">'+(b.products||[]).slice(0,2).map(function(pr){return '<button class="sm primary" data-act="quicksale" data-biz="'+b.id+'" data-pid="'+pr.id+'">+1 '+esc(pr.name)+' · '+money(pr.price)+'</button>';}).join('')+'</span></div>'; }).join('')+
     step(1,sales>0,'Log sales',sales>0?money(sales)+' logged today':'all business income → '+esc(ACC().length?(accById(acctOf(mainBiz()?'in:biz:'+mainBiz().id:'family'))||{name:'business account'}).name:'business account'),'<button class="sm'+(sales>0?'':' primary')+'" data-act="income">+ Sales</button>')+
-    step(2,sd<0.5||hold<0.5,'Pay salary',S.salaryAuto&&sd<0.5?'paid automatically each day · '+money(salaryDay(t))+'/day':sd>0.5?money(sd)+' waiting ('+salaryDaysDue()+' days)'+(salaryDebtPct()>0?' · '+salaryDebtPct()+'% to debts':''):'up to date','<button class="sm" data-act="draw" '+(hold>0.5?'':'disabled')+'>Pay</button>')+
-    step(3,allT<0.5,'Allot today',allT<0.5?'debts, budget and opex are on track':[dT>0.5?'debts '+shortMoney(dT):'',bT>0.5?'budget '+shortMoney(bT):'',oT>0.5?'opex '+shortMoney(oT):''].filter(Boolean).join(' · '),allT>0.5?'<button class="sm primary" data-act="allotevery">Allot all</button>':'')+
+    step(2,sd<0.5||hold<0.5,'Pay salary',S.salaryAuto&&sd<0.5?'paid automatically each day · '+money(salaryDay(t))+'/day':sd>0.5?money(sd)+' waiting ('+salaryDaysDue()+' days)'+(salaryDebtPct()>0?' · '+salaryDebtPct()+'% to debts':''):'up to date','<button class="sm" data-act="draw">Pay</button>')+
+    step(3,allT<0.5,'Allot today',allT<0.5?'debts, budget and opex are on track':[dT>0.5?'debts '+shortMoney(dT):'',bT>0.5?'budget '+shortMoney(bT):'',oT>0.5?'opex '+shortMoney(oT):''].filter(Boolean).join(' · '),allT>0.5&&(((dT+bT)>0.5&&availableMoney()>0.5)||(oT>0.5&&bizFree()>0.5))?'<button class="sm primary" data-act="allotevery">Allot all</button>':'')+
     step(4,pl&&!nTx,'Transfer',!pl?'set up your accounts below':nTx?nTx+' transfer'+(nTx>1?'s':'')+' waiting — see Wallets':'nothing to move'+(mainUnspent('wife')>0.5?' · Wife budget '+money(mainUnspent('wife'))+' to send this week':''),'')+
     '</div>';
 }
@@ -2054,7 +2058,7 @@ V.home=function(){
       tile('Left to spend','<span class="'+(salLeft<0?'neg':'')+'">'+(salLeft<0?'−':'')+shortMoney(Math.abs(salLeft))+'</span>','paid out '+shortMoney(drawn))+'</div>'+
     (drawn>0?'<div class="bar '+(used.total>drawn?'bad':used.total>drawn*0.85?'warn':'')+'"><i style="width:'+pct(used.total,drawn).toFixed(1)+'%"></i></div>':'')+
     (salLeft<0&&drawn<sal?'<div class="note warn" style="margin-bottom:0">More was spent than has been paid out — record the salary payout with <b>Pay salary</b>.</div>':'')+
-    (salDue>0.5||hold>0.5?'<button class="primary sm" style="margin-top:10px" data-act="draw">Pay salary</button>':'')+'</div>';
+    '<button class="'+(salDue>0.5?'primary ':'')+'sm" style="margin-top:10px" data-act="draw">'+(salDue>0.5?'Pay salary':'Pay salary / advance')+'</button></div>';
   var due=upcomingDues(14);
   if(due.length){
     h+='<div class="card"><div class="row between" style="margin-bottom:10px"><h2>📅 Due in 2 weeks</h2><span class="num"><b>'+money(sum(due,function(x){return x.amount;}))+'</b></span></div>'+dueList(due.slice(0,5))+
@@ -2108,7 +2112,8 @@ V.income=function(){
 
   // Business dashboard, wallet (with daily opex savings), opex report and the
   // per-business view — each folds away, since there may be several businesses.
-  h+=tabWallets(['tank','biz:*','opex:*','tithe:*'],'Income & business wallets');
+  h+=tabWallets(['tank','biz:*','opex:*','tithe:*','adv'],'Income & business wallets');
+  if(salaryAdvance()>0.5) h+='<div class="card tight"><div class="row between"><span>⏩ Salary advance from the business</span><b class="num">'+money(salaryAdvance())+'</b></div><small class="muted">Repaid by the coming '+Math.ceil(salaryAdvance()/Math.max(1,salaryDay(todayISO())))+' days of salary; daily payouts resume after.</small></div>';
   h+=bizDashboard();
   h+=metaCard();
   h+=bizTitheCard(incMk);
@@ -2137,7 +2142,7 @@ V.income=function(){
         var t=sum(l,function(x){return x.today;});
         return '<details class="bizsave" data-g="wal:'+b.id+'"'+(openGroups['wal:'+b.id]!==false?' open':'')+'><summary><b>'+esc(b.name)+'</b><span class="num">'+(t>0.5?money(t)+' today':'✓')+'</span></summary>'+
           l.map(function(x){return oRow(x,idx[x.o.id]);}).join('')+
-          (t>0.5?'<button class="sm" data-act="opexallotall" data-biz="'+b.id+'" '+(bfree>0.5?'':'disabled')+'>Allot all · '+esc(b.name)+'</button>':'')+'</details>';
+          (t>0.5&&bfree>0.5?'<button class="sm" data-act="opexallotall" data-biz="'+b.id+'">Allot all · '+esc(b.name)+'</button>':'')+'</details>';
       }).join('')
     : osv.map(oRow).join('');
   var walH=collapsible('inc:wallet',true,'<span class="gn">👛 Business wallet</span><span class="gt num">'+money(wal.balance)+'</span>',
@@ -2147,7 +2152,7 @@ V.income=function(){
     (osv.length?'<div class="row between" style="margin:12px 0 2px"><b>🏪 Save daily for opex</b><span class="num"><b>'+money(oToday)+'</b> <small class="muted">today</small></span></div>'+
       '<div class="row between" style="margin-bottom:4px"><small class="muted num">Free business money: '+money(bfree)+'</small><span class="row" style="gap:6px">'+
         (osv.some(function(x){return x.jar>0.5;})?'<button class="sm" data-act="opexreset">↺ Reset</button>':'')+
-        (oToday>0.5?'<button class="sm primary" data-act="opexallotall" '+(bfree>0.5?'':'disabled')+'>Allot all</button>':'')+'</span></div>'+
+        (oToday>0.5&&bfree>0.5?'<button class="sm primary" data-act="opexallotall">Allot all</button>':'')+'</span></div>'+
       groupsHtml
       :'<p class="muted" style="font-size:13px">Add opex lines to your businesses in Profile to save for them daily.</p>')+
     (wal.taxRes>0.5?'<div class="row between" style="margin-top:8px"><span>🧾 Tax set aside '+money(wal.taxRes)+'</span><button class="sm" data-act="bizexp" data-line="tax|tax">Pay tax</button></div>':'')+
@@ -2523,7 +2528,7 @@ function debtSavingsCard(){
   var h='<div class="card dsave"><div class="row between"><h2>💰 Save daily for debts</h2><span class="num"><b>'+money(today)+'</b> <small class="muted">today</small></span></div>'+
     '<div class="row between" style="margin:4px 0"><small class="muted num">Free salary money: '+money(free)+'</small><span class="row" style="gap:6px">'+
       (list.some(function(x){return x.saved>0.5;})?'<button class="sm" data-act="resetdebtsave" title="Return unused savings to free money">↺ Reset</button>':'')+
-      (today>0.5?'<button class="sm primary" data-act="allotall" '+(free>0.5?'':'disabled')+'>Allot all</button>':'')+'</span></div>'+
+      (today>0.5&&free>0.5?'<button class="sm primary" data-act="allotall">Allot all</button>':'')+'</span></div>'+
     info('How it works','<ol><li><b>Daily amount:</b> what\'s still needed ÷ the days left to the due date (today included). Missed days are spread over the days left — there\'s no catching up in one go.</li>'+
       '<li><b>Day marks:</b> green = saved that day, red = missed, outlined = today, grey = still to come.</li>'+
       '<li><b>Tap any debt</b> to save today\'s share, a few days ahead, or everything still needed.</li>'+
@@ -3844,12 +3849,20 @@ function splitBudget(B, date){
     setAlloc('main:'+k,num(allocMap(mk)['main:'+k])+v,mk); S.allocLog=S.allocLog||[]; S.allocLog.push({date:date,key:'main:'+k,amount:v,auto:true}); out[k]=v; });
   return Object.keys(out).length?out:null;
 }
-function paySalary(a, pc, date, auto){
+// A manual split: Dad gets `dad`, Mom the rest of the budget share.
+function splitBudgetManual(B, dad, date){
+  var mk=monthKey(date), out={dad:Math.round(dad*100)/100, wife:Math.round((B-dad)*100)/100};
+  Object.keys(out).forEach(function(k){ if(out[k]<0.01){ delete out[k]; return; }
+    setAlloc('main:'+k,num(allocMap(mk)['main:'+k])+out[k],mk); S.allocLog=S.allocLog||[]; S.allocLog.push({date:date,key:'main:'+k,amount:out[k]}); });
+  return Object.keys(out).length?out:null;
+}
+function paySalary(a, pc, date, auto, man){
   var T=opcOn(monthKey(date))?Math.round(a*personalTithePct()/100*100)/100:0;
-  var sp=splitToDebtJars((a-T)*pc/100), D=(a-T)*pc/100-sp.left;
+  var Dwant=man&&man.debt!=null?Math.max(0,Math.min(a-T,man.debt)):(a-T)*pc/100;
+  var sp=splitToDebtJars(Dwant), D=Dwant-sp.left;
   if(T>0.5) setAlloc('ptithe',num(allocMap(monthKey(date))['ptithe'])+T,monthKey(date));
   S.salarySplit=S.salarySplit||{}; S.salarySplit.debt=pc;
-  var B=splitBudget(a-T-D,date);
+  var B=man&&man.dad!=null?splitBudgetManual(a-T-D,Math.max(0,Math.min(a-T-D,man.dad)),date):splitBudget(a-T-D,date);
   var dm={id:uid(),date:date,kind:'draw',amount:Math.round(a*100)/100,fee:0,toDebt:Math.round(D*100)/100,tithe:T||undefined,split:B||undefined,noMove:true,auto:auto||undefined,note:auto?'Salary (daily)':'Salary'};
   S.moves.push(dm);
   sp.legs.forEach(function(l){ S.moves.push({id:uid(),date:date,kind:'debtsave',to:l[0].id,amount:Math.round(l[1]*100)/100,note:'Salary share → '+l[0].name,draw:dm.id}); });
@@ -3864,28 +3877,49 @@ function autoPaySalary(){
   paySalary(a,salaryDebtPct(),todayISO(),true); return true;
 }
 ACT.draw=function(el){
-  var need=salaryDueSoFar(), h=Math.max(0,holding()), def=Math.min(h,need), pctD=salaryDebtPct();
-  var fa=accById(acctOf('family')), da=accById(acctOf('debt')), ta=accById(acctOf('tank'));
+  var need=salaryDueSoFar(), h=Math.max(0,holding()), def=Math.round(Math.min(h,need)), day=salaryDay(todayISO()), adv=salaryAdvance();
+  var fa=accById(acctOf('family')), da=accById(acctOf('debt')), dda=accById(acctOf('main:dad')), ta=accById(acctOf('tank')), bz=accById(acctOf(mainBiz()?'biz:'+mainBiz().id:'family'));
+  var tp=opcOn(thisMonth())?personalTithePct():0;
   openDialog('👪 Pay salary',
-    '<div class="alloc-top num"><span>Salary waiting</span><b>'+money(need)+'</b></div>'+
-    '<small class="muted num">'+money(salaryDay(todayISO()))+' a day · '+salaryDaysDue()+' days not yet paid out · family share in the tank '+money(h)+'</small>'+
-    '<input class="bigamt num" name="amount" inputmode="decimal" required aria-label="Amount" value="'+Math.round(def)+'">'+
-    '<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">'+[1,3,7].map(function(k){ var v=Math.min(h,need,salaryDay(todayISO())*k); return v>0.5?'<button type="button" class="chip" data-setamt="'+Math.round(v)+'">'+k+' day'+(k>1?'s':'')+'</button>':''; }).join('')+
-      (need>0.5?'<button type="button" class="chip" data-setamt="'+Math.round(Math.min(h,need))+'">All waiting</button>':'')+'</div>'+
-    '<label class="f"><span>Debt share %</span><input name="pct" inputmode="decimal" value="'+pctD+'"></label>'+
-    '<div class="note splitprev" style="margin-top:0"></div>'+
+    '<div class="alloc-top num"><span>Salary earned, not yet paid</span><b>'+money(need)+'</b></div>'+
+    '<small class="muted num">'+money(day)+' a day'+(adv>0.5?' · advance still being repaid '+money(adv):'')+'</small>'+
+    '<input class="bigamt num" name="amount" inputmode="decimal" required aria-label="Amount" value="'+def+'">'+
+    '<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:6px">'+
+      (need>0.5?'<button type="button" class="chip" data-setamt="'+Math.round(Math.min(h,need))+'">All earned · '+money(Math.min(h,need))+'</button>':'')+
+      [3,7,15].map(function(k){ var v=Math.round(Math.min(h,need)+day*k); return '<button type="button" class="chip" data-setamt="'+v+'">Advance '+k+' days</button>'; }).join('')+'</div>'+
+    '<div class="note warn advnote" hidden></div>'+
+    '<div class="k" style="margin-top:6px">Split</div>'+
+    (tp?'<div class="row between splitrow"><span>🙏 Tithe '+tp+'% <small class="muted">→ GSave</small></span><b class="num tval">₱0</b></div>':'')+
+    '<div class="row between splitrow"><span>💰 Debt'+(da?' <small class="muted">→ '+esc(da.name)+'</small>':'')+'</span><input name="debt" inputmode="decimal" class="num" style="width:110px"></div>'+
+    '<div class="row between splitrow"><span>🧾 Budget</span><b class="num bval">₱0</b></div>'+
+    '<div class="row between splitrow sub"><span>👨 Dad'+(dda?' <small class="muted">→ '+esc(dda.name)+'</small>':'')+'</span><input name="dad" inputmode="decimal" class="num" style="width:110px"></div>'+
+    '<div class="row between splitrow sub"><span>👩 Mom <small class="muted">(send weekly)</small></span><b class="num mval">₱0</b></div>'+
+    '<div class="row" style="gap:6px;margin:6px 0"><button type="button" class="chip" data-resplit="1">Reset to '+(100-salaryDebtPct())+'/'+salaryDebtPct()+' · '+mainPct('dad')+'/'+mainPct('wife')+'</button></div>'+
     '<label class="check"><input type="checkbox" name="auto"'+(S.salaryAuto?' checked':'')+'><span>Pay the salary automatically every day</span></label>'+
-    '<p class="muted" style="font-size:13px">This records the payout. The money then shows under <b>Transfer now</b>'+(ta?' from '+esc(ta.name):'')+' — send it in your bank app, add the fee, and tap it.</p>',
-    function(v){ var a=num(v.amount), pc=Math.max(0,Math.min(100,num(v.pct))); if(a<=0) return false;
-      if(a>h+0.5){ toast('The tank only has '+money(h)); return false; }
+    '<p class="muted" style="font-size:13px">This records the payout; the transfers then show under <b>Money flow</b>.</p>',
+    function(v){ var a=num(v.amount); if(a<=0) return false;
+      var T=a*tp/100, dbt=Math.max(0,Math.min(a-T,num(v.debt))), dad=Math.max(0,Math.min(a-T-dbt,num(v.dad)));
       S.salaryAuto=!!v.auto;
-      paySalary(a,pc,todayISO(),false);
-      toast('Salary '+money(a)+' recorded — now send it (see Transfer now)'); }, 'Record payout');
-  var upd=function(){ var f=dlgForm, sp=f.querySelector('.splitprev'); if(!sp) return; var a=num(f.querySelector('[name=amount]').value), pc=num(f.querySelector('[name=pct]').value);
-    var T=opcOn(thisMonth())?a*personalTithePct()/100:0, d=(a-T)*pc/100;
-    sp.innerHTML=(T>0.5?'🙏 Tithe <b>'+money(T)+'</b> (allotted in the budget)<br>':'')+'💰 Debts <b>'+money(d)+'</b>'+(da?' → '+esc(da.name):'')+'<br>🧾 Budget <b>'+money(a-d-T)+'</b>'+(fa?' → '+esc(fa.name):''); };
-  dlgForm.oninput=upd; dlgForm.onclick=function(){ setTimeout(upd,0); }; upd();
+      paySalary(a,salaryDebtPct(),todayISO(),false,{debt:dbt,dad:dad});
+      var over=a-Math.min(h,need);
+      toast('Salary '+money(a)+' recorded'+(over>0.5?' · '+money(over)+' advance from the business':'')); }, 'Record payout');
+  var f=dlgForm, touched={};
+  var fill=function(reset){ var a=num(f.querySelector('[name=amount]').value), T=a*tp/100, net=a-T;
+    var di=f.querySelector('[name=debt]'), ad=f.querySelector('[name=dad]');
+    if(reset||!touched.debt) di.value=Math.round(net*salaryDebtPct()/100);
+    var dbt=Math.min(net,num(di.value)), bud=net-dbt;
+    if(reset||!touched.dad) ad.value=Math.round(bud*mainPct('dad')/100);
+    var dad=Math.min(bud,num(ad.value));
+    var tv=f.querySelector('.tval'); if(tv) tv.textContent=money(T);
+    f.querySelector('.bval').textContent=money(bud); f.querySelector('.mval').textContent=money(bud-dad);
+    var over=a-Math.min(h,need), an=f.querySelector('.advnote');
+    an.hidden=!(over>0.5); if(over>0.5) an.innerHTML='Salary advance <b>'+money(over)+'</b> ('+(day>0?Math.round(over/day*10)/10:0)+' days ahead): taken from the business'+(bz?' ('+esc(bz.name)+')':'')+'. The coming days\' salary repays it before paying out again.';
+  };
+  f.oninput=function(e){ if(e.target.name==='debt') touched.debt=1; if(e.target.name==='dad') touched.dad=1; if(e.target.name==='amount'){ touched={}; } fill(false); };
+  f.onclick=function(e){ if(e.target.closest('[data-resplit]')){ touched={}; fill(true); } else if(e.target.closest('[data-setamt]')){ touched={}; setTimeout(function(){fill(true);},0); } };
+  fill(true);
 };
+
 
 
 ACT.sweep=function(el){
