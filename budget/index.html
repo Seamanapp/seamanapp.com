@@ -372,6 +372,13 @@ tr.tap{cursor:pointer}
 .dsrow.tap{cursor:pointer}.dsrow.tap:active{background:var(--line)}
 .mainb h2{margin:0}.mitems{margin-top:10px;border-top:1px solid var(--line)}.mitems>summary{padding:10px 0;cursor:pointer;font-weight:600}
 .mitems .card{box-shadow:none;border:1px solid var(--line);margin:8px 0}.mainsel{width:auto;padding:4px 6px;font-size:12px}
+.tabw .tw{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);cursor:pointer}.tabw .tw:first-of-type{border-top:0}
+.twl{flex:1;min-width:0;display:flex;flex-direction:column}.twl small{color:var(--muted);font-size:12px}
+.twr{display:flex;flex-direction:column;align-items:flex-end;gap:2px}.twr small{font-size:11px;color:var(--muted)}
+.wks{margin:4px 0 10px}.wk{display:grid;grid-template-columns:62px 1fr auto;gap:8px;align-items:center;padding:4px 0}
+.wk .wl{font-size:12px;font-weight:600;display:flex;flex-direction:column;line-height:1.15}.wk .wl small{font-weight:400;color:var(--muted);font-size:10.5px}
+.wk .wb .bar3{margin:0}.wk .wn{font-size:12px;text-align:right;display:flex;flex-direction:column;line-height:1.15}.wk .wn small{color:var(--muted);font-size:10.5px}
+.wk.next{opacity:.5}.wk.now{background:var(--line);border-radius:10px;padding:6px 6px}.wk .wt{grid-column:1/-1;font-size:12px;color:var(--brand);font-weight:600;margin-top:-2px}
 .wgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .wtile{display:flex;gap:8px;align-items:flex-start;text-align:left;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--card);min-width:0;font-weight:400}
 .wt{display:flex;flex-direction:column;min-width:0;gap:1px}
@@ -1069,6 +1076,7 @@ function addAlloc(x, a){
   setAlloc(key, Math.max(x.funded,x.spent)+a, cm);
   if(!S.allocDay||S.allocDay.date!==t) S.allocDay={date:t, m:{}};
   S.allocDay.m[key]=Math.round((num(S.allocDay.m[key])+a)*100)/100;
+  S.allocLog=S.allocLog||[]; S.allocLog.push({date:t, key:key, amount:Math.round(a*100)/100});
 }
 function setAlloc(key, amt, mk){
   mk=mk||thisMonth(); S.alloc=S.alloc||{}; S.alloc[mk]=S.alloc[mk]||{};
@@ -2020,8 +2028,10 @@ V.income=function(){
 
   // Business dashboard, wallet (with daily opex savings), opex report and the
   // per-business view — each folds away, since there may be several businesses.
+  h+=tabWallets(['tank','biz:*','opex:*'],'Income & business wallets');
   h+=bizDashboard();
   h+=metaCard();
+  h+=bizTitheCard(incMk);
 
   var wal=bizWallet(), wparts=[
     {label:'Set aside for opex',v:Math.max(0,wal.jars),color:slotColor(1)},
@@ -2245,46 +2255,15 @@ function titheBaseSelect(){
 
 var editGroups={};   // budget groups currently in edit mode
 V.budget=function(){
-  var sal=salary(), mins=debtMins(), plan=budgetTotal(), left=sal-plan-mins, cm=thisMonth();
+  var cm=thisMonth();
   var groups=[]; S.budget.forEach(function(b){ if(groups.indexOf(b.group)<0) groups.push(b.group); });
-
-  // Tithe first: a % of income, given before the salary.
-  var f=monthFlow(cm), given=titheGiven(cm), owed=titheOwed(), tp=pct(given,f.tithe);
-  var spentB=spentThisMonth(), daysLeft=daysIn(cm)-dayOfMonth();
-  var hot=S.budget.map(function(b){ var s=spentThisMonth(b.id); return {b:b,s:s,p:planOf(b)}; })
-    .filter(function(x){return x.s>0;}).sort(function(a,b){return pct(b.s,b.p||1)-pct(a.s,a.p||1);}).slice(0,3);
-  var h='<div class="card"><div class="row between"><h2>🧾 Spending · '+monthLabel(cm)+'</h2><span class="muted num" style="font-size:13px">'+daysLeft+' days left</span></div>'+
-    '<div class="grid g3" style="margin:8px 0">'+tile('Spent',shortMoney(spentB),Math.round(pct(spentB,plan))+'% of plan')+tile('Plan',shortMoney(plan),'budget lines')+
-      tile('Left','<span class="'+(plan-spentB<0?'neg':'')+'">'+shortMoney(plan-spentB)+'</span>',daysLeft>0&&plan-spentB>0?shortMoney((plan-spentB)/daysLeft)+'/day':'')+'</div>'+
-    barHTML(pct(spentB,plan),spentB>plan?'bad':pct(spentB,plan)>85?'warn':'good')+
-    (hot.length?'<div style="margin-top:8px">'+hot.map(function(x){ var q=pct(x.s,x.p);
-      return '<div class="row between" style="font-size:13px;margin-top:6px"><span>'+esc(x.b.name)+'</span><span class="num'+(x.p<=0||x.s>x.p?' neg':'')+'">'+money(x.s)+' <small class="muted">/ '+money(x.p)+'</small></span></div>'+barHTML(x.p>0?q:100,x.p<=0||x.s>x.p?'bad':q>85?'warn':'good'); }).join('')+'</div>':'')+
-    '</div>';
-  var pt=S.budget.find(function(b){return b.auto==='tithe';});
-  var ptCard=pt?'<div class="row between" style="font-size:14px;margin-top:10px;padding-top:8px;border-top:1px solid var(--line)"><span>👔 From your salary <small class="muted num">· allotted '+money(fundedLine(pt,cm))+' · given '+money(spentThisMonth(pt.id))+'</small></span>'+
-    '<button class="sm" data-act="spend" data-cat="ptithe">+ Give</button></div>':'';
-  h+='<div class="card tithe"><div class="row between"><h2>🙏 Tithe</h2><button class="icon" data-act="tithe" aria-label="Tithe settings">✎</button></div>'+
-    '<div class="row between num" style="margin-top:6px"><span><b style="font-size:22px">'+money(f.tithe)+'</b> <small class="muted">due · '+monthLabel(cm)+'</small></span><span class="muted">'+num(S.tithe.pct)+'% of '+shortMoney(f.titheBase)+'</span></div>'+
-    '<div class="bar'+(given>=f.tithe&&f.tithe>0?' good':'')+'" style="margin:8px 0 4px"><i style="width:'+tp.toFixed(1)+'%"></i></div>'+
-    '<div class="row between" style="font-size:13px"><span class="muted">Given '+money(given)+' · '+TITHE_BASES[S.tithe.base]+'</span>'+
-      '<button class="primary sm" data-act="spend" data-cat="tithe">+ Give</button></div>'+ptCard+
-    (owed>0.5?'<div class="note warn" style="margin-bottom:0">Set aside, not yet given: <b class="num">'+money(owed)+'</b></div>':'')+
-    '</div>';
-
-  // Only salary that has actually been paid out is money to distribute.
-  var paidOut=drawnThisMonth(), used=salarySpent(cm), unalloc=availableMoney(cm), alloc=paidOut-unalloc, rest=paidOut-used.total;
-  h+='<div class="card"><div class="row between"><h2>💵 Salary to distribute · '+monthLabel(cm)+'</h2><button class="primary sm" data-act="budallotall">Allot today</button></div>'+
-    '<div class="grid g3" style="margin:8px 0">'+
-      tile('Paid out',shortMoney(paidOut),'of '+shortMoney(sal)+' salary')+
-      tile('Spent',shortMoney(used.total),used.debt?'incl. '+shortMoney(used.debt)+' debts':'')+
-      tile('Left','<span class="'+(rest<0?'neg':'')+'">'+(rest<0?'−':'')+shortMoney(Math.abs(rest))+'</span>','',' style="border-color:'+(rest>=0?'var(--good)':'var(--bad)')+'"')+'</div>'+
-    (paidOut>0
-      ? '<div class="bar '+(used.total>paidOut?'bad':'')+'"><i style="width:'+pct(used.total,paidOut).toFixed(1)+'%"></i></div>'+
-        '<div class="row between num" style="font-size:13px;margin-top:8px"><span class="muted">Allocated '+money(alloc)+(used.debt?' <small>(incl. '+shortMoney(used.debt)+' debts)</small>':'')+'</span>'+
-          '<span class="'+(unalloc<0?'neg':'')+'"><b>'+(unalloc>=0?money(unalloc)+'</b> to allocate':money(-unalloc)+'</b> over')+'</span></div>'
-      : '<div class="note" style="margin-bottom:0">No salary paid out yet this month. Pay it from the tank on <b>Home → Pay salary</b>; that amount is what this budget distributes.</div>')+
-    '</div>';
-
+  var h=tabWallets(['main:wife','main:dad','family','acct:wife'],'Budget wallets');
+  // Salary money for the budget this month (debt share and tithe already set apart).
+  var paidOut=drawnThisMonth(), toDebt=sum(S.moves.filter(function(m){return m.kind==='draw'&&monthKey(m.date)===cm;}),function(m){return num(m.toDebt);});
+  var free=Math.max(0,availableMoney(cm)), pt=S.budget.find(function(b){return b.auto==='tithe';});
+  h+='<div class="card tight"><div class="row between"><span>💵 Budget money · '+monthLabel(cm)+'</span><b class="num">'+money(paidOut-toDebt)+'</b></div>'+
+    '<small class="muted num" style="display:block;margin-top:4px">salary paid in '+(S.salaryAuto?'daily':'')+(pt?' · tithe '+money(fundedLine(pt,cm)):'')+' · Wife '+money(mainFunded('wife',cm))+' · Dad '+money(mainFunded('dad',cm))+' · <b>free '+money(free)+'</b></small>'+
+    (free>0.5&&sum(budgetDaily(),function(x){return x.today;})>0.5?'<button class="primary sm" style="margin-top:8px" data-act="budallotall">Allot today</button>':'')+'</div>';
   var bd=budgetDaily(), bFree=Math.max(0,availableMoney(cm)), cfgM=mainsCfg();
   var groupCard=function(g,k){
     var items=S.budget.filter(function(b){return b.group===g&&mainOf(b)===k;}), hh='';
@@ -2342,6 +2321,7 @@ V.budget=function(){
       bar3(plan,fund,sp)+
       '<div class="pas num"><span>Planned <b>'+money(plan)+'</b></span><span>Allotted <b>'+money(fund)+'</b></span><span>'+(k==='wife'?'Sent':'Spent')+' <b class="'+(sp>Math.max(fund,plan)?'neg':'')+'">'+money(sp)+'</b></span></div>'+
       '<small class="muted num" style="display:block;margin:4px 0 8px">'+money(Math.max(0,plan-Math.max(fund,sp))/left)+'/day for the '+left+' days left · plan '+(m.manual!=null&&m.manual!==''?'set by hand':'= items total')+'</small>'+
+      weeksHTML(k)+
       '<div class="row" style="gap:6px;flex-wrap:wrap">'+
         (u&&u.today>0.5?'<button class="primary sm" data-act="budallot" data-key="'+key+'">Allot '+money(Math.min(u.today,bFree||u.today))+' today</button>':'<button class="sm" data-act="budallot" data-key="'+key+'">✓ today · allot more</button>')+
         (k==='wife'?'<button class="sm'+(unsent>0.5?' primary':'')+'" data-act="sendwife">Send to Wife'+(unsent>0.5?' · '+money(unsent):'')+'</button>':'<button class="sm" data-act="spend">+ Spend</button>')+'</div>'+
@@ -2349,7 +2329,11 @@ V.budget=function(){
         gs.map(function(g){ return groupCard(g,k); }).join('')+
         '<button class="sm" data-act="addcat" data-main="'+k+'" style="margin-top:6px">+ Item</button></details></div>';
   });
-  h+='<div class="card tight" style="margin-bottom:14px"><div class="row between"><span>Debt payments <small class="muted">(auto from Debts)</small></span><b class="num">'+money(mins)+'</b></div></div>'+
+  h+=(function(){ var pt2=S.budget.find(function(b){return b.auto==='tithe';}); if(!pt2) return '';
+      return '<div class="card tithe"><div class="row between"><h2>🙏 Tithe from salary</h2><button class="sm" data-act="spend" data-cat="ptithe">+ Give</button></div>'+
+        bar3(planOf(pt2),fundedLine(pt2,cm),spentThisMonth(pt2.id))+
+        '<div class="pas num"><span>Planned <b>'+money(planOf(pt2))+'</b></span><span>Allotted <b>'+money(fundedLine(pt2,cm))+'</b></span><span>Given <b>'+money(spentThisMonth(pt2.id))+'</b></span></div>'+
+        '<small class="muted">'+num(S.tithe.pct)+'% of every salary payout, set apart automatically.</small></div>'; })()+
     '<div class="row" style="margin-bottom:14px"><button data-act="spend">+ Log spending</button></div>'+
     '<button class="fab" data-act="spend" aria-label="Log spending">＋ Spend</button><div style="height:56px" aria-hidden="true"></div>';
 
@@ -2391,6 +2375,67 @@ function dayStrip(from, to, savedOn, openFn){
 }
 function savedByDay(kind, id){
   var m={}; S.moves.forEach(function(x){ if(x.kind===kind&&x.to===id&&num(x.amount)>0) m[x.date]=(m[x.date]||0)+num(x.amount); }); return m;
+}
+// Weekly view of a main budget: the month in weeks (1–7, 8–14, 15–21, 22–28,
+// 29–end); each week's share of the plan, what was allotted and sent/spent in it.
+function mainWeeks(k){
+  var cm=thisMonth(), dim=daysIn(cm), plan=mainPlan(k), key='main:'+k, td=dayOfMonth();
+  var log=(S.allocLog||[]).filter(function(l){return l.key===key&&monthKey(l.date)===cm;});
+  // Allotments made before the log existed are spread over the days that had passed.
+  var unlogged=Math.max(0,mainFunded(k,cm)-sum(log,function(l){return num(l.amount);})), firstLog=log.length?+log[0].date.slice(8,10):td+1, spreadDays=Math.max(1,Math.min(td,firstLog-1));
+  var ids=mainLines(k).map(function(b){return b.id;});
+  var spends=S.spend.filter(function(x){return monthKey(x.date)===cm&&(x.catId===key||ids.indexOf(x.catId)>=0);});
+  var out=[];
+  for(var s0=1;s0<=dim;s0+=7){
+    var e0=Math.min(dim,s0+6); if(s0===29||e0-s0<6&&s0>22){ e0=dim; }
+    var inW=function(d){ var n=+d.slice(8,10); return n>=s0&&n<=e0; };
+    var over=Math.max(0,Math.min(e0,spreadDays)-s0+1);
+    out.push({n:out.length+1, s:s0, e:e0, plan:plan*(e0-s0+1)/dim,
+      allot:sum(log.filter(function(l){return inW(l.date);}),function(l){return num(l.amount);})+unlogged*over/spreadDays,
+      sent:sum(spends.filter(function(x){return inW(x.date);}),function(x){return num(x.amount);}),
+      state:e0<td?'past':s0>td?'next':'now'});
+    if(e0===dim) break;
+  }
+  return out;
+}
+function weeksHTML(k){
+  var mo=monthLabel(thisMonth()).split(' ')[0];
+  return '<div class="wks">'+mainWeeks(k).map(function(w){
+    var left=Math.max(0,w.plan-w.sent);
+    return '<div class="wk '+w.state+'"><span class="wl">Wk '+w.n+'<small>'+mo+' '+w.s+'–'+w.e+'</small></span>'+
+      '<span class="wb">'+bar3(w.plan,w.allot,w.sent)+'</span>'+
+      '<span class="wn num">'+money(w.sent)+'<small>/ '+money(w.plan)+'</small></span>'+
+      (w.state==='now'&&left>0.5?'<small class="wt">'+(k==='wife'?'send ':'left ')+money(left)+' this week</small>':'')+'</div>'; }).join('')+'</div>';
+}
+// The wallets a tab is about: their balances and the transfers into them.
+function tabWallets(keys, title){
+  if(!ACC().length) return '';
+  var pl=acctPlan(), P=purposes(), ids=[];
+  var match=function(pk){ return keys.some(function(k){ return k.slice(-1)==='*'?pk.indexOf(k.slice(0,-1))===0:pk===k; }); };
+  P.forEach(function(p){ if(match(p.key)&&ids.indexOf(p.acct)<0) ids.push(p.acct); });
+  keys.forEach(function(k){ if(k.indexOf('acct:')===0){ var id=asg()[k.slice(5)]; if(id&&accById(id)&&ids.indexOf(id)<0) ids.push(id); } });
+  var rows=pl.rows.filter(function(r){return ids.indexOf(r.a.id)>=0;});
+  var tx=pl.tx.filter(function(t){return ids.indexOf(t.to.id)>=0;});
+  if(!rows.length) return '';
+  return '<div class="card tabw"><div class="row between"><span class="k">💳 '+esc(title)+'</span><button class="link" data-go="home" style="font-size:12px">all wallets ›</button></div>'+
+    rows.map(function(r){
+      var mine=r.ps.filter(function(p){return match(p.key);});
+      var st=Math.abs(r.diff)<0.5?'<span class="pill good">✓</span>':r.diff>0?'<span class="pill warn">needs '+money(r.diff)+'</span>':'<span class="pill">extra '+money(-r.diff)+'</span>';
+      return '<div class="tw" data-act="acct" data-id="'+r.a.id+'" role="button" tabindex="0">'+acctLogo(r.a)+'<span class="twl"><b>'+esc(r.a.name)+'</b><small class="num">'+
+        (mine.length?mine.map(function(p){return esc(p.name)+' '+money(p.amt);}).join(' · '):'tracked separately')+'</small></span>'+
+        '<span class="twr num"><b>'+money(r.has)+'</b><small>of '+money(r.should)+'</small>'+st+'</span></div>';
+    }).join('')+
+    tx.map(function(t){ return '<div class="row between ptx"><span class="pxt"><b>'+esc(t.from.name)+' → '+esc(t.to.name)+'</b><small class="muted">for '+esc(t.for.join(', '))+'</small></span>'+
+      '<button class="primary sm" data-act="acctxfer" data-from="'+t.from.id+'" data-to="'+t.to.id+'" data-amt="'+t.amount+'">'+money(t.amount)+'</button></div>'; }).join('')+'</div>';
+}
+// The business tithe (given from the business wallet).
+function bizTitheCard(cm){
+  var f=monthFlow(cm), given=titheGiven(cm), owed=titheOwed(), tp=pct(given,f.tithe);
+  return '<div class="card tithe"><div class="row between"><h2>🙏 Business tithe</h2><button class="icon" data-act="tithe" aria-label="Tithe settings">✎</button></div>'+
+    '<div class="row between num" style="margin-top:6px"><span><b style="font-size:22px">'+money(f.tithe)+'</b> <small class="muted">due · '+monthLabel(cm)+'</small></span><span class="muted">'+num(S.tithe.pct)+'% of '+shortMoney(f.titheBase)+'</span></div>'+
+    '<div class="bar'+(given>=f.tithe&&f.tithe>0?' good':'')+'" style="margin:8px 0 4px"><i style="width:'+tp.toFixed(1)+'%"></i></div>'+
+    '<div class="row between" style="font-size:13px"><span class="muted">Given '+money(given)+' · '+TITHE_BASES[S.tithe.base]+'</span><button class="primary sm" data-act="spend" data-cat="tithe">+ Give</button></div>'+
+    (owed>0.5?'<div class="note warn" style="margin-bottom:0">Set aside, not yet given: <b class="num">'+money(owed)+'</b></div>':'')+'</div>';
 }
 function debtSavingsCard(){
   var list=debtSavings(); if(!list.length) return '';
@@ -2527,6 +2572,7 @@ V.debts=function(){
       '<div class="row" style="justify-content:center"><button class="primary" data-act="debt">+ Add debt</button><button data-act="import">Import file</button></div></div>';
   }
 
+  h+=tabWallets(['debt'],'Debt savings wallet');
   var d30=upcomingDues(30);
   h+='<div class="card"><div class="row between"><span class="k">Total debt</span><button class="primary sm" data-act="debt">+ Add</button></div>'+
     '<div class="v num" style="font-size:32px;margin:2px 0 6px">'+money(td)+'</div>'+
