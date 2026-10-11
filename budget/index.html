@@ -382,6 +382,8 @@ tr.tap{cursor:pointer}
 .prow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}.prow span:first-child{display:flex;flex-direction:column}
 .stepper{display:inline-flex;align-items:center;gap:4px}.stepper input{width:52px;text-align:center;font-weight:700;font-size:18px;padding:6px}.stepper.sm b{min-width:22px;text-align:center}
 .stepper .icon{min-width:34px;min-height:34px;font-size:18px}
+.flowstep{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.flowstep:first-of-type{border-top:0}
+.flowstep .pxt{flex:1}.fs{width:24px;height:24px;border-radius:50%;background:var(--brand);color:var(--brand-ink,#fff);display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
 .wgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .wtile{display:flex;gap:8px;align-items:flex-start;text-align:left;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--card);min-width:0;font-weight:400}
 .wt{display:flex;flex-direction:column;min-width:0;gap:1px}
@@ -619,7 +621,7 @@ function migrate(){
     // Payouts already made since the OPC month get their tithe allotted once.
     S.moves.forEach(function(m){ if(m.kind==='draw'&&m.tithe==null&&monthKey(m.date)>=S.opc.from){ var T=Math.round(num(m.amount)*num(S.tithe.pct)/100*100)/100; m.tithe=T; var tk=monthKey(m.date); setAlloc('ptithe',num(allocMap(tk)['ptithe'])+T,tk); } });
   }
-  if(S.accounts&&S.accounts.length&&S.flowV!==5&&['gcash','maya','gsave'].every(function(n){return S.accounts.some(function(a){return a.name.toLowerCase()===n;});})){ applyFlow(); S.flowV=5; }
+  if(S.accounts&&S.accounts.length&&S.flowV!==6&&['gcash','maya','gsave'].every(function(n){return S.accounts.some(function(a){return a.name.toLowerCase()===n;});})){ applyFlow(); S.flowV=6; }
   (S.businesses||[]).forEach(function(b){ if(!b.unit&&/nav\s*club/i.test(b.name||'')) b.unit={name:'client',price:3250};
     if(!b.products) b.products=b.unit&&num(b.unit.price)>0?[{id:'p'+uid(),name:b.unit.name.charAt(0).toUpperCase()+b.unit.name.slice(1),price:num(b.unit.price)}]:[]; });
   if(!S.accounts){
@@ -1530,11 +1532,13 @@ function purposes(){
   S.businesses.forEach(function(b){
     var away=0;
     b.opex.forEach(function(o){ var a=opexAway(o,b); if(a){ var j=opexJar(o); away+=j; L.push({key:'opex:'+o.id, icon:'🏪', name:o.name+' ('+b.name+')', amt:j, acct:a}); } });
-    L.push({key:'biz:'+b.id, icon:'🏪', name:b.name, amt:num(bl[b.id])-away, acct:acctOf('biz:'+b.id)});
+    var bt=b===mainBiz()?Math.max(0,bizWallet().titheRes):0;
+    L.push({key:'biz:'+b.id, icon:'🏪', name:b.name+' (business)', amt:num(bl[b.id])-away-bt, acct:acctOf('biz:'+b.id)});
+    if(bt>0.5) L.push({key:'tithe:biz', icon:'🙏', name:'Business tithe', amt:bt, acct:acctOf('biz:'+b.id)});
   });
   L.push({key:'tank', icon:'🛢️', name:'Salary tank', amt:holding(), acct:acctOf('tank')});
   var awayL=0;
-  S.budget.forEach(function(b){ var a=lineAway(b); if(a){ var u=lineUnspent(b); awayL+=u; L.push({key:'line:'+b.id, icon:'🧾', name:b.name, amt:u, acct:a}); } });
+  S.budget.forEach(function(b){ var a=lineAway(b); if(a){ var u=lineUnspent(b); awayL+=u; L.push({key:'line:'+b.id, icon:b.auto==='tithe'?'🙏':'🧾', name:b.auto==='tithe'?'Tithe from salary':b.name, amt:u, acct:a}); } });
   var wU=mainUnspent('wife'), dU=mainUnspent('dad');
   L.push({key:'main:wife', icon:'👩', name:'Wife budget (to send)', amt:wU, acct:acctOf('family')});
   L.push({key:'main:dad', icon:'👨', name:'Dad budget', amt:dU, acct:acctOf('family')});
@@ -1603,6 +1607,13 @@ function acctPlan(){
   // Merge transfers on the same route and list them in the order they're done.
   var merged=[]; tx.forEach(function(t){ var m=merged.find(function(x){return x.from===t.from&&x.to===t.to;}); if(m) m.amount=Math.round((m.amount+t.amount)*100)/100; else merged.push(t); });
   tx=merged.sort(function(a,b){return a.depth-b.depth;});
+  // What each transfer carries: what the receiving wallet itself needs (by part), and what it passes on.
+  tx.forEach(function(t){
+    var onward=tx.filter(function(u){return u.from===t.to;}), on=sum(onward,function(u){return u.amount;}), own=Math.max(0,t.amount-on);
+    var rr=rowOf(t.to.id);
+    t.parts=own>0.5?[{name:'for '+t.to.name+' ('+rr.ps.filter(function(p){return p.amt>0.5;}).map(function(p){return p.name;}).join(', ')+')', icon:'', v:own}]:[];
+    onward.forEach(function(u){ t.parts.push({name:'to pass on → '+u.to.name, icon:'↪', v:u.amount}); });
+  });
   // A transfer that only passes money on says so.
   tx.forEach(function(t){ var onward=tx.filter(function(u){return u.from===t.to;}); if(onward.length) t.for=t.for.concat(onward.map(function(u){return 'then '+u.to.name;})); });
   var due=Math.min(salaryDueSoFar(),Math.max(0,holding()));
@@ -1634,18 +1645,28 @@ function accountsCard(){
   var matched=S.moves.some(function(m){return m.kind==='acctadj';});
   return '<div class="card"><div class="row between"><h2>💳 Wallets</h2><span class="row" style="gap:8px"><b class="num">'+money(tot)+'</b><button class="icon" data-act="acctsetup" aria-label="Set up wallets">⚙</button></span></div>'+
     '<div class="row" style="gap:6px;margin:4px 0 6px"><button class="sm'+(matched?'':' primary')+'" data-act="matchall">⚖️ Match all balances</button>'+(matched?'':'<small class="muted" style="align-self:center">do this once with your real balances</small>')+'</div>'+
-    (pl.tx.length?'<div class="xnow"><div class="k">⇄ Transfer now</div>'+pl.tx.map(function(t){
-        return '<div class="row between ptx"><span class="pxt"><b>'+esc(t.from.name)+' → '+esc(t.to.name)+'</b><small class="muted">for '+esc(t.for.join(', ')||'balance')+'</small></span>'+
-          '<button class="primary sm" data-act="acctxfer" data-from="'+t.from.id+'" data-to="'+t.to.id+'" data-amt="'+t.amount+'">'+money(t.amount)+(num((S.fees||{})[t.from.id+'>'+t.to.id])>0?'<small> +'+money(S.fees[t.from.id+'>'+t.to.id])+' fee</small>':'')+'</button></div>'; }).join('')+
-        '<small class="muted" style="display:block;margin-top:4px">These grow as you allot. Send whenever you like — one transfer for several days means one fee. Tap after sending.</small></div>'
+    (function(){
+      // The money flow, in the order it's done: what stays in the income wallet,
+      // the weekly send to Mommy, then each transfer with what it carries.
+      var inc=accById(acctOf(mainBiz()?'in:biz:'+mainBiz().id:'family')), incRow=inc&&pl.rows.find(function(r){return r.a.id===inc.id;});
+      var keep=incRow?incRow.ps.filter(function(p){return p.amt>0.5&&p.key!=='main:wife';}):[];
+      var un=mainUnspent('wife'), wa=asg().wife&&accById(asg().wife);
+      if(!pl.tx.length&&!(un>0.5&&wa)) return '';
+      return '<div class="xnow"><div class="k">⇄ Money flow now</div>'+
+        (incRow?'<div class="flowstep"><span class="fs">1</span><span class="pxt"><b>In '+esc(inc.name)+' (sales arrive): '+money(incRow.has)+'</b>'+
+          (keep.length?'<small class="muted">keep here: '+keep.map(function(p){return p.icon+' '+esc(p.name)+' '+money(p.amt);}).join(' · ')+'</small>':'')+'</span></div>':'')+
+        (un>0.5&&wa?'<div class="flowstep"><span class="fs">2</span><span class="pxt"><b>👩 Send to Mommy · '+esc(wa.name)+'</b><small class="muted">her budget allotted, not yet sent · weekly</small></span><button class="primary sm" data-act="sendwife">'+money(un)+'</button></div>':'')+
+        pl.tx.map(function(t,i){
+          return '<div class="flowstep"><span class="fs">'+(i+3)+'</span><span class="pxt"><b>'+esc(t.from.name)+' → '+esc(t.to.name)+'</b><small class="muted">'+
+            ((t.parts||[]).map(function(x){return x.icon+' '+esc(x.name)+' '+money(x.v);}).join(' · ')||esc(t.for.join(', ')))+'</small></span>'+
+            '<button class="primary sm" data-act="acctxfer" data-from="'+t.from.id+'" data-to="'+t.to.id+'" data-amt="'+t.amount+'">'+money(t.amount)+'</button></div>'; }).join('')+
+        '<small class="muted" style="display:block;margin-top:4px">Your family\'s money is the daily salary, kept here first; what\'s left of each sale is business money. Send whenever you like — one transfer for several days means one fee.</small></div>';
+    })()+
+    (pl.tx.length?''
       :'<div class="note good" style="margin:8px 0">✓ Every account has what it should'+(pl.sal?' — only the salary is waiting.':' — nothing to transfer.')+'</div>')+
     (pl.sal&&pl.sal.from&&pl.sal.to?'<div class="xnow"><div class="row between ptx" style="border:0"><span class="pxt"><b>👪 Salary waiting · '+pl.sal.days+' days</b>'+
         '<small class="muted">record it first: '+(salaryDebtPct()>0?salaryDebtPct()+'% to debts, the rest to the budget — the transfers then appear below':'the transfer then appears below')+'</small></span>'+
         '<button class="primary sm" data-act="draw">Pay '+money(pl.sal.amount)+'</button></div></div>':'')+
-    (function(){ var un=mainUnspent('wife'), wa=asg().wife&&accById(asg().wife); if(un<0.5||!wa) return '';
-      var last=S.spend.filter(function(x){return x.catId==='main:wife';}).map(function(x){return x.date;}).sort().pop();
-      return '<div class="xnow"><div class="row between ptx" style="border:0"><span class="pxt"><b>👩 Send to Wife · '+esc((accById(acctOf('family'))||{name:''}).name)+' → '+esc(wa.name)+'</b>'+
-        '<small class="muted">allotted, not yet sent · weekly'+(last?' · last sent '+shortDate(last):'')+'</small></span><button class="primary sm" data-act="sendwife">'+money(un)+'</button></div></div>'; })()+
     (pl.short>0.5?'<div class="note warn">'+money(pl.short)+' is planned but not in any account yet — record sales or the salary payout, or match a balance.</div>':'')+
     '<div class="wgrid">'+pl.rows.map(function(r){
       var st=Math.abs(r.diff)<0.5?'<span class="pill good">✓</span>':r.diff>0?'<span class="pill warn">needs '+shortMoney(r.diff)+'</span>':'<span class="pill">extra '+shortMoney(-r.diff)+'</span>';
@@ -3347,6 +3368,8 @@ function applyFlow(){
   // protection funds (and dream savings).
   // Dad's budget and the Wife's budget (until it's sent each week) stay with the tank in GCash.
   S.assign={tank:g.id, family:g.id, wife:w.id, debt:ms.id, protect:s2.id, dreams:s2.id};
+  // Both tithes (the business's and the salary's) are kept in the business wallet.
+  var tl=(S.budget||[]).find(function(x){return x.auto==='tithe';}); if(tl) S.assign['line:'+tl.id]=m.id;
   // Where each wallet gets its money from: sales come into GCash; the business
   // wallet (Maya) is filled from GCash and fills Maya Savings for debts.
   S.feed={}; S.feed[m.id]=g.id; S.feed[ms.id]=m.id; S.feed[w.id]=g.id; S.feed[s2.id]=g.id;
@@ -3355,7 +3378,7 @@ function applyFlow(){
 }
 
 ACT.acctpreset=function(){
-  checkpoint('set up accounts'); applyFlow(); S.flowV=5;
+  checkpoint('set up accounts'); applyFlow(); S.flowV=6;
   if(dlg.open) dlg.close();
   save(); render(); toast('GCash income · Maya business · Maya Savings debts · GCash - Wife budget · GSave protection');
 };
