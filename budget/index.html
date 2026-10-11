@@ -386,6 +386,7 @@ tr.tap{cursor:pointer}
 .flowstep .pxt{flex:1}.fs{width:24px;height:24px;border-radius:50%;background:var(--brand);color:var(--brand-ink,#fff);display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
 .sdrow{padding:10px 0;border-top:1px solid var(--line);cursor:pointer}.sdrow:first-of-type{border-top:0}
 .sdleg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;margin-top:4px}.sdleg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:middle}.sdleg small{color:var(--muted)}
+.mrow{border-bottom:1px solid var(--line,#8883);padding-bottom:6px;margin-bottom:6px}.mfix{display:grid;gap:4px;margin-top:-4px}.mfix select{width:100%}
 .splitrow{padding:5px 0;font-size:14px}.splitrow.sub{padding-left:16px}.splitrow input{padding:6px 8px;text-align:right}
 .wgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .wtile{display:flex;gap:8px;align-items:flex-start;text-align:left;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--card);min-width:0;font-weight:400}
@@ -918,7 +919,8 @@ function bizWallet(){
   w.paidOpex=sum(S.bizExp.filter(function(e){return e.kind!=='tax';}),function(e){return num(e.amount);});
   w.paidTax=sum(S.bizExp.filter(function(e){return e.kind==='tax';}),function(e){return num(e.amount);});
   w.given=titheGiven();
-  w.balance=num(S.walletStart)+w.sales-w.paidOpex-w.paidTax-w.given-w.family+xferNetPrefix('biz:')-acctFees('biz:');
+  w.advance=salaryAdvance();
+  w.balance=num(S.walletStart)+w.sales-w.paidOpex-w.paidTax-w.given-w.family-w.advance+xferNetPrefix('biz:')-acctFees('biz:');
   w.taxRes=w.tax-w.paidTax; w.titheRes=w.tithe-w.given;
   w.jars=0; S.businesses.forEach(function(b){ b.opex.forEach(function(o){ w.jars+=opexJar(o); }); });
   w.opexRes=w.jars;
@@ -1148,11 +1150,18 @@ function totalDebtStart(){ return sum(liveDebts(), function(d){return Math.max(n
 function leftover(){ return salary() - budgetTotal() - debtMins(); }
 function extraToDebt(){ return S.extraOverride!=null ? num(S.extraOverride) : Math.max(0, leftover()); }
 
-function holding(){
-  var inflow=sum(flowMonths(),function(mk){return monthFlow(mk).family;});
-  var out=sum(S.moves.filter(function(m){return m.kind==='draw'||m.kind==='sweep';}),function(m){return num(m.amount)+num(m.fee);});
-  return num(S.holdingStart)+inflow-out+xferNet('tank')-acctFees('tank');
+// The salary tank: earned salary (E) in, payouts (P) out. Money released from the
+// business into the tank (rel) is at least what's been earned; going beyond that —
+// paying or moving salary ahead — is an advance the coming days' salary repays.
+function tankLedger(){
+  var E=sum(flowMonths(),function(mk){return monthFlow(mk).family;});
+  var P=sum(S.moves.filter(function(m){return m.kind==='draw'||m.kind==='sweep';}),function(m){return num(m.amount)+num(m.fee);});
+  var base=num(S.holdingStart)+xferNet('tank')-acctFees('tank'), rel=E;
+  S.moves.forEach(function(m){ if(m.kind==='tankadv') rel=Math.max(rel,num(m.relTo)); });
+  rel=Math.max(rel,P-base);
+  return {E:E, P:P, base:base, rel:rel};
 }
+function holding(){ var t=tankLedger(); return t.base+t.rel-t.P; }
 /* Daily living. Income arrives daily, so nothing asks for a month's money up
    front: the salary is earned day by day, and each debt with a due date is
    saved for a little every day until it's due. */
@@ -1171,7 +1180,9 @@ function availableMoney(mk){
 // Salary is earned day by day (the month's salary ÷ its days) from S.salaryFrom
 // and waits until it's paid out — unpaid days carry over, even into a new month.
 // Salary paid ahead of what's been earned (the tank below zero), carried by the business.
-function salaryAdvance(){ return Math.max(0,-holding()); }
+// Business money an advance may use: its balance, minus the tithe kept aside.
+function advanceRoom(){ var w=bizWallet(); return Math.max(0,w.balance-Math.max(0,w.titheRes)); }
+function salaryAdvance(){ var t=tankLedger(); return Math.max(0,t.rel-t.E); }
 function salaryDay(iso){ var mk=monthKey(iso); return salary()/daysIn(mk); }
 function salaryEarnedSoFar(){
   var from=S.salaryFrom||thisMonth()+'-01', t=todayISO(), x=from, tot=0, g=0;
@@ -1562,7 +1573,6 @@ function purposes(){
     if(bt>0.5) L.push({key:'tithe:biz', icon:'🙏', name:'Business tithe', amt:bt, acct:acctOf('tithe:biz')});
   });
   L.push({key:'tank', icon:'🛢️', name:'Salary tank', amt:Math.max(0,holding()), acct:acctOf('tank')});
-  var advP=salaryAdvance(); if(advP>0.5) L.push({key:'adv', icon:'⏩', name:'Salary advance (paid ahead)', amt:-advP, acct:acctOf(mainBiz()?'biz:'+mainBiz().id:'family')});
   var awayL=0;
   S.budget.forEach(function(b){ var a=lineAway(b); if(a){ var u=lineUnspent(b); awayL+=u; L.push({key:'line:'+b.id, icon:b.auto==='tithe'?'🙏':'🧾', name:b.auto==='tithe'?'Tithe from salary':b.name, amt:u, acct:a}); } });
   var wU=mainUnspent('wife'), dU=mainUnspent('dad');
@@ -1575,17 +1585,19 @@ function purposes(){
   return L;
 }
 // What each account really has.
-function acctHas(){
-  var h={}, add=function(a,v){ h[a]=(h[a]||0)+v; };
+function acctHas(B){
+  var h={}, why='', add=function(a,v,c){ h[a]=(h[a]||0)+v; if(B){ c=c||why; B[a]=B[a]||{}; B[a][c]=(B[a][c]||0)+v; } };
   ACC().forEach(function(a){ h[a.id]=0; });
   var mb=mainBiz(), mbA=mb?acctOf('biz:'+mb.id):acctOf('family');
-  add(mbA,num(S.walletStart)); add(acctOf('tank'),num(S.holdingStart));
+  add(mbA,num(S.walletStart),'Starting balance'); add(acctOf('tank'),num(S.holdingStart),'Starting balance');
   // Sales land where they arrive; the business share then moves to the business's own account.
-  S.incomes.forEach(function(x){ var b=bizByName(x.source)||mb; add(b?acctOf('in:biz:'+b.id):mbA, num(x.amount)); });
-  S.bizExp.forEach(function(e){
+  S.incomes.forEach(function(x){ var b=bizByName(x.source)||mb; add(b?acctOf('in:biz:'+b.id):mbA, num(x.amount),'Sales in'); });
+  S.bizExp.forEach(function(e){ why='Business expenses';
+    if(e.acct&&accById(e.acct)){ add(e.acct,-num(e.amount)); return; }
     var b=S.businesses.find(function(y){return y.id===e.bizId;}), o=b&&b.opex.find(function(y){return y.id===e.itemId;});
     add(o&&opexAway(o,b)?opexAway(o,b):b?acctOf('biz:'+b.id):mbA, -num(e.amount)); });
-  S.spend.forEach(function(x){
+  S.spend.forEach(function(x){ why=x.catId==='tithe'?'Tithe given':x.catId==='main:wife'?'Mom spending (sent to her)':x.catId==='main:dad'?'Dad spending':'Family spending';
+    if(x.acct&&accById(x.acct)){ add(x.acct,-num(x.amount)); return; }
     if(x.catId==='tithe'){ add(acctOn('tithe:biz',x.date,mainBiz()?'biz:'+mainBiz().id:'family'),-num(x.amount)); return; }
     if(x.catId==='main:dad'){ add(acctOn('main:dad',x.date,'family'),-num(x.amount)); return; }
     // Money sent to the Wife is spent from her wallet (the transfer put it there).
@@ -1594,27 +1606,27 @@ function acctHas(){
     if(b&&b.auto==='tithe'){ add(acctOn('line:'+b.id,x.date,'family'),-num(x.amount)); return; }
     add(b&&lineAway(b)?lineAway(b):b&&mainOf(b)==='dad'?acctOn('main:dad',x.date,'family'):acctOf('family'), -num(x.amount)); });
   S.moves.forEach(function(m){
-    var a=num(m.amount), f=num(m.fee);
+    var a=num(m.amount), f=num(m.fee); why='Debt payments';
     if(m.kind==='draw'){ if(m.noMove) return; var td=num(m.toDebt); add(acctOf('tank'),-a-f); add(acctOf('family'),a-td); add(acctOf('debt'),td); }
     else if(m.kind==='sweep') add(acctOf('tank'),-a);
     else if(m.kind==='debtpay'){ add(acctOf('debt'),-num(m.fromJar)); add(acctOf('family'),-(a-num(m.fromJar))); }
-    else if(m.kind==='acctx'){ add(m.from,-a-f); add(m.to,a); }
-    else if(m.kind==='acctadj') add(m.acct,a);
+    else if(m.kind==='acctx'){ add(m.from,-a,'Transfers out'); if(f) add(m.from,-f,'Transfer fees'); add(m.to,a,'Transfers in'); }
+    else if(m.kind==='acctadj') add(m.acct,a,'Balance matches');
     else if(m.kind==='xfer'){
       var fr=String(m.from), to=String(m.to), held=function(k){return k.indexOf('fund:')===0||k.indexOf('dream:')===0||k==='outside';};
       if(!held(fr)) add(acctOf(walletOf(fr)),-a-f); else if(fr!=='outside') add(acctOf(walletOf(fr)),-f);
       if(!held(to)) add(acctOf(walletOf(to)),a);
     }
   });
-  add(acctOf('protect'),sum(Object.keys(S.funds||{}),function(k){return num(S.funds[k]);}));
+  why='Protection & dreams'; add(acctOf('protect'),sum(Object.keys(S.funds||{}),function(k){return num(S.funds[k]);}));
   add(acctOf('dreams'),sum((S.dreams||[]).filter(function(d){return d.status!=='bought';}),function(d){return num(d.saved);}));
   return h;
 }
 // Should have, has, and the transfers that settle the difference.
 function acctPlan(){
   var P=purposes(), H=acctHas(), rows=ACC().map(function(a){
-    var ps=P.filter(function(p){return p.acct===a.id;}), should=sum(ps,function(p){return p.amt;});
-    return {a:a, ps:ps, should:should, has:num(H[a.id]), diff:should-num(H[a.id])};
+    var ps=P.filter(function(p){return p.acct===a.id;}), should=sum(ps,function(p){return p.amt;}), raw=num(H[a.id]), has=Math.max(0,raw);
+    return {a:a, ps:ps, should:should, raw:raw, gap:raw<-0.5?-raw:0, has:has, diff:should-has};
   });
   // Accounts are filled along their route (e.g. GCash → Maya → Maya Savings):
   // the deepest account first, its need added to the account that feeds it.
@@ -1648,7 +1660,7 @@ function acctPlan(){
   tx.forEach(function(t){ var onward=tx.filter(function(u){return u.from===t.to;}); if(onward.length) t.for=t.for.concat(onward.map(function(u){return 'then '+u.to.name;})); });
   var due=Math.min(salaryDueSoFar(),Math.max(0,holding()));
   var sal=due>0.5&&acctOf('tank')!==acctOf('family')?{from:accById(acctOf('tank')), to:accById(acctOf('family')), amount:due, budget:due*(1-salaryDebtPct()/100), days:salaryDaysDue()}:null;
-  return {rows:rows, tx:tx, sal:sal, short:sum(need,function(n){return n.v;})};
+  return {rows:rows, tx:tx, sal:sal, short:sum(need,function(n){return n.v;}), gaps:rows.filter(function(r){return r.gap>0;})};
 }
 function acctLogo(a, big){ return a&&a.logo?'<img class="wlogo'+(big?' big':'')+'" src="'+esc(a.logo)+'" alt="">':'<span class="wlogo e'+(big?' big':'')+'" aria-hidden="true">🏦</span>'; }
 // Home: the day's routine in four steps.
@@ -1692,7 +1704,8 @@ function accountsCard(){
   var pl=acctPlan(), tot=sum(pl.rows,function(r){return r.has;});
   var matched=S.moves.some(function(m){return m.kind==='acctadj';});
   return '<div class="card"><div class="row between"><h2>💳 Wallets</h2><span class="row" style="gap:8px"><b class="num">'+money(tot)+'</b><button class="icon" data-act="acctsetup" aria-label="Set up wallets">⚙</button></span></div>'+
-    '<div class="row" style="gap:6px;margin:4px 0 6px"><button class="sm'+(matched?'':' primary')+'" data-act="matchall">⚖️ Match all balances</button>'+(matched?'':'<small class="muted" style="align-self:center">do this once with your real balances</small>')+'</div>'+
+    '<div class="row" style="gap:6px;margin:4px 0 6px"><button class="sm'+(matched&&!pl.gaps.length?'':' primary')+'" data-act="matchall">⚖️ Match &amp; fix balances</button>'+(matched?'':'<small class="muted" style="align-self:center">do this once with your real balances</small>')+'</div>'+
+    (pl.gaps.length?'<div class="note bad" data-act="matchall" role="button" tabindex="0">🔍 Records don\'t add up: '+pl.gaps.map(function(r){return esc(r.a.name)+' is '+money(r.gap)+' short (more recorded going out than coming in)';}).join(' · ')+'. Tap to type the real balance and say where the difference went.</div>':'')+
     (function(){
       // The money flow, in the order it's done: what stays in the income wallet,
       // the weekly send to Mommy, then each transfer with what it carries.
@@ -1719,7 +1732,7 @@ function accountsCard(){
     '<div class="wgrid">'+pl.rows.map(function(r){
       var st=Math.abs(r.diff)<0.5?'<span class="pill good">✓</span>':r.diff>0?'<span class="pill warn">needs '+shortMoney(r.diff)+'</span>':'<span class="pill">extra '+shortMoney(-r.diff)+'</span>';
       return '<button class="wtile" data-act="acct" data-id="'+r.a.id+'">'+acctLogo(r.a)+'<span class="wt"><b>'+esc(r.a.name)+'</b>'+
-        '<small>should hold</small><span class="wv num">'+money(r.should)+'</span><small class="num">has now '+money(r.has)+'</small>'+st+
+        '<small>should hold</small><span class="wv num">'+money(r.should)+'</span><small class="num">has now '+money(r.has)+'</small>'+st+(r.gap?'<small class="neg">⚠ '+money(r.gap)+' unaccounted</small>':'')+
         '<small>'+esc(r.ps.map(function(p){return p.name;}).join(' · '))+'</small></span></button>'; }).join('')+'</div></div>';
 }
 function walletsCard(){
@@ -2112,8 +2125,8 @@ V.income=function(){
 
   // Business dashboard, wallet (with daily opex savings), opex report and the
   // per-business view — each folds away, since there may be several businesses.
-  h+=tabWallets(['tank','biz:*','opex:*','tithe:*','adv'],'Income & business wallets');
-  if(salaryAdvance()>0.5) h+='<div class="card tight"><div class="row between"><span>⏩ Salary advance from the business</span><b class="num">'+money(salaryAdvance())+'</b></div><small class="muted">Repaid by the coming '+Math.ceil(salaryAdvance()/Math.max(1,salaryDay(todayISO())))+' days of salary; daily payouts resume after.</small></div>';
+  h+=tabWallets(['tank','biz:*','opex:*','tithe:*'],'Income & business wallets');
+  if(salaryAdvance()>0.5) h+='<div class="card tight"><div class="row between"><span>⏩ Salary advance (already taken out of the business)</span><b class="num">'+money(salaryAdvance())+'</b></div><small class="muted">Repaid by the coming '+Math.ceil(salaryAdvance()/Math.max(1,salaryDay(todayISO())))+' days of salary; daily payouts resume after.</small></div>';
   h+=bizDashboard();
   h+=metaCard();
   h+=bizTitheCard(incMk);
@@ -2508,7 +2521,7 @@ function tabWallets(keys, title){
       var st=Math.abs(r.diff)<0.5?'<span class="pill good">✓</span>':r.diff>0?'<span class="pill warn">needs '+money(r.diff)+'</span>':'<span class="pill">extra '+money(-r.diff)+'</span>';
       return '<div class="tw" data-act="acct" data-id="'+r.a.id+'" role="button" tabindex="0">'+acctLogo(r.a)+'<span class="twl"><b>'+esc(r.a.name)+'</b><small class="num">'+
         (mine.length?mine.map(function(p){return esc(p.name)+' '+money(p.amt);}).join(' · '):'tracked separately')+'</small></span>'+
-        '<span class="twr num"><b>'+money(r.has)+'</b><small>of '+money(r.should)+'</small>'+st+'</span></div>';
+        '<span class="twr num"><b>'+money(r.has)+'</b><small>of '+money(r.should)+'</small>'+st+(r.gap?'<small class="neg">⚠ '+money(r.gap)+' unaccounted</small>':'')+'</span></div>';
     }).join('')+
     tx.map(function(t){ return '<div class="row between ptx"><span class="pxt"><b>'+esc(t.from.name)+' → '+esc(t.to.name)+'</b><small class="muted">for '+esc(t.for.join(', '))+'</small></span>'+
       '<button class="primary sm" data-act="acctxfer" data-from="'+t.from.id+'" data-to="'+t.to.id+'" data-amt="'+t.amount+'">'+money(t.amount)+'</button></div>'; }).join('')+'</div>';
@@ -2885,6 +2898,7 @@ function txLabelOf(coll, x){
   if(x.kind==='acctx') return {kind:'xfer', icon:'⇄', label:((accById(x.from)||{}).name||'?')+' → '+((accById(x.to)||{}).name||'?')+(num(x.fee)>0?' · fee '+money(x.fee):'')+(x.note?' · '+x.note:'')};
   if(x.kind==='acctadj') return {kind:'xfer', icon:'⚖️', label:'Balance match · '+((accById(x.acct)||{}).name||'?')+' '+(num(x.amount)<0?'−':'+')};
   if(x.kind==='xfer') return {kind:'xfer', icon:'⇄', label:walletName(x.from)+' → '+walletName(x.to)+(num(x.fee)>0?' · fee '+money(x.fee):'')+(x.note?' · '+x.note:'')};
+  if(x.kind==='tankadv') return {kind:'xfer', icon:'⏩', label:x.note||'Salary advance to tank'};
   var icons={draw:'👪', debtpay:'📉', debtsave:'💰', debtrelease:'↺', opexsave:'🏪', opexrelease:'↺', sweep:'🛢️', dreamadd:'⭐'};
   return {kind:x.kind, icon:icons[x.kind]||'↔', label:x.note||x.kind};
 }
@@ -3007,7 +3021,7 @@ V.settings=function(){
 
 var dlg=document.getElementById('dlg'), dlgForm=document.getElementById('dlgForm'), dlgSubmit=null;
 function openDialog(title, fields, onSubmit, submitLabel){
-  dlgForm.oninput=null; dlgForm.onclick=null;
+  dlgForm.oninput=null; dlgForm.onclick=null; dlgForm.onchange=null;
   dlgForm.innerHTML='<h2 style="margin-bottom:12px">'+esc(title)+'</h2>'+fields+
     '<div class="row" style="justify-content:flex-end;margin-top:12px"><button value="cancel" formnovalidate>Cancel</button><button class="primary" value="ok">'+esc(submitLabel||'Save')+'</button></div>';
   dlgSubmit=onSubmit;
@@ -3479,7 +3493,10 @@ ACT.acct=function(el){
   var recs=S.moves.filter(function(m){return (m.kind==='acctx'&&(m.from===r.a.id||m.to===r.a.id))||(m.kind==='acctadj'&&m.acct===r.a.id);}).slice(-12).reverse();
   openDialog('🏦 '+r.a.name,
     '<div class="row" style="gap:12px;align-items:center;margin-bottom:8px">'+acctLogo(r.a,true)+'<div><div class="v num" style="font-size:26px">'+money(r.has)+'</div><small class="muted num">should have '+money(r.should)+'</small></div></div>'+
-    '<div class="wparts">'+r.ps.map(function(p){return '<div class="row between"><span>'+p.icon+' '+esc(p.name)+'</span><span class="num">'+money(p.amt)+'</span></div>';}).join('')+'</div>'+
+    (r.gap?'<div class="note bad">⚠ The records show '+money(r.gap)+' more going out of '+esc(r.a.name)+' than coming in. Something wasn\'t recorded — tap <b>Match bank balance</b> and say where it went.</div>':'')+
+    '<div class="k">Should hold</div><div class="wparts">'+r.ps.map(function(p){return '<div class="row between"><span>'+p.icon+' '+esc(p.name)+'</span><span class="num'+(p.amt<-0.5?' neg':'')+'">'+money(p.amt)+'</span></div>';}).join('')+'</div>'+
+    (function(){ var B={}; acctHas(B); var b=B[r.a.id]||{}, ks=Object.keys(b).filter(function(k){return Math.abs(b[k])>0.005;});
+      return '<details class="more"><summary>How the app counts '+money(r.raw)+'</summary><div class="wparts">'+(ks.length?ks.map(function(k){return '<div class="row between"><span>'+esc(k)+'</span><span class="num'+(b[k]<0?' neg':'')+'">'+(b[k]<0?'−':'+')+money(Math.abs(b[k]))+'</span></div>';}).join(''):'<small class="muted">Nothing recorded yet.</small>')+'</div></details>'; })()+
     '<div class="row" style="gap:6px;flex-wrap:wrap;margin:10px 0">'+
       '<button type="button" class="primary sm" data-act="acctmatch" data-id="'+r.a.id+'">⚖️ Match bank balance</button>'+
       '<button type="button" class="sm" data-act="acctxfer" data-from="'+r.a.id+'">⇄ Transfer</button>'+
@@ -3507,26 +3524,58 @@ ACT.acctxfer=function(el){
       S.moves.push({id:uid(),date:v.date||todayISO(),kind:'acctx',from:v.from,to:v.to,amount:Math.round(a*100)/100,fee:fee,feeTo:feeTo,note:v.note||''});
       toast(money(a)+' '+accById(v.from).name+' → '+accById(v.to).name+(fee?' · fee '+money(fee):'')); }, 'Record');
 };
-ACT.matchall=function(){
-  var pl=acctPlan();
-  openDialog('⚖️ Match all balances',
-    '<p class="muted" style="font-size:13px;margin-top:0">Open each app and type the balance you see right now. The app records the difference as an adjustment, so from here on it knows exactly what each wallet contains.</p>'+
-    pl.rows.map(function(r,i){ return '<label class="f"><span>'+esc(r.a.name)+' <small class="muted">· app counts '+money(r.has)+'</small></span><input name="bal'+i+'" inputmode="decimal" placeholder="leave blank to skip"></label>'; }).join(''),
-    function(v){ var n=0;
-      pl.rows.forEach(function(r,i){ var raw=(v['bal'+i]||'').trim(); if(raw==='') return; var d=num(raw)-r.has; if(Math.abs(d)<0.5) return;
-        S.moves.push({id:uid(),date:todayISO(),kind:'acctadj',acct:r.a.id,amount:Math.round(d*100)/100,note:'Matched to '+r.a.name}); n++; });
-      toast(n?n+' wallet'+(n>1?'s':'')+' matched — Transfer now shows what to send':'Nothing to change'); }, 'Match');
+// Type the real balance; the app shows the difference and asks where it went,
+// then records it as a transfer, a spend, a business expense, or a plain correction.
+function causeOpts(r, others){
+  var o='<option value="adj">⚖️ Just correct it (interest, unknown)</option>'+
+    '<optgroup label="↔ A transfer that wasn\'t recorded">'+others.map(function(x){return '<option value="x:'+x.a.id+'">↔ with '+esc(x.a.name)+'</option>';}).join('')+'</optgroup>'+
+    '<optgroup label="🧾 Spent from this wallet, not recorded"><option value="sp:main:wife">👩 Mom (house budget)</option><option value="sp:main:dad">👨 Dad</option>'+
+      S.budget.filter(function(b){return !b.auto;}).map(function(b){return '<option value="sp:'+b.id+'">🧾 '+esc(b.name)+'</option>';}).join('')+
+      S.businesses.map(function(b){return '<option value="bx:'+b.id+'">🏪 '+esc(b.name)+' expense</option>';}).join('')+'</optgroup>';
+  return o;
+}
+function causeGuess(r, d, rows){
+  if(d>0){ var ex=rows.filter(function(x){return x!==r&&x.raw-x.should>0.5;}).sort(function(a,b){return (b.raw-b.should)-(a.raw-a.should);})[0]; return ex?'x:'+ex.a.id:'adj'; }
+  if(asg().wife===r.a.id) return 'sp:main:wife';
+  if(acctOf('main:dad')===r.a.id&&acctOf('family')!==r.a.id) return 'sp:main:dad';
+  var bz=S.businesses.find(function(b){return acctOf('biz:'+b.id)===r.a.id;}); if(bz) return 'bx:'+bz.id;
+  return 'adj';
+}
+function recordCause(r, d, c){
+  var t=todayISO(), note='Found when matching '+r.a.name;
+  if(c.indexOf('x:')===0){ var o=c.slice(2), from=d>0?o:r.a.id, to=d>0?r.a.id:o;
+    var ps=purposes().filter(function(p){return p.acct===from;}), fk=ps.some(function(p){return p.key==='family';})?'family':ps.some(function(p){return p.key==='tank';})?'tank':((ps.find(function(p){return p.key.indexOf('biz:')===0;})||{}).key||'family');
+    S.moves.push({id:uid(),date:t,kind:'acctx',from:from,to:to,amount:Math.round(Math.abs(d)*100)/100,fee:0,feeTo:fk,note:note}); return true; }
+  if(c.indexOf('sp:')===0||c.indexOf('bx:')===0){ if(d>0) return false;
+    if(c.indexOf('sp:')===0) S.spend.push({id:uid(),date:t,catId:c.slice(3),amount:Math.round(-d*100)/100,acct:r.a.id,note:note});
+    else S.bizExp.push({id:uid(),date:t,bizId:c.slice(3),itemId:null,amount:Math.round(-d*100)/100,fromJar:0,acct:r.a.id,note:'Unrecorded · '+note});
+    return true; }
+  S.moves.push({id:uid(),date:t,kind:'acctadj',acct:r.a.id,amount:Math.round(d*100)/100,note:'Matched to '+r.a.name}); return true;
+}
+ACT.matchall=function(el){
+  var pl=acctPlan(), only=el&&el.dataset&&el.dataset.id, rows=pl.rows.filter(function(r){return !only||r.a.id===only;});
+  openDialog(only?'⚖️ Match '+rows[0].a.name:'⚖️ Match & fix balances',
+    '<p class="muted" style="font-size:13px;margin-top:0">Open each app and type the balance you see now. If it differs from what the app counts, say where the difference went — it\'s recorded there, so the right wallet or budget carries it.</p>'+
+    rows.map(function(r){ var i=pl.rows.indexOf(r);
+      return '<div class="mrow" data-i="'+i+'"><label class="f"><span>'+esc(r.a.name)+' <small class="muted num">· app counts '+money(r.raw)+'</small>'+(r.gap?' <small class="neg">⚠ '+money(r.gap)+' short in the records</small>':'')+'</span>'+
+        '<input name="bal'+i+'" inputmode="decimal" placeholder="'+(only?'':'leave blank to skip')+'"'+(only?' value="'+Math.round(Math.max(0,r.raw)*100)/100+'"':'')+'></label>'+
+        '<div class="mfix" hidden><small class="num mdiff"></small><select name="why'+i+'">'+causeOpts(r,pl.rows.filter(function(x){return x!==r;}))+'</select></div></div>'; }).join(''),
+    function(v){ var n=0, bad=null;
+      rows.forEach(function(r0){ var i=pl.rows.indexOf(r0), raw=(v['bal'+i]||'').trim(); if(raw===''||bad) return;
+        var cur=num(acctHas()[r0.a.id]), d=num(raw)-cur; if(Math.abs(d)<0.5) return;
+        if(recordCause(r0,d,v['why'+i]||'adj')) n++; else bad=r0.a.name; });
+      if(bad){ toast(bad+': the real balance is higher — spending can\'t explain that. Pick a transfer or “Just correct it”.'); return false; }
+      toast(n?n+' difference'+(n>1?'s':'')+' recorded — every wallet now matches':'Everything already matches ✓'); }, only?'Match':'Match & fix');
+  var upd=function(){ rows.forEach(function(r){ var i=pl.rows.indexOf(r), box=dlgForm.querySelector('.mrow[data-i="'+i+'"]'), inp=box.querySelector('input'), fx=box.querySelector('.mfix');
+    var raw=inp.value.trim(), d=raw===''?0:num(raw)-r.raw; fx.hidden=Math.abs(d)<0.5;
+    if(!fx.hidden){ box.querySelector('.mdiff').textContent=(d>0?'+'+money(d)+' more than the app counts — where did it come from?':money(-d)+' less than the app counts — where did it go?');
+      var sel=box.querySelector('select'); if(!sel.dataset.touched||sel.dataset.sign!==String(d>0)){ sel.value=causeGuess(r,d,pl.rows); sel.dataset.sign=String(d>0); }
+      [].forEach.call(sel.querySelectorAll('option'),function(o){ o.disabled=d>0&&(o.value.indexOf('sp:')===0||o.value.indexOf('bx:')===0); }); } }); };
+  dlgForm.oninput=function(e){ if(e.target.tagName==='SELECT') e.target.dataset.touched=1; upd(); };
+  dlgForm.onchange=function(e){ if(e.target.tagName==='SELECT') e.target.dataset.touched=1; };
+  upd();
 };
-ACT.acctmatch=function(el){
-  var pl=acctPlan(), r=pl.rows.find(function(x){return x.a.id===el.dataset.id;}); if(!r) return;
-  openDialog('⚖️ Match '+r.a.name,
-    '<small class="muted num">The app counts '+money(r.has)+' in '+esc(r.a.name)+'</small>'+
-    field('actual','Balance in the '+esc(r.a.name)+' app now','inputmode="decimal" required',Math.round(r.has*100)/100)+
-    '<p class="muted" style="font-size:13px">Use this once when you start, and whenever the real balance drifts. The difference is saved as an adjustment (see Transactions).</p>',
-    function(v){ var d=num(v.actual)-r.has; if(Math.abs(d)<0.5){ toast('Already matches ✓'); return; }
-      S.moves.push({id:uid(),date:todayISO(),kind:'acctadj',acct:r.a.id,amount:Math.round(d*100)/100,note:'Matched to '+r.a.name});
-      toast(r.a.name+' '+(d>0?'+':'−')+money(Math.abs(d))+' to match'); }, 'Match');
-};
+ACT.acctmatch=function(el){ ACT.matchall({dataset:{id:el.dataset.id}}); };
 // Everything due today in one tap: debts, budget lines and business opex.
 ACT.allotevery=function(){
   checkpoint('allot everything for today');
@@ -3887,21 +3936,27 @@ ACT.draw=function(el){
     '<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:6px">'+
       (need>0.5?'<button type="button" class="chip" data-setamt="'+Math.round(Math.min(h,need))+'">All earned · '+money(Math.min(h,need))+'</button>':'')+
       [3,7,15].map(function(k){ var v=Math.round(Math.min(h,need)+day*k); return '<button type="button" class="chip" data-setamt="'+v+'">Advance '+k+' days</button>'; }).join('')+'</div>'+
+    '<label class="check"><input type="checkbox" name="tankonly"><span>Only move it to the tank for now <small class="muted">(no split to debt, Mom or Dad yet)</small></span></label>'+
     '<div class="note warn advnote" hidden></div>'+
-    '<div class="k" style="margin-top:6px">Split</div>'+
+    '<div class="splitbox"><div class="k" style="margin-top:6px">Split</div>'+
     (tp?'<div class="row between splitrow"><span>🙏 Tithe '+tp+'% <small class="muted">→ GSave</small></span><b class="num tval">₱0</b></div>':'')+
     '<div class="row between splitrow"><span>💰 Debt'+(da?' <small class="muted">→ '+esc(da.name)+'</small>':'')+'</span><input name="debt" inputmode="decimal" class="num" style="width:110px"></div>'+
     '<div class="row between splitrow"><span>🧾 Budget</span><b class="num bval">₱0</b></div>'+
     '<div class="row between splitrow sub"><span>👨 Dad'+(dda?' <small class="muted">→ '+esc(dda.name)+'</small>':'')+'</span><input name="dad" inputmode="decimal" class="num" style="width:110px"></div>'+
     '<div class="row between splitrow sub"><span>👩 Mom <small class="muted">(send weekly)</small></span><b class="num mval">₱0</b></div>'+
-    '<div class="row" style="gap:6px;margin:6px 0"><button type="button" class="chip" data-resplit="1">Reset to '+(100-salaryDebtPct())+'/'+salaryDebtPct()+' · '+mainPct('dad')+'/'+mainPct('wife')+'</button></div>'+
+    '<div class="row" style="gap:6px;margin:6px 0"><button type="button" class="chip" data-resplit="1">Reset to '+(100-salaryDebtPct())+'/'+salaryDebtPct()+' · '+mainPct('dad')+'/'+mainPct('wife')+'</button></div></div>'+
     '<label class="check"><input type="checkbox" name="auto"'+(S.salaryAuto?' checked':'')+'><span>Pay the salary automatically every day</span></label>'+
     '<p class="muted" style="font-size:13px">This records the payout; the transfers then show under <b>Money flow</b>.</p>',
     function(v){ var a=num(v.amount); if(a<=0) return false;
+      var room=advanceRoom(), need2=v.tankonly?a:a-h;
+      if(need2>room+0.5){ toast('The business only has '+money(room)+' to advance — '+(v.tankonly?'move':'pay')+' at most '+money(v.tankonly?room:h+room)); return false; }
+      if(v.tankonly){
+        S.moves.push({id:uid(),date:todayISO(),kind:'tankadv',amount:Math.round(a*100)/100,relTo:Math.round((tankLedger().rel+a)*100)/100,noMove:true,note:'Salary advance to tank'});
+        toast(money(a)+' moved ahead into the tank — pay it out whenever you\'re ready'); return; }
       var T=a*tp/100, dbt=Math.max(0,Math.min(a-T,num(v.debt))), dad=Math.max(0,Math.min(a-T-dbt,num(v.dad)));
       S.salaryAuto=!!v.auto;
       paySalary(a,salaryDebtPct(),todayISO(),false,{debt:dbt,dad:dad});
-      var over=a-Math.min(h,need);
+      var over=a-h;
       toast('Salary '+money(a)+' recorded'+(over>0.5?' · '+money(over)+' advance from the business':'')); }, 'Record payout');
   var f=dlgForm, touched={};
   var fill=function(reset){ var a=num(f.querySelector('[name=amount]').value), T=a*tp/100, net=a-T;
@@ -3912,8 +3967,13 @@ ACT.draw=function(el){
     var dad=Math.min(bud,num(ad.value));
     var tv=f.querySelector('.tval'); if(tv) tv.textContent=money(T);
     f.querySelector('.bval').textContent=money(bud); f.querySelector('.mval').textContent=money(bud-dad);
-    var over=a-Math.min(h,need), an=f.querySelector('.advnote');
-    an.hidden=!(over>0.5); if(over>0.5) an.innerHTML='Salary advance <b>'+money(over)+'</b> ('+(day>0?Math.round(over/day*10)/10:0)+' days ahead): taken from the business'+(bz?' ('+esc(bz.name)+')':'')+'. The coming days\' salary repays it before paying out again.';
+    var tk=f.querySelector('[name=tankonly]').checked, over=tk?a:a-h, an=f.querySelector('.advnote');
+    f.querySelector('.splitbox').hidden=tk; f.querySelector('button[value=ok]')&&(f.querySelector('button[value=ok]').textContent=tk?'Move to tank':'Record payout');
+    var room=advanceRoom(), fr=bizWallet().free;
+    an.className='note '+(over>room+0.5?'bad':'warn')+' advnote';
+    an.hidden=!(over>0.5); if(over>room+0.5) an.innerHTML='Too much: the business has <b>'+money(room)+'</b> it can advance. '+(tk?'Move':'Pay')+' at most <b>'+money(tk?room:h+room)+'</b>.';
+    else if(over>0.5&&tk) an.innerHTML='Moves <b>'+money(a)+'</b> from the business'+(bz?' ('+esc(bz.name)+')':'')+' into the salary tank (now '+money(h)+'). Nothing goes to debt, Mom or Dad yet — pay it out later from here. The coming days\' salary repays the advance.';
+    else if(over>0.5) an.innerHTML='Salary advance <b>'+money(over)+'</b> ('+(day>0?Math.round(over/day*10)/10:0)+' days ahead): taken from the business'+(bz?' ('+esc(bz.name)+')':'')+'. The coming days\' salary repays it before paying out again.'+(over>fr+0.5?' <b>Note:</b> this dips into money set aside for opex.':'');
   };
   f.oninput=function(e){ if(e.target.name==='debt') touched.debt=1; if(e.target.name==='dad') touched.dad=1; if(e.target.name==='amount'){ touched={}; } fill(false); };
   f.onclick=function(e){ if(e.target.closest('[data-resplit]')){ touched={}; fill(true); } else if(e.target.closest('[data-setamt]')){ touched={}; setTimeout(function(){fill(true);},0); } };
