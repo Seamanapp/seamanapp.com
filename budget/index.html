@@ -583,6 +583,14 @@ function migrate(){
   if(!S.salaryFrom) S.salaryFrom=thisMonth()+'-01';
   if(!S.salarySplit) S.salarySplit={debt:50, from:todayISO()};
   S.fees=S.fees||{};
+  if(!S.opc){ S.opc={from:'2026-10'}; if(S.salary.method!=='manual'){ S.salary.manual=suggestedSalary(); S.salary.method='manual'; } }
+  if(S.opc&&S.opc.from){
+    var ptl=S.budget.find(function(b){return b.auto==='tithe';});
+    if(!ptl){ ptl={id:'ptithe',group:'Giving',name:'Tithe (salary)',amount:0,essential:true,auto:'tithe'}; S.budget.unshift(ptl); }
+    ptl.amount=Math.round(num(S.salary.manual)*num(S.tithe.pct)/100);
+    // Payouts already made since the OPC month get their tithe allotted once.
+    S.moves.forEach(function(m){ if(m.kind==='draw'&&m.tithe==null&&monthKey(m.date)>=S.opc.from){ var T=Math.round(num(m.amount)*num(S.tithe.pct)/100*100)/100; m.tithe=T; var tk=monthKey(m.date); setAlloc('ptithe',num(allocMap(tk)['ptithe'])+T,tk); } });
+  }
   if(S.accounts&&S.accounts.length&&S.flowV!==3&&['gcash','maya','gsave'].every(function(n){return S.accounts.some(function(a){return a.name.toLowerCase()===n;});})){ applyFlow(); S.flowV=3; }
   (S.businesses||[]).forEach(function(b){ if(!b.unit&&/nav\s*club/i.test(b.name||'')) b.unit={name:'client',price:3250}; });
   if(!S.accounts){
@@ -843,6 +851,7 @@ function opexReport(mk, onlyBizId){
     var iso=mk+'-'+pad(d), prev=addDays(iso,-1), bud=0, sales=0;
     bizs.forEach(function(b){
       b.opex.forEach(function(o){ bud+=accrued(o,b,prev,iso); });
+      if(opcOn(mk)&&mainBiz()&&b.id===mainBiz().id&&iso<=todayISO()) bud+=salaryDay(iso);
       sales+=sum(S.incomes.filter(function(i){return i.source===b.name&&i.date===iso;}),function(i){return num(i.amount);});
     });
     cumB+=bud; cumS+=sales; days.push({d:d, iso:iso, bud:bud, sales:sales, cumB:cumB, cumS:cumS});
@@ -895,7 +904,10 @@ function monthFlow(mk, onlyBiz){
     // Lines with no plan (or since deleted) count when they're paid.
     var actual=sum(acts.filter(function(e){ var o=b&&b.opex.find(function(x){return x.id===e.itemId;}); return !o||!(num(o.amount)>0); }),function(e){return num(e.amount);});
     r.revenue+=rev; r.actual=(r.actual||0)+actual; r.planned=(r.planned||0)+planned;
-    r.byBiz.push({name:name, biz:b, revenue:rev, opex:actual+planned, actual:actual, planned:planned, est:planned>0, profit:rev-actual-planned});
+    // OPC: the President's salary is an expense of the main business.
+    var pres=b&&mainBiz()&&b.id===mainBiz().id?presidentSalary(mk):0;
+    planned+=pres; r.president=(r.president||0)+pres; r.planned=(r.planned||0)+pres;
+    r.byBiz.push({name:name, biz:b, revenue:rev, opex:actual+planned, actual:actual, planned:planned, president:pres, est:planned>0, profit:rev-actual-planned});
   });
   var calc=function(planned){
     var x={}; x.opex=(r.actual||0)+planned; x.profit=r.revenue-x.opex;
@@ -905,6 +917,7 @@ function monthFlow(mk, onlyBiz){
     x.titheBase=base==='gross'?r.revenue:base==='family'?Math.max(0,x.profit-x.tax-x.reinvest):Math.max(0,x.profit);
     x.tithe=x.titheBase*num(S.tithe.pct)/100;
     x.family=x.profit-x.tax-x.reinvest-x.tithe;
+    if(opcOn(mk)){ x.retained=x.family; x.family=r.president||0; }
     return x;
   };
   var planned=r.planned||0, x=calc(planned);
@@ -912,8 +925,8 @@ function monthFlow(mk, onlyBiz){
   r.deficit=Math.max(0,(r.actual||0)+planned-r.revenue);
   // A short month never takes from the family: the share stops at zero and
   // the shortfall shows in the business wallet instead.
-  r.uncovered=x.family<0?-x.family:0;
-  if(x.family<0) x.family=0;
+  if(opcOn(mk)){ r.uncovered=x.retained<0?-x.retained:0; r.opc=true; }
+  else { r.uncovered=x.family<0?-x.family:0; if(x.family<0) x.family=0; }
   Object.keys(x).forEach(function(k){ r[k]=x[k]; });
   r.opexEst=planned>0;
   return r;
@@ -941,7 +954,19 @@ function suggestedSalary(){
   if(S.salary.method==='avg80') return Math.floor(sum(vals)/vals.length*0.8/100)*100;
   return Math.floor(Math.min.apply(null,vals)/100)*100;
 }
-function salary(){ return S.salary.method==='manual' ? num(S.salary.manual) : suggestedSalary(); }
+function salary(){ return S.salary.method==='manual'||opcOn(thisMonth()) ? num(S.salary.manual) : suggestedSalary(); }
+/* OPC structure (from S.opc.from): the President's salary is a business
+   expense, earned per day; the business tithes on its profit after salary,
+   keeps what's left (retained earnings), and the salary itself is tithed in
+   the personal budget. Before that month the old family-share flow applies. */
+function opcOn(mk){ return !!(S.opc&&S.opc.from&&mk>=S.opc.from); }
+// President's salary counted in month mk (through today for this month).
+function presidentSalary(mk){
+  if(!opcOn(mk)||mk>thisMonth()) return 0;
+  var days=mk===thisMonth()?dayOfMonth():daysIn(mk);
+  return num(S.salary.manual)/daysIn(mk)*days;
+}
+function personalTithePct(){ return num(S.tithe.pct); }
 
 // A budget line may be split into sub-items (Subscriptions → Netflix, Spotify…);
 // then its plan is the sum of the sub-items.
@@ -964,6 +989,7 @@ function targetSub(b, x, mk){ var f=fundedSub(b,x,mk); return f>0?f:num(x.amount
 function allotUnits(){
   var out=[];
   S.budget.forEach(function(b){
+    if(b.auto==='tithe') return;   // filled from each salary payout
     if(hasSubs(b)) b.subs.forEach(function(x){ if(num(x.amount)>0) out.push({key:b.id+'|'+x.id, b:b, x:x, name:b.name+' › '+x.name, plan:num(x.amount)}); });
     else if(num(b.amount)>0) out.push({key:b.id, b:b, x:null, name:b.name, plan:num(b.amount)});
   });
@@ -1872,7 +1898,14 @@ V.income=function(){
   var f=monthFlow(incMk), h='';
 
   // 1 · Where this month's sales went
-  var parts=[
+  var opc=f.opc, pres=f.president||0;
+  var parts=opc?[
+    {label:'Business opex',v:Math.max(0,f.opex-pres),color:slotColor(1)},
+    {label:'Salary as President',v:pres,color:slotColor(5)},
+    {label:'Tax set-aside',v:f.tax,color:slotColor(2)},
+    {label:'Tithe (business)',v:f.tithe,color:slotColor(3)},
+    {label:'Reinvest',v:f.reinvest,color:slotColor(4)},
+    {label:'Retained in business',v:Math.max(0,f.retained),color:slotColor(6)}]:[
     {label:'Business opex'+(f.opexEst?' (planned)':''),v:Math.max(0,Math.min(f.opex,f.revenue)),color:slotColor(1)},
     {label:'Tax set-aside',v:f.tax,color:slotColor(2)},
     {label:'Tithe',v:f.tithe,color:slotColor(3)},
@@ -1885,14 +1918,17 @@ V.income=function(){
     (f.revenue>0?stackBar(parts)+
       '<div class="wf">'+
         wfRow('Sales',f.revenue,'')+
-        wfRow('− Opex <small>'+(incMk===thisMonth()?'so far':'for the month')+(metaOpex(incMk)>0.5?' · incl. Meta Ads '+shortMoney(metaOpex(incMk))+' (actual + VAT)':'')+'</small>',-f.opex,slotColor(1))+
+        (opc?wfRow('− Opex <small>'+(incMk===thisMonth()?'so far':'for the month')+(metaOpex(incMk)>0.5?' · incl. Meta Ads '+shortMoney(metaOpex(incMk))+' (actual + VAT)':'')+'</small>',-(f.opex-pres),slotColor(1))+
+          wfRow('− 👔 Salary as President <small>'+money(salaryDay(incMk+'-01'))+'/day · opex</small>',-pres,slotColor(5))
+        :wfRow('− Opex <small>'+(incMk===thisMonth()?'so far':'for the month')+(metaOpex(incMk)>0.5?' · incl. Meta Ads '+shortMoney(metaOpex(incMk))+' (actual + VAT)':'')+'</small>',-f.opex,slotColor(1)))+
         wfRow('= Profit <small>'+(f.revenue?Math.round(f.profit/f.revenue*100):0)+'% margin</small>',f.profit,'',true)+
         wfRow('− Tax <small>'+num(S.split.tax)+'% of sales</small>',-f.tax,slotColor(2))+
         wfRow('− 🙏 Tithe <small>'+num(S.tithe.pct)+'% of '+TITHE_BASES[S.tithe.base]+'</small>',-f.tithe,slotColor(3))+
         wfRow('− Reinvest <small>'+num(S.split.biz)+'% of profit</small>',-f.reinvest,slotColor(4))+
-        wfRow('= Family share → tank',f.family,slotColor(5),true)+
-      '</div>'+(f.deficit>0.5?'<div class="note bad">Opex deficit: sales are '+money(f.deficit)+' short of the opex that should be set aside by now. The family share stays at ₱0 until sales catch up.</div>':'')+
-      (f.family<0?'<div class="note bad">Logged business expenses are more than this month\'s sales — the family share is negative.</div>':'')
+        (opc?wfRow('= Retained in the business',f.retained,slotColor(6),true):wfRow('= Family share → tank',f.family,slotColor(5),true))+
+      '</div>'+(opc?'<div class="note" style="margin-top:6px">🏢 OPC structure: the President\'s salary ('+money(pres)+' so far) is a business expense and goes to the salary tank; it\'s tithed in your personal budget. The business tithes on its profit after salary.</div>':'')+
+      (opc&&f.retained<-0.5?'<div class="note bad">Sales don\'t cover the President\'s salary and expenses yet — short '+money(-f.retained)+'.</div>':'')+(f.deficit>0.5?'<div class="note bad">Opex deficit: sales are '+money(f.deficit)+' short of the opex that should be set aside by now. The family share stays at ₱0 until sales catch up.</div>':'')+
+      (!opc&&f.family<0?'<div class="note bad">Logged business expenses are more than this month\'s sales — the family share is negative.</div>':'')
     :'<p class="muted">No sales logged for '+monthLabel(incMk,true)+'.</p>'+(f.deficit>0.5?'<div class="note bad">Opex deficit: '+money(f.deficit)+' should be set aside by now but there are no sales yet.</div>':''))+
     '</div>';
 
@@ -1991,7 +2027,7 @@ V.income=function(){
 
   // 3 · Family share over the year, against the salary
   var months=[]; for(var i=11;i>=0;i--) months.push(addMonths(cm,-i));
-  h+='<div class="card"><h2>👪 Family share by month</h2>'+
+  h+='<div class="card"><h2>👪 '+(opcOn(thisMonth())?'Paid to the family by month':'Family share by month')+'</h2>'+
     barChart(months.map(function(m){ var v=Math.max(0,monthFlow(m).family);
       return {label:monthLabel(m).split(' ')[0].slice(0,1)+(m.slice(5)==='01'?"'"+m.slice(2,4):''), v:v, tip:monthLabel(m,true)+': '+money(monthFlow(m).family), color:sal>0&&v<sal?'var(--warn)':'var(--brand)'}; }),
       {ref:sal, refLabel:'salary '+shortMoney(sal), aria:'Family share of income per month'})+
@@ -1999,7 +2035,7 @@ V.income=function(){
 
   var vals=w.map(function(x){return x.family;});
   var lo=vals.length?Math.min.apply(null,vals):0, hi=vals.length?Math.max.apply(null,vals):0, avg=vals.length?sum(vals)/vals.length:0;
-  h+='<div class="card"><h2>💵 Family salary</h2><div class="v num" style="font-size:30px;margin:4px 0">'+money(sal)+'<small class="muted" style="font-size:14px"> / month</small></div>'+
+  h+='<div class="card"><h2>'+(opcOn(thisMonth())?'👔 Salary as President':'💵 Family salary')+'</h2><div class="v num" style="font-size:30px;margin:4px 0">'+money(sal)+'<small class="muted" style="font-size:14px"> / month</small></div>'+
     '<div class="range"><div class="rbar">'+(hi>0?'<b class="mk" style="left:'+pct(sal,hi)+'%" data-tip="Salary '+money(sal)+'"></b>':'')+'</div>'+
       '<div class="row between num" style="font-size:12px"><span>lean '+shortMoney(lo)+'</span><span>avg '+shortMoney(avg)+'</span><span>best '+shortMoney(hi)+'</span></div></div>'+
     (sal>0&&sal<essentials()?'<div class="note bad">Below essentials + debt payments ('+money(essentials())+').</div>':'')+
@@ -2138,11 +2174,14 @@ V.budget=function(){
     (hot.length?'<div style="margin-top:8px">'+hot.map(function(x){ var q=pct(x.s,x.p);
       return '<div class="row between" style="font-size:13px;margin-top:6px"><span>'+esc(x.b.name)+'</span><span class="num'+(x.p<=0||x.s>x.p?' neg':'')+'">'+money(x.s)+' <small class="muted">/ '+money(x.p)+'</small></span></div>'+barHTML(x.p>0?q:100,x.p<=0||x.s>x.p?'bad':q>85?'warn':'good'); }).join('')+'</div>':'')+
     '</div>';
+  var pt=S.budget.find(function(b){return b.auto==='tithe';});
+  var ptCard=pt?'<div class="row between" style="font-size:14px;margin-top:10px;padding-top:8px;border-top:1px solid var(--line)"><span>👔 From your salary <small class="muted num">· allotted '+money(fundedLine(pt,cm))+' · given '+money(spentThisMonth(pt.id))+'</small></span>'+
+    '<button class="sm" data-act="spend" data-cat="ptithe">+ Give</button></div>':'';
   h+='<div class="card tithe"><div class="row between"><h2>🙏 Tithe</h2><button class="icon" data-act="tithe" aria-label="Tithe settings">✎</button></div>'+
     '<div class="row between num" style="margin-top:6px"><span><b style="font-size:22px">'+money(f.tithe)+'</b> <small class="muted">due · '+monthLabel(cm)+'</small></span><span class="muted">'+num(S.tithe.pct)+'% of '+shortMoney(f.titheBase)+'</span></div>'+
     '<div class="bar'+(given>=f.tithe&&f.tithe>0?' good':'')+'" style="margin:8px 0 4px"><i style="width:'+tp.toFixed(1)+'%"></i></div>'+
     '<div class="row between" style="font-size:13px"><span class="muted">Given '+money(given)+' · '+TITHE_BASES[S.tithe.base]+'</span>'+
-      '<button class="primary sm" data-act="spend" data-cat="tithe">+ Give</button></div>'+
+      '<button class="primary sm" data-act="spend" data-cat="tithe">+ Give</button></div>'+ptCard+
     (owed>0.5?'<div class="note warn" style="margin-bottom:0">Set aside, not yet given: <b class="num">'+money(owed)+'</b></div>':'')+
     '</div>';
 
@@ -2707,6 +2746,8 @@ V.settings=function(){
       return '<span class="chip">'+esc(g)+' <small>'+n+'</small></span>'; }).join('')+'</div>'+
     '<small class="muted">Add lines or sub-items to a category with ✎ on the Budget tab.</small></div>';
 
+  h+='<div class="card"><h2>🏢 OPC structure</h2><p class="muted" style="font-size:13px;margin-top:0">From this month the President\'s salary is a business expense, the business keeps what\'s left, and your salary is tithed in the budget. Clear it to go back to the family-share flow.</p>'+
+    '<label class="f"><span>Starting month</span><input type="month" data-bind="opc.from" value="'+esc(S.opc&&S.opc.from||'')+'"></label></div>';
   h+='<div class="card"><h2>Money settings</h2><div class="grid g2">'+
     '<label class="f"><span>Currency symbol</span><input data-bind="currency" value="'+esc(S.currency)+'"></label>'+
     '<label class="f"><span>Starter emergency fund (months of essentials)</span><select data-bind="starterMonths" data-num>'+[0.5,1,2].map(function(n){return '<option value="'+n+'"'+(S.starterMonths==n?' selected':'')+'>'+n+'</option>';}).join('')+'</select></label>'+
@@ -2766,7 +2807,8 @@ ACT.deltx=function(el){
   checkpoint('delete transaction');
   if(coll==='moves') reverseMove(x);
   S[coll]=S[coll].filter(function(y){return y!==x;});
-  if(coll==='moves'&&x.kind==='draw') S.moves=S.moves.filter(function(y){return y.draw!==x.id;});
+  if(coll==='moves'&&x.kind==='draw'){ S.moves=S.moves.filter(function(y){return y.draw!==x.id;});
+    if(num(x.tithe)>0){ var tk=monthKey(x.date); setAlloc('ptithe',Math.max(0,num(allocMap(tk)['ptithe'])-num(x.tithe)),tk); } }
   if(dlg.open) dlg.close();
   save(); render(); toast('Deleted');
 };
@@ -3463,14 +3505,18 @@ ACT.draw=function(el){
     '<p class="muted" style="font-size:13px">This records the payout. The money then shows under <b>Transfer now</b>'+(ta?' from '+esc(ta.name):'')+' — send it in your bank app, add the fee, and tap it.</p>',
     function(v){ var a=num(v.amount), pc=Math.max(0,Math.min(100,num(v.pct))); if(a<=0) return false;
       if(a>h+0.5){ toast('The tank only has '+money(h)); return false; }
-      var sp=splitToDebtJars(a*pc/100), D=a*pc/100-sp.left;
+      // Tithe first (OPC): the salary's tithe goes to the personal Tithe line, then the debt/budget split.
+      var T=opcOn(thisMonth())?Math.round(a*personalTithePct()/100*100)/100:0;
+      var sp=splitToDebtJars((a-T)*pc/100), D=(a-T)*pc/100-sp.left;
+      if(T>0.5) setAlloc('ptithe',num(allocMap()['ptithe'])+T);
       S.salarySplit=S.salarySplit||{}; S.salarySplit.debt=pc;
-      var dm={id:uid(),date:todayISO(),kind:'draw',amount:a,fee:0,toDebt:Math.round(D*100)/100,noMove:true,note:'Salary'};
+      var dm={id:uid(),date:todayISO(),kind:'draw',amount:a,fee:0,toDebt:Math.round(D*100)/100,tithe:T||undefined,noMove:true,note:'Salary'};
       S.moves.push(dm);
       sp.legs.forEach(function(l){ S.moves.push({id:uid(),date:todayISO(),kind:'debtsave',to:l[0].id,amount:Math.round(l[1]*100)/100,note:'Salary share → '+l[0].name,draw:dm.id}); });
       toast('Salary '+money(a)+' recorded — now send it (see Transfer now)'); }, 'Record payout');
-  var upd=function(){ var f=dlgForm, sp=f.querySelector('.splitprev'); if(!sp) return; var a=num(f.querySelector('[name=amount]').value), pc=num(f.querySelector('[name=pct]').value), d=a*pc/100;
-    sp.innerHTML='💰 Debts <b>'+money(d)+'</b>'+(da?' → '+esc(da.name):'')+'<br>🧾 Budget <b>'+money(a-d)+'</b>'+(fa?' → '+esc(fa.name):''); };
+  var upd=function(){ var f=dlgForm, sp=f.querySelector('.splitprev'); if(!sp) return; var a=num(f.querySelector('[name=amount]').value), pc=num(f.querySelector('[name=pct]').value);
+    var T=opcOn(thisMonth())?a*personalTithePct()/100:0, d=(a-T)*pc/100;
+    sp.innerHTML=(T>0.5?'🙏 Tithe <b>'+money(T)+'</b> (allotted in the budget)<br>':'')+'💰 Debts <b>'+money(d)+'</b>'+(da?' → '+esc(da.name):'')+'<br>🧾 Budget <b>'+money(a-d-T)+'</b>'+(fa?' → '+esc(fa.name):''); };
   dlgForm.oninput=upd; dlgForm.onclick=function(){ setTimeout(upd,0); }; upd();
 };
 
