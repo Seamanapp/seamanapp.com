@@ -370,6 +370,8 @@ tr.tap{cursor:pointer}
 .ds.ok{background:var(--good)}.ds.miss{background:var(--bad);opacity:.75}.ds.off{opacity:.35}
 .ds.now{background:transparent;box-shadow:inset 0 0 0 1.5px var(--brand)}.ds.today.ok{box-shadow:0 0 0 1.5px var(--brand)}
 .dsrow.tap{cursor:pointer}.dsrow.tap:active{background:var(--line)}
+.mainb h2{margin:0}.mitems{margin-top:10px;border-top:1px solid var(--line)}.mitems>summary{padding:10px 0;cursor:pointer;font-weight:600}
+.mitems .card{box-shadow:none;border:1px solid var(--line);margin:8px 0}.mainsel{width:auto;padding:4px 6px;font-size:12px}
 .wgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .wtile{display:flex;gap:8px;align-items:flex-start;text-align:left;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--card);min-width:0;font-weight:400}
 .wt{display:flex;flex-direction:column;min-width:0;gap:1px}
@@ -580,6 +582,15 @@ function migrate(){
   S.bizExp=S.bizExp||[];
   if(!S.saveStart) S.saveStart=thisMonth()+'-01';
   S.wallets=S.wallets||{};
+  if(S.mainsV!==1){
+    mainsCfg();
+    (S.budget||[]).forEach(function(b){ if(b.auto!=='tithe'&&!b.main) b.main=guessMain(b); });
+    Object.keys(S.alloc||{}).forEach(function(mk){ var m=S.alloc[mk];
+      Object.keys(m).forEach(function(key){ if(key.indexOf('main:')===0) return; var b=S.budget.find(function(x){return x.id===key.split('|')[0];}); if(!b||!mainOf(b)) return;
+        m['main:'+mainOf(b)]=Math.round((num(m['main:'+mainOf(b)])+num(m[key]))*100)/100; delete m[key]; }); });
+    if(S.allocDay&&S.allocDay.m){ var nm={}; Object.keys(S.allocDay.m).forEach(function(key){ var b=S.budget.find(function(x){return x.id===key.split('|')[0];}); var k2=b&&mainOf(b)?'main:'+mainOf(b):key; nm[k2]=num(nm[k2])+num(S.allocDay.m[key]); }); S.allocDay.m=nm; }
+    S.mainsV=1;
+  }
   if(!S.salaryFrom) S.salaryFrom=thisMonth()+'-01';
   if(!S.salarySplit) S.salarySplit={debt:50, from:todayISO()};
   S.fees=S.fees||{};
@@ -597,7 +608,7 @@ function migrate(){
     // Payouts already made since the OPC month get their tithe allotted once.
     S.moves.forEach(function(m){ if(m.kind==='draw'&&m.tithe==null&&monthKey(m.date)>=S.opc.from){ var T=Math.round(num(m.amount)*num(S.tithe.pct)/100*100)/100; m.tithe=T; var tk=monthKey(m.date); setAlloc('ptithe',num(allocMap(tk)['ptithe'])+T,tk); } });
   }
-  if(S.accounts&&S.accounts.length&&S.flowV!==4&&['gcash','maya','gsave'].every(function(n){return S.accounts.some(function(a){return a.name.toLowerCase()===n;});})){ applyFlow(); S.flowV=4; }
+  if(S.accounts&&S.accounts.length&&S.flowV!==5&&['gcash','maya','gsave'].every(function(n){return S.accounts.some(function(a){return a.name.toLowerCase()===n;});})){ applyFlow(); S.flowV=5; }
   (S.businesses||[]).forEach(function(b){ if(!b.unit&&/nav\s*club/i.test(b.name||'')) b.unit={name:'client',price:3250}; });
   if(!S.accounts){
     var byBank={}; S.accounts=[]; S.assign={};
@@ -1002,6 +1013,32 @@ function allocTotal(mk){ var m=allocMap(mk); return sum(Object.keys(m),function(
 // month, or — if nothing was allocated yet — its monthly plan.
 function targetOf(b, mk){ var f=fundedLine(b,mk); return f>0?f:planOf(b); }
 function targetSub(b, x, mk){ var f=fundedSub(b,x,mk); return f>0?f:num(x.amount); }
+/* Two main budgets: 👩 Wife – House budget and 👨 Dad. Every budget line
+   belongs to one (the salary tithe stays on its own). Each main budget has one
+   plan (its items' total, or set by hand), is allotted day by day, and counts
+   what's spent from it — for the Wife's budget that's what was sent to her
+   (she tracks the details herself). */
+var MAINS=['wife','dad'];
+function mainsCfg(){ S.mains=S.mains||{}; if(!S.mains.wife) S.mains.wife={name:'Wife – House budget',icon:'👩',manual:null}; if(!S.mains.dad) S.mains.dad={name:'Dad',icon:'👨',manual:null}; return S.mains; }
+function mainOf(b){ return b.auto==='tithe'?null:(b.main||guessMain(b))==='wife'?'wife':'dad'; }
+function mainLines(k){ return S.budget.filter(function(b){return mainOf(b)===k;}); }
+function mainPlan(k){ var m=mainsCfg()[k]; return m.manual!=null&&m.manual!==''?num(m.manual):sum(mainLines(k),planOf); }
+function mainFunded(k, mk){ return num(allocMap(mk)['main:'+k]); }
+function mainSpent(k, mk){
+  mk=mk||thisMonth(); var ids=mainLines(k).map(function(b){return b.id;});
+  return sum(S.spend.filter(function(x){return monthKey(x.date)===mk&&(x.catId==='main:'+k||ids.indexOf(x.catId)>=0);}),function(x){return num(x.amount);});
+}
+// Allotted but not yet spent (or for the Wife, not yet sent), over every month.
+function mainUnspent(k){
+  var months={}; Object.keys(S.alloc||{}).forEach(function(mk){months[mk]=1;});
+  return sum(Object.keys(months),function(mk){ return Math.max(0,mainFunded(k,mk)-mainSpent(k,mk)); });
+}
+function guessMain(b){
+  var g=(b.group||'')+' '+(b.name||'');
+  if(/daddy|\bdad\b|bill|tuition|school fee|transport|insurance|loan|car\b|phone|internet|utilit|electric|meralco|gas \(car\)|fuel/i.test(b.group||'')) return 'dad';
+  if(/grocer|food|market|baby|kuya|mommy|\bmom\b|wife|house|home|household|kitchen|laundry|toilet|diaper|milk|formula|yaya|helper|cleaning|lpg/i.test(g)) return 'wife';
+  return 'dad';
+}
 /* Budget lines are allotted day by day like the debts: each line's planned
    amount still unallotted is spread evenly over the days left in the month
    (today included). Lines with sub-items are allotted per sub-item. */
@@ -1016,14 +1053,16 @@ function allotUnits(){
 }
 function allottedToday(key){ var a=S.allocDay; return a&&a.date===todayISO()?num(a.m[key]):0; }
 function budgetDaily(){
-  var cm=thisMonth(), left=daysIn(cm)-dayOfMonth()+1;
-  return allotUnits().map(function(u){
-    var funded=u.x?fundedSub(u.b,u.x,cm):num(allocMap(cm)[u.key]), spent=u.x?spentSub(u.x.id):spentThisMonth(u.b.id);
-    var have=Math.max(funded,spent), td=allottedToday(u.key);
-    var today=Math.max(0,Math.min(u.plan-have,(u.plan-have+td)/left-td));
-    return {key:u.key, b:u.b, x:u.x, name:u.name, plan:u.plan, funded:funded, spent:spent, today:today, perDay:u.plan/daysIn(cm), daysLeft:left, ready:have>=u.plan-0.5};
-  });
+  var cm=thisMonth(), left=daysIn(cm)-dayOfMonth()+1, cfg=mainsCfg();
+  return MAINS.map(function(k){
+    var plan=mainPlan(k); if(!(plan>0)) return null;
+    var key='main:'+k, funded=mainFunded(k,cm), spent=mainSpent(k,cm);
+    var have=Math.max(funded,spent), td=allottedToday(key);
+    var today=Math.max(0,Math.min(plan-have,(plan-have+td)/left-td));
+    return {key:key, main:k, b:null, x:null, name:cfg[k].name, plan:plan, funded:funded, spent:spent, today:today, perDay:plan/daysIn(cm), daysLeft:left, ready:have>=plan-0.5};
+  }).filter(Boolean);
 }
+
 // Spending already made without an allocation counts as allocated first.
 function addAlloc(x, a){
   var cm=thisMonth(), t=todayISO(), key=x.key;
@@ -1085,7 +1124,8 @@ function dayOfMonth(){ return +todayISO().slice(8,10); }
 function availableMoney(mk){
   mk=mk||thisMonth();
   var paid=sum(S.moves.filter(function(m){return m.kind==='draw'&&monthKey(m.date)===mk;}),function(m){return num(m.amount);});
-  var lines=sum(S.budget,function(b){ return Math.max(fundedLine(b,mk), mk===thisMonth()?spentThisMonth(b.id):0); });
+  var lines=sum(S.budget.filter(function(b){return !mainOf(b);}),function(b){ return Math.max(fundedLine(b,mk), mk===thisMonth()?spentThisMonth(b.id):0); })
+    +sum(MAINS,function(k){ return Math.max(mainFunded(k,mk), mainSpent(k,mk)); });
   var sp=salarySpent(mk);
   return paid-sp.debt-sp.moved-lines;
 }
@@ -1473,7 +1513,10 @@ function purposes(){
   L.push({key:'tank', icon:'🛢️', name:'Salary tank', amt:holding(), acct:acctOf('tank')});
   var awayL=0;
   S.budget.forEach(function(b){ var a=lineAway(b); if(a){ var u=lineUnspent(b); awayL+=u; L.push({key:'line:'+b.id, icon:'🧾', name:b.name, amt:u, acct:a}); } });
-  L.push({key:'family', icon:'👪', name:'Family spending', amt:familyTotal()-awayL, acct:acctOf('family')});
+  var wU=mainUnspent('wife'), dU=mainUnspent('dad');
+  L.push({key:'main:wife', icon:'👩', name:'Wife budget (to send)', amt:wU, acct:acctOf('family')});
+  L.push({key:'main:dad', icon:'👨', name:'Dad budget', amt:dU, acct:acctOf('family')});
+  L.push({key:'family', icon:'👪', name:'Free salary money', amt:familyTotal()-awayL-wU-dU, acct:acctOf('family')});
   L.push({key:'debt', icon:'💰', name:'Debt savings', amt:sum(S.debts,debtJar), acct:acctOf('debt')});
   L.push({key:'protect', icon:'🛡️', name:'Protection funds', amt:sum(Object.keys(S.funds||{}),function(k){return num(S.funds[k]);}), acct:acctOf('protect')});
   L.push({key:'dreams', icon:'⭐', name:'Dream savings', amt:sum((S.dreams||[]).filter(function(d){return d.status!=='bought';}),function(d){return num(d.saved);}), acct:acctOf('dreams')});
@@ -1492,6 +1535,8 @@ function acctHas(){
     add(o&&opexAway(o,b)?opexAway(o,b):b?acctOf('biz:'+b.id):mbA, -num(e.amount)); });
   S.spend.forEach(function(x){
     if(x.catId==='tithe'){ add(mbA,-num(x.amount)); return; }
+    // Money sent to the Wife is spent from her wallet (the transfer put it there).
+    if(x.catId==='main:wife'){ add(asg().wife&&accById(asg().wife)?asg().wife:acctOf('family'), -num(x.amount)); return; }
     var b=S.budget.find(function(y){return y.id===x.catId;}); add(b&&lineAway(b)?lineAway(b):acctOf('family'), -num(x.amount)); });
   S.moves.forEach(function(m){
     var a=num(m.amount), f=num(m.fee);
@@ -1555,7 +1600,7 @@ function todayCard(){
     step(1,sales>0,'Log sales',sales>0?money(sales)+' logged today':'all business income → '+esc(ACC().length?(accById(acctOf(mainBiz()?'in:biz:'+mainBiz().id:'family'))||{name:'business account'}).name:'business account'),'<button class="sm'+(sales>0?'':' primary')+'" data-act="income">+ Sales</button>')+
     step(2,sd<0.5||hold<0.5,'Pay salary',S.salaryAuto&&sd<0.5?'paid automatically each day · '+money(salaryDay(t))+'/day':sd>0.5?money(sd)+' waiting ('+salaryDaysDue()+' days)'+(salaryDebtPct()>0?' · '+salaryDebtPct()+'% to debts':''):'up to date','<button class="sm" data-act="draw" '+(hold>0.5?'':'disabled')+'>Pay</button>')+
     step(3,allT<0.5,'Allot today',allT<0.5?'debts, budget and opex are on track':[dT>0.5?'debts '+shortMoney(dT):'',bT>0.5?'budget '+shortMoney(bT):'',oT>0.5?'opex '+shortMoney(oT):''].filter(Boolean).join(' · '),allT>0.5?'<button class="sm primary" data-act="allotevery">Allot all</button>':'')+
-    step(4,pl&&!nTx,'Transfer',!pl?'set up your accounts below':nTx?nTx+' transfer'+(nTx>1?'s':'')+' waiting — see Accounts':'nothing to move','')+
+    step(4,pl&&!nTx,'Transfer',!pl?'set up your accounts below':nTx?nTx+' transfer'+(nTx>1?'s':'')+' waiting — see Wallets':'nothing to move'+(mainUnspent('wife')>0.5?' · Wife budget '+money(mainUnspent('wife'))+' to send this week':''),'')+
     '</div>';
 }
 function accountsCard(){
@@ -1575,6 +1620,10 @@ function accountsCard(){
     (pl.sal&&pl.sal.from&&pl.sal.to?'<div class="xnow"><div class="row between ptx" style="border:0"><span class="pxt"><b>👪 Salary waiting · '+pl.sal.days+' days</b>'+
         '<small class="muted">record it first: '+(salaryDebtPct()>0?salaryDebtPct()+'% to debts, the rest to the budget — the transfers then appear below':'the transfer then appears below')+'</small></span>'+
         '<button class="primary sm" data-act="draw">Pay '+money(pl.sal.amount)+'</button></div></div>':'')+
+    (function(){ var un=mainUnspent('wife'), wa=asg().wife&&accById(asg().wife); if(un<0.5||!wa) return '';
+      var last=S.spend.filter(function(x){return x.catId==='main:wife';}).map(function(x){return x.date;}).sort().pop();
+      return '<div class="xnow"><div class="row between ptx" style="border:0"><span class="pxt"><b>👩 Send to Wife · '+esc((accById(acctOf('family'))||{name:''}).name)+' → '+esc(wa.name)+'</b>'+
+        '<small class="muted">allotted, not yet sent · weekly'+(last?' · last sent '+shortDate(last):'')+'</small></span><button class="primary sm" data-act="sendwife">'+money(un)+'</button></div></div>'; })()+
     (pl.short>0.5?'<div class="note warn">'+money(pl.short)+' is planned but not in any account yet — record sales or the salary payout, or match a balance.</div>':'')+
     '<div class="wgrid">'+pl.rows.map(function(r){
       var st=Math.abs(r.diff)<0.5?'<span class="pill good">✓</span>':r.diff>0?'<span class="pill warn">needs '+shortMoney(r.diff)+'</span>':'<span class="pill">extra '+shortMoney(-r.diff)+'</span>';
@@ -2224,7 +2273,7 @@ V.budget=function(){
 
   // Only salary that has actually been paid out is money to distribute.
   var paidOut=drawnThisMonth(), used=salarySpent(cm), unalloc=availableMoney(cm), alloc=paidOut-unalloc, rest=paidOut-used.total;
-  h+='<div class="card"><div class="row between"><h2>💵 Salary to distribute · '+monthLabel(cm)+'</h2><button class="primary sm" data-act="allocate">+ Allocate · '+shortMoney(Math.max(0,availableMoney(cm)))+'</button></div>'+
+  h+='<div class="card"><div class="row between"><h2>💵 Salary to distribute · '+monthLabel(cm)+'</h2><button class="primary sm" data-act="budallotall">Allot today</button></div>'+
     '<div class="grid g3" style="margin:8px 0">'+
       tile('Paid out',shortMoney(paidOut),'of '+shortMoney(sal)+' salary')+
       tile('Spent',shortMoney(used.total),used.debt?'incl. '+shortMoney(used.debt)+' debts':'')+
@@ -2236,31 +2285,25 @@ V.budget=function(){
       : '<div class="note" style="margin-bottom:0">No salary paid out yet this month. Pay it from the tank on <b>Home → Pay salary</b>; that amount is what this budget distributes.</div>')+
     '</div>';
 
-  var bd=budgetDaily(), bToday=sum(bd,function(x){return x.today;}), bFree=Math.max(0,availableMoney(cm));
-  if(bd.length) h+='<div class="card tight"><div class="row between"><span>📅 Allot today\'s budget</span><b class="num">'+money(bToday)+'</b></div>'+
-    '<div class="row between" style="margin-top:6px"><small class="muted num">'+bd.filter(function(x){return x.today>0.5;}).length+' lines · free '+money(bFree)+' · '+(daysIn(cm)-dayOfMonth()+1)+' days left</small>'+
-    (bToday>0.5?'<button class="primary sm" data-act="budallotall" '+(bFree>0.5?'':'disabled')+'>Allot all'+(bFree>0.5&&bFree<bToday-0.5?' '+shortMoney(bFree):'')+'</button>':'<span class="pill good">✓ today</span>')+'</div>'+
-    '<small class="muted" style="display:block;margin-top:4px">Each line gets what\'s left of its plan ÷ days left — a missed day is spread over the rest of the month.</small></div>';
-
-  h+='<div class="b3leg"><span><i style="opacity:.16"></i>Planned</span><span><i style="opacity:.42"></i>Allotted</span><span><i></i>Spent</span><span><i style="background:var(--bad)"></i>Over plan</span></div>';
-  // Each category: progress bars by default, the editor behind ✎.
-  groups.forEach(function(g){
-    var items=S.budget.filter(function(b){return b.group===g;});
+  var bd=budgetDaily(), bFree=Math.max(0,availableMoney(cm)), cfgM=mainsCfg();
+  var groupCard=function(g,k){
+    var items=S.budget.filter(function(b){return b.group===g&&mainOf(b)===k;}), hh='';
     var gv=sum(items,function(b){return targetOf(b,cm);}), gs=sum(items,function(b){return spentThisMonth(b.id);});
     var gp=sum(items,planOf), ga=sum(items,function(b){return fundedLine(b,cm);});
     var over=gs>gv&&gs>0, editing=!!editGroups[g];
-    h+='<div class="card bgrp'+(editing?' editing':'')+'"><div class="row between"><b>'+esc(g)+'</b>'+
+    hh+='<div class="card bgrp'+(editing?' editing':'')+'"><div class="row between"><b>'+esc(g)+'</b>'+
       '<span class="row" style="gap:8px"><span class="num'+(gs>Math.max(ga,gp)?' neg':'')+'">'+money(gs)+' <small class="muted">/ '+money(gp)+'</small></span>'+
       '<button class="icon'+(editing?' on':'')+'" data-bedit="'+esc(g)+'" aria-pressed="'+editing+'" aria-label="'+(editing?'Done editing ':'Edit ')+esc(g)+'">'+(editing?'✓':'✎')+'</button></span></div>'+
-      bar3(gp,ga,gs)+'<div class="pas num"><span>Planned <b>'+shortMoney(gp)+'</b></span><span>Allotted <b>'+shortMoney(ga)+'</b></span><span>Spent <b class="'+(gs>Math.max(ga,gp)?'neg':'')+'">'+shortMoney(gs)+'</b></span></div>';
+      '';
     if(editing){
-      h+=items.map(function(b){
+      hh+=items.map(function(b){
         var sp=spentThisMonth(b.id), ov=sp>planOf(b)&&sp>0, subs=hasSubs(b);
         return '<div class="brow"><div><input class="bname" aria-label="Category name" data-edit="budget" data-id="'+b.id+'" data-f="name" value="'+esc(b.name)+'">'+
           (sp?'<small class="num" style="color:'+(ov?'var(--bad)':'var(--muted)')+'">spent '+money(sp)+'</small>':'')+'</div>'+
           (subs
             ? '<span class="amt num sumamt" title="Sum of sub-items">'+money(planOf(b))+'</span>'
             : '<input class="amt num" inputmode="decimal" aria-label="Planned amount for '+esc(b.name)+'" data-edit="budget" data-id="'+b.id+'" data-f="amount" data-num value="'+(num(b.amount)||'')+'" placeholder="0">')+
+          '<select class="mainsel" aria-label="Main budget" data-edit="budget" data-id="'+b.id+'" data-f="main"><option value="wife"'+(mainOf(b)==='wife'?' selected':'')+'>👩 Wife</option><option value="dad"'+(mainOf(b)==='dad'?' selected':'')+'>👨 Dad</option></select>'+
           '<label class="need" title="Essential (a need)"><input type="checkbox" aria-label="Essential" data-edit="budget" data-id="'+b.id+'" data-f="essential" '+(b.essential?'checked':'')+'><span>need</span></label>'+
           '<button class="icon danger" data-del="budget" data-id="'+b.id+'" aria-label="Delete '+esc(b.name)+'">✕</button></div>'+
           (subs?b.subs.map(function(x){
@@ -2272,12 +2315,11 @@ V.budget=function(){
       }).join('')+'<div class="row" style="margin-top:8px"><button class="sm" data-act="addcat" data-group="'+esc(g)+'">+ Line</button><span class="spacer"></span><button class="primary sm" data-bedit="'+esc(g)+'">Done</button></div>';
     } else {
       var shown=items.filter(function(b){return targetOf(b,cm)>0||spentThisMonth(b.id)>0;});
-      h+=shown.map(function(b){
+      hh+=shown.map(function(b){
         var sp=spentThisMonth(b.id), pl=targetOf(b,cm), ov=sp>pl, fa=fundedLine(b,cm), pn=planOf(b);
         var tdy=sum(bd.filter(function(x){return x.b===b;}),function(x){return x.today;});
-        return '<div class="bline" data-act="allocate" data-key="'+b.id+'" role="button" tabindex="0"><div class="row between"><span>'+esc(b.name)+'</span>'+
-            (tdy>0.5&&!hasSubs(b)?'<button class="chip" data-act="budallot" data-key="'+b.id+'">+'+shortMoney(tdy)+' today</button>':tdy>0.5?'<small class="muted num">+'+shortMoney(tdy)+' today</small>':'')+'</div>'+
-          bar3(pn,fa,sp)+'<div class="pas num"><span>Planned <b>'+shortMoney(pn)+'</b></span><span>Allotted <b>'+shortMoney(fa)+'</b></span><span>Spent <b class="'+(sp>Math.max(fa,pn)?'neg':'')+'">'+shortMoney(sp)+'</b></span></div>'+
+        return '<div class="bline"><div class="row between"><span>'+esc(b.name)+'</span>'+
+            '<small class="num muted">'+money(pn)+(sp>0?' · spent '+money(sp):'')+'</small></div>'+
           (hasSubs(b)?'<div class="subs">'+b.subs.filter(function(x){return targetSub(b,x,cm)>0||spentSub(x.id)>0;}).map(function(x){
             var ss=spentSub(x.id), sa=targetSub(b,x,cm), so=ss>sa;
             return '<div class="subl" data-tip="'+esc(x.name+': '+money(ss)+' of '+money(sa))+'"><span>'+esc(x.name)+'</span>'+
@@ -2287,10 +2329,28 @@ V.budget=function(){
           }).join('')+'</div>':'')+'</div>';
       }).join('')+(shown.length<items.length?'<small class="muted">'+(items.length-shown.length)+' line'+(items.length-shown.length>1?'s':'')+' not set — tap ✎</small>':'');
     }
-    h+='</div>';
+    hh+='</div>';
+    return hh;
+  };
+
+  h+='<div class="b3leg"><span><i style="opacity:.16"></i>Planned</span><span><i style="opacity:.42"></i>Allotted</span><span><i></i>Sent / spent</span><span><i style="background:var(--bad)"></i>Over plan</span></div>';
+  MAINS.forEach(function(k){
+    var m=cfgM[k], plan=mainPlan(k), fund=mainFunded(k,cm), sp=mainSpent(k,cm), u=bd.find(function(x){return x.main===k;}), left=daysIn(cm)-dayOfMonth()+1;
+    var unsent=k==='wife'?mainUnspent('wife'):0, gs=[]; mainLines(k).forEach(function(b){ if(gs.indexOf(b.group)<0) gs.push(b.group); });
+    var key='main:'+k, op=openGroups[key]===true;
+    h+='<div class="card mainb"><div class="row between"><h2>'+m.icon+' '+esc(m.name)+'</h2><button class="icon" data-act="mainplan" data-main="'+k+'" aria-label="Edit plan">✎</button></div>'+
+      bar3(plan,fund,sp)+
+      '<div class="pas num"><span>Planned <b>'+money(plan)+'</b></span><span>Allotted <b>'+money(fund)+'</b></span><span>'+(k==='wife'?'Sent':'Spent')+' <b class="'+(sp>Math.max(fund,plan)?'neg':'')+'">'+money(sp)+'</b></span></div>'+
+      '<small class="muted num" style="display:block;margin:4px 0 8px">'+money(Math.max(0,plan-Math.max(fund,sp))/left)+'/day for the '+left+' days left · plan '+(m.manual!=null&&m.manual!==''?'set by hand':'= items total')+'</small>'+
+      '<div class="row" style="gap:6px;flex-wrap:wrap">'+
+        (u&&u.today>0.5?'<button class="primary sm" data-act="budallot" data-key="'+key+'">Allot '+money(Math.min(u.today,bFree||u.today))+' today</button>':'<button class="sm" data-act="budallot" data-key="'+key+'">✓ today · allot more</button>')+
+        (k==='wife'?'<button class="sm'+(unsent>0.5?' primary':'')+'" data-act="sendwife">Send to Wife'+(unsent>0.5?' · '+money(unsent):'')+'</button>':'<button class="sm" data-act="spend">+ Spend</button>')+'</div>'+
+      '<details class="mitems" data-g="'+key+'"'+(op?' open':'')+'><summary>Items for planning <small class="muted">'+mainLines(k).length+' · '+money(sum(mainLines(k),planOf))+'</small></summary>'+
+        gs.map(function(g){ return groupCard(g,k); }).join('')+
+        '<button class="sm" data-act="addcat" data-main="'+k+'" style="margin-top:6px">+ Item</button></details></div>';
   });
   h+='<div class="card tight" style="margin-bottom:14px"><div class="row between"><span>Debt payments <small class="muted">(auto from Debts)</small></span><b class="num">'+money(mins)+'</b></div></div>'+
-    '<div class="row" style="margin-bottom:14px"><button class="primary" data-act="allocate">+ Allocate · '+money(Math.max(0,availableMoney(cm)))+' free</button><button data-act="spend">+ Log spending</button></div>'+
+    '<div class="row" style="margin-bottom:14px"><button data-act="spend">+ Log spending</button></div>'+
     '<button class="fab" data-act="spend" aria-label="Log spending">＋ Spend</button><div style="height:56px" aria-hidden="true"></div>';
 
   var recent=S.spend.filter(function(x){return monthKey(x.date)===cm;}).sort(function(a,b){return b.date.localeCompare(a.date);});
@@ -2300,7 +2360,7 @@ V.budget=function(){
       var rows=recent.filter(function(x){return x.date===d;}), key='spd:'+d, op=openGroups[key]!=null?openGroups[key]:di===0;
       return '<details class="spday" data-g="'+key+'"'+(op?' open':'')+'><summary><span>'+esc(new Date(d+'T00:00:00').toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric'}))+' <small class="muted">'+rows.length+' item'+(rows.length>1?'s':'')+'</small></span><b class="num">'+money(sum(rows,function(x){return num(x.amount);}))+'</b></summary>'+
         rows.map(function(x){
-          var c=x.catId==='tithe'?{name:'🙏 Tithe'}:S.budget.find(function(b){return b.id===x.catId;});
+          var c=x.catId==='tithe'?{name:'🙏 Tithe'}:String(x.catId).indexOf('main:')===0?{name:pickedLabel(x.catId)}:S.budget.find(function(b){return b.id===x.catId;});
           var sub=c&&x.subId&&c.subs?c.subs.find(function(y){return y.id===x.subId;}):null;
           return '<div class="txrow" data-act="edittx" data-coll="spend" data-id="'+x.id+'" role="button" tabindex="0"><span class="txi">🧾</span><span class="txl"><b>'+esc(c?(sub?c.name+' › '+sub.name:c.name):'(deleted)')+'</b>'+(x.note?'<small>'+esc(x.note)+'</small>':'')+'</span>'+
             '<span class="num">'+money(x.amount)+'</span><button class="icon danger" data-act="deltx" data-coll="spend" data-id="'+x.id+'" aria-label="Delete">✕</button></div>';
@@ -2970,6 +3030,7 @@ function catPicker(selected, opts){
 }
 function pickedLabel(v){
   if(v==='tithe') return '🙏 Tithe';
+  if(String(v).indexOf('main:')===0){ var mc=mainsCfg()[String(v).slice(5)]; return mc?(String(v)==='main:wife'?'👩 Sent to Wife':mc.icon+' '+mc.name):''; }
   var p=String(v||'').split('|'), b=S.budget.find(function(y){return y.id===p[0];}); if(!b) return '';
   var x=p[1]&&b.subs?b.subs.find(function(y){return y.id===p[1];}):null;
   return b.group+' › '+b.name+(x?' › '+x.name:'');
@@ -3085,6 +3146,35 @@ ACT.pay=function(el){
 };
 // Set aside today's share for one debt (tapped by hand).
 ACT.undo1=function(){ undoLast(); };
+ACT.sendwife=function(){
+  var cm=thisMonth(), plan=mainPlan('wife'), sent=mainSpent('wife',cm), unsent=mainUnspent('wife'), left=daysIn(cm)-dayOfMonth()+1;
+  var wk=Math.max(0,Math.min(plan-sent,(plan-sent)/left*7));
+  var fa=accById(acctOf('family')), wa=asg().wife&&accById(asg().wife), route=(fa?fa.id:'')+'>'+(wa?wa.id:'');
+  openDialog('👩 Send to Wife',
+    '<div class="alloc-top num"><span>Allotted, not yet sent</span><b>'+money(unsent)+'</b></div>'+
+    '<small class="muted num">Plan '+money(plan)+' · sent '+money(sent)+' this month</small>'+
+    '<input class="bigamt num" name="amount" inputmode="decimal" required aria-label="Amount" value="'+Math.round(unsent)+'">'+
+    '<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">'+(unsent>0.5?'<button type="button" class="chip" data-setamt="'+Math.round(unsent)+'">Allotted so far · '+money(unsent)+'</button>':'')+
+      (wk>0.5?'<button type="button" class="chip" data-setamt="'+Math.round(wk)+'">Next 7 days · '+money(wk)+'</button>':'')+
+      (plan-sent>0.5?'<button type="button" class="chip" data-setamt="'+Math.round(plan-sent)+'">Rest of month · '+money(plan-sent)+'</button>':'')+'</div>'+
+    (fa&&wa&&fa.id!==wa.id?'<label class="f"><span>Transfer fee ('+esc(fa.name)+' → '+esc(wa.name)+')</span><input name="fee" inputmode="decimal" value="'+num((S.fees||{})[route])+'"></label>':'')+
+    field('date','Date','type="date" required',todayISO())+
+    '<p class="muted" style="font-size:13px">Counts as spent from the Wife – House budget; she tracks the details. Sending more than allotted takes it from free salary money.</p>',
+    function(v){ var a=num(v.amount), fee=num(v.fee), d=v.date||todayISO(); if(a<=0) return false;
+      S.spend.push({id:uid(),date:d,catId:'main:wife',amount:Math.round(a*100)/100,note:'Sent to Wife'});
+      if(fa&&wa&&fa.id!==wa.id){ S.fees=S.fees||{}; S.fees[route]=fee; S.moves.push({id:uid(),date:d,kind:'acctx',from:fa.id,to:wa.id,amount:Math.round(a*100)/100,fee:fee,feeTo:'family',note:'Weekly budget to Wife'}); }
+      toast(money(a)+' sent to Wife'); }, 'Record send');
+};
+// Plan of a main budget: its items' total, or a number set by hand.
+ACT.mainplan=function(el){
+  var k=el.dataset.main, m=mainsCfg()[k];
+  openDialog(m.icon+' '+m.name+' · plan',
+    '<label class="check"><input type="checkbox" name="byitems"'+(m.manual==null||m.manual===''?' checked':'')+'><span>Use the total of its items ('+money(sum(mainLines(k),planOf))+')</span></label>'+
+    field('manual','Or set the monthly plan','inputmode="decimal"',m.manual!=null&&m.manual!==''?num(m.manual):'')+
+    field('name','Name','',m.name),
+    function(v){ m.manual=v.byitems?null:num(v.manual); m.name=(v.name||'').trim()||m.name; toast('Plan '+money(mainPlan(k))+' a month'); }, 'Save');
+};
+
 // Allot for a line or a debt: today's share, a few days ahead, or everything still needed.
 function allotDialog(title, perDay, td, need, free, onSave){
   var opt=function(k,label){ var v=Math.max(0,Math.min(need,perDay*k-td)); return v>0.5?'<button type="button" class="chip" data-setamt="'+Math.round(v)+'">'+label+' · '+money(v)+'</button>':''; };
@@ -3130,7 +3220,8 @@ function applyFlow(){
   // business expense). Maya Savings holds debt repayment savings. GCash - Wife
   // is the budget wallet for family spending. GSave keeps emergency and other
   // protection funds (and dream savings).
-  S.assign={tank:g.id, family:w.id, debt:ms.id, protect:s2.id, dreams:s2.id};
+  // Dad's budget and the Wife's budget (until it's sent each week) stay with the tank in GCash.
+  S.assign={tank:g.id, family:g.id, wife:w.id, debt:ms.id, protect:s2.id, dreams:s2.id};
   // Where each wallet gets its money from: sales come into GCash; the business
   // wallet (Maya) is filled from GCash and fills Maya Savings for debts.
   S.feed={}; S.feed[m.id]=g.id; S.feed[ms.id]=m.id; S.feed[w.id]=g.id; S.feed[s2.id]=g.id;
@@ -3139,7 +3230,7 @@ function applyFlow(){
 }
 
 ACT.acctpreset=function(){
-  checkpoint('set up accounts'); applyFlow(); S.flowV=4;
+  checkpoint('set up accounts'); applyFlow(); S.flowV=5;
   if(dlg.open) dlg.close();
   save(); render(); toast('GCash income · Maya business · Maya Savings debts · GCash - Wife budget · GSave protection');
 };
@@ -3153,7 +3244,7 @@ ACT.acctsetup=function(){
     '<div class="k">Accounts (e.g. GCash, Maya, GSave)</div>'+acc.map(function(a,i){return '<input name="acc'+i+'" value="'+esc(a.name)+'" placeholder="Account '+(i+1)+'" style="margin-bottom:6px">';}).join('')+
     '<div class="k" style="margin-top:10px">Where each kind of money is kept</div>'+
     S.businesses.map(function(b){return row('in:biz:'+b.id,'📥 '+esc(b.name)+' sales arrive in')+row('biz:'+b.id,'🏪 '+esc(b.name)+' money kept in');}).join('')+
-    row('tank','🛢️ Salary tank (family share waiting)')+row('family','👪 Family spending')+row('debt','💰 Debt savings')+row('protect','🛡️ Protection funds')+row('dreams','⭐ Dream savings')+
+    row('tank','🛢️ Salary tank (family share waiting)')+row('family','👨 Dad budget & salary money')+row('wife','👩 Wife\'s wallet (gets the weekly send)','—')+row('debt','💰 Debt savings')+row('protect','🛡️ Protection funds')+row('dreams','⭐ Dream savings')+
     '<details class="more"><summary>Where each wallet is filled from</summary>'+acc.map(function(a,i){ var cur=(S.feed||{})[a.id];
       return '<label class="f asgrow"><span>'+esc(a.name||'Account '+(i+1))+' ← from</span><select name="feed:'+i+'"><option value="">— (money arrives here)</option>'+acc.map(function(b2,j){return j===i?'':'<option value="'+j+'"'+(cur===b2.id?' selected':'')+'>'+esc(b2.name||'Account '+(j+1))+'</option>';}).join('')+'</select></label>'; }).join('')+'</details>'+
     '<details class="more"><summary>Bills paid from a different account</summary>'+
@@ -3662,13 +3753,13 @@ ACT.dreammove=function(el){ checkpoint('reorder goals');
 };
 ACT.addcat=function(el){
   var groups=[]; S.budget.forEach(function(b){ if(groups.indexOf(b.group)<0) groups.push(b.group); });
-  var g0=el&&el.dataset.group||groups[0]||'Home';
+  var g0=el&&el.dataset.group||(el&&el.dataset.main?((S.budget.find(function(b){return mainOf(b)===el.dataset.main;})||{}).group):'')||groups[0]||'Home';
   openDialog('Add budget category',
     field('name','Category','required')+
     field('group','Group','list="grpList" required',g0)+'<datalist id="grpList">'+groups.map(function(g){return '<option value="'+esc(g)+'">';}).join('')+'</datalist>'+
     field('amount','Monthly amount','inputmode="decimal"')+
     '<label class="check"><input type="checkbox" name="essential" checked><span>Essential (a "need", not a "want")</span></label>',
-    function(v){ S.budget.push({id:uid(),name:v.name,group:v.group||'Other',amount:num(v.amount),essential:!!v.essential}); });
+    function(v){ var nb={id:uid(),name:v.name,group:v.group||'Other',amount:num(v.amount),essential:!!v.essential}; nb.main=el&&el.dataset.main||guessMain(nb); S.budget.push(nb); });
 };
 ACT.addsub=function(el){
   checkpoint('add sub-item');
