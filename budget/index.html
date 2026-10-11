@@ -384,6 +384,8 @@ tr.tap{cursor:pointer}
 .stepper .icon{min-width:34px;min-height:34px;font-size:18px}
 .flowstep{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.flowstep:first-of-type{border-top:0}
 .flowstep .pxt{flex:1}.fs{width:24px;height:24px;border-radius:50%;background:var(--brand);color:var(--brand-ink,#fff);display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+.sdrow{padding:10px 0;border-top:1px solid var(--line);cursor:pointer}.sdrow:first-of-type{border-top:0}
+.sdleg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;margin-top:4px}.sdleg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:middle}.sdleg small{color:var(--muted)}
 .wgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .wtile{display:flex;gap:8px;align-items:flex-start;text-align:left;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--card);min-width:0;font-weight:400}
 .wt{display:flex;flex-direction:column;min-width:0;gap:1px}
@@ -594,6 +596,15 @@ function migrate(){
   S.bizExp=S.bizExp||[];
   if(!S.saveStart) S.saveStart=thisMonth()+'-01';
   S.wallets=S.wallets||{};
+  if(S.splitV!==1&&S.opc&&S.opc.from){
+    var cf=mainsCfg(); MAINS.forEach(function(k){ cf[k].mode='split'; cf[k].pct=50; });
+    // October's payouts: their budget share goes to Dad and Mom 50/50 (replacing earlier allotments).
+    var omk=S.opc.from, ob={}; (S.moves||[]).forEach(function(m){ if(m.kind==='draw'&&monthKey(m.date)>=omk){ var bb=num(m.amount)-num(m.tithe)-num(m.toDebt); var mk2=monthKey(m.date); ob[mk2]=(ob[mk2]||0)+bb; m.split={wife:Math.round(bb*50)/100,dad:Math.round(bb*50)/100}; } });
+    Object.keys(ob).forEach(function(mk2){ S.alloc=S.alloc||{}; S.alloc[mk2]=S.alloc[mk2]||{}; S.alloc[mk2]['main:wife']=Math.round(ob[mk2]*50)/100; S.alloc[mk2]['main:dad']=Math.round(ob[mk2]*50)/100; });
+    S.allocLog=(S.allocLog||[]).filter(function(l){return !(String(l.key).indexOf('main:')===0&&monthKey(l.date)>=omk);});
+    (S.moves||[]).forEach(function(m){ if(m.split) Object.keys(m.split).forEach(function(k){ S.allocLog.push({date:m.date,key:'main:'+k,amount:m.split[k],auto:true}); }); });
+    S.splitV=1;
+  }
   if(S.mainsV!==1){
     mainsCfg();
     (S.budget||[]).forEach(function(b){ if(b.auto!=='tithe'&&!b.main) b.main=guessMain(b); });
@@ -621,7 +632,7 @@ function migrate(){
     // Payouts already made since the OPC month get their tithe allotted once.
     S.moves.forEach(function(m){ if(m.kind==='draw'&&m.tithe==null&&monthKey(m.date)>=S.opc.from){ var T=Math.round(num(m.amount)*num(S.tithe.pct)/100*100)/100; m.tithe=T; var tk=monthKey(m.date); setAlloc('ptithe',num(allocMap(tk)['ptithe'])+T,tk); } });
   }
-  if(S.accounts&&S.accounts.length&&S.flowV!==6&&['gcash','maya','gsave'].every(function(n){return S.accounts.some(function(a){return a.name.toLowerCase()===n;});})){ applyFlow(); S.flowV=6; }
+  if(S.accounts&&S.accounts.length&&S.flowV!==7&&['gcash','maya','gsave'].every(function(n){return S.accounts.some(function(a){return a.name.toLowerCase()===n;});})){ applyFlow(); S.flowV=7; }
   (S.businesses||[]).forEach(function(b){ if(!b.unit&&/nav\s*club/i.test(b.name||'')) b.unit={name:'client',price:3250};
     if(!b.products) b.products=b.unit&&num(b.unit.price)>0?[{id:'p'+uid(),name:b.unit.name.charAt(0).toUpperCase()+b.unit.name.slice(1),price:num(b.unit.price)}]:[]; });
   if(!S.accounts){
@@ -1042,7 +1053,12 @@ var MAINS=['wife','dad'];
 function mainsCfg(){ S.mains=S.mains||{}; if(!S.mains.wife) S.mains.wife={name:'Wife – House budget',icon:'👩',manual:null}; if(!S.mains.dad) S.mains.dad={name:'Dad',icon:'👨',manual:null}; return S.mains; }
 function mainOf(b){ return b.auto==='tithe'?null:(b.main||guessMain(b))==='wife'?'wife':'dad'; }
 function mainLines(k){ return S.budget.filter(function(b){return mainOf(b)===k;}); }
-function mainPlan(k){ var m=mainsCfg()[k]; return m.manual!=null&&m.manual!==''?num(m.manual):sum(mainLines(k),planOf); }
+// Monthly budget from the salary: salary − its tithe, then the budget share (after the debt share).
+function budgetMonthly(){ var a=num(S.salary.manual); if(opcOn(thisMonth())) a*=1-personalTithePct()/100; return a*(1-salaryDebtPct()/100); }
+function mainPct(k){ var c=mainsCfg()[k]; return c.pct!=null?num(c.pct):50; }
+function mainPlan(k){ var m=mainsCfg()[k];
+  if(m.mode==='split') return budgetMonthly()*mainPct(k)/100;
+  return m.manual!=null&&m.manual!==''?num(m.manual):sum(mainLines(k),planOf); }
 function mainFunded(k, mk){ return num(allocMap(mk)['main:'+k]); }
 function mainSpent(k, mk){
   mk=mk||thisMonth(); var ids=mainLines(k).map(function(b){return b.id;});
@@ -1075,6 +1091,7 @@ function allottedToday(key){ var a=S.allocDay; return a&&a.date===todayISO()?num
 function budgetDaily(){
   var cm=thisMonth(), left=daysIn(cm)-dayOfMonth()+1, cfg=mainsCfg();
   return MAINS.map(function(k){
+    if(cfg[k].mode==='split') return null;   // filled from every salary payout
     var plan=mainPlan(k); if(!(plan>0)) return null;
     var key='main:'+k, funded=mainFunded(k,cm), spent=mainSpent(k,cm);
     var have=Math.max(funded,spent), td=allottedToday(key);
@@ -1484,9 +1501,14 @@ function ACC(){ return S.accounts||(S.accounts=[]); }
 function asg(){ return S.assign||(S.assign={}); }
 function accById(id){ return ACC().find(function(a){return a.id===id;}); }
 function mainBiz(){ return S.businesses[0]||null; }
+// Account for a purpose on a given date: before a purpose moved to its own
+// account (S.since), its payments came from where its money was then.
+function acctOn(p, date, fallback){ var since=(S.since||{})[p]; return since&&date&&date<since?acctOf(fallback):acctOf(p); }
 function acctOf(p){
   var a=asg()[p]; if(a&&accById(a)) return a;
   if(p.indexOf('line:')===0) return acctOf('family');
+  if(p.indexOf('main:')===0) return acctOf('family');
+  if(p==='tithe:biz') return acctOf(mainBiz()?'biz:'+mainBiz().id:'family');
   if(p.indexOf('in:')===0) return acctOf(p.slice(3));
   if(p.indexOf('opex:')===0){ var bz=S.businesses.find(function(b){return b.opex.some(function(o){return 'opex:'+o.id===p;});}); return acctOf(bz?'biz:'+bz.id:'family'); }
   return ACC()[0]?ACC()[0].id:'none';
@@ -1534,14 +1556,14 @@ function purposes(){
     b.opex.forEach(function(o){ var a=opexAway(o,b); if(a){ var j=opexJar(o); away+=j; L.push({key:'opex:'+o.id, icon:'🏪', name:o.name+' ('+b.name+')', amt:j, acct:a}); } });
     var bt=b===mainBiz()?Math.max(0,bizWallet().titheRes):0;
     L.push({key:'biz:'+b.id, icon:'🏪', name:b.name+' (business)', amt:num(bl[b.id])-away-bt, acct:acctOf('biz:'+b.id)});
-    if(bt>0.5) L.push({key:'tithe:biz', icon:'🙏', name:'Business tithe', amt:bt, acct:acctOf('biz:'+b.id)});
+    if(bt>0.5) L.push({key:'tithe:biz', icon:'🙏', name:'Business tithe', amt:bt, acct:acctOf('tithe:biz')});
   });
   L.push({key:'tank', icon:'🛢️', name:'Salary tank', amt:holding(), acct:acctOf('tank')});
   var awayL=0;
   S.budget.forEach(function(b){ var a=lineAway(b); if(a){ var u=lineUnspent(b); awayL+=u; L.push({key:'line:'+b.id, icon:b.auto==='tithe'?'🙏':'🧾', name:b.auto==='tithe'?'Tithe from salary':b.name, amt:u, acct:a}); } });
   var wU=mainUnspent('wife'), dU=mainUnspent('dad');
   L.push({key:'main:wife', icon:'👩', name:'Wife budget (to send)', amt:wU, acct:acctOf('family')});
-  L.push({key:'main:dad', icon:'👨', name:'Dad budget', amt:dU, acct:acctOf('family')});
+  L.push({key:'main:dad', icon:'👨', name:'Dad budget', amt:dU, acct:acctOf('main:dad')});
   L.push({key:'family', icon:'👪', name:'Free salary money', amt:familyTotal()-awayL-wU-dU, acct:acctOf('family')});
   L.push({key:'debt', icon:'💰', name:'Debt savings', amt:sum(S.debts,debtJar), acct:acctOf('debt')});
   L.push({key:'protect', icon:'🛡️', name:'Protection funds', amt:sum(Object.keys(S.funds||{}),function(k){return num(S.funds[k]);}), acct:acctOf('protect')});
@@ -1560,10 +1582,13 @@ function acctHas(){
     var b=S.businesses.find(function(y){return y.id===e.bizId;}), o=b&&b.opex.find(function(y){return y.id===e.itemId;});
     add(o&&opexAway(o,b)?opexAway(o,b):b?acctOf('biz:'+b.id):mbA, -num(e.amount)); });
   S.spend.forEach(function(x){
-    if(x.catId==='tithe'){ add(mbA,-num(x.amount)); return; }
+    if(x.catId==='tithe'){ add(acctOn('tithe:biz',x.date,mainBiz()?'biz:'+mainBiz().id:'family'),-num(x.amount)); return; }
+    if(x.catId==='main:dad'){ add(acctOn('main:dad',x.date,'family'),-num(x.amount)); return; }
     // Money sent to the Wife is spent from her wallet (the transfer put it there).
     if(x.catId==='main:wife'){ add(asg().wife&&accById(asg().wife)?asg().wife:acctOf('family'), -num(x.amount)); return; }
-    var b=S.budget.find(function(y){return y.id===x.catId;}); add(b&&lineAway(b)?lineAway(b):acctOf('family'), -num(x.amount)); });
+    var b=S.budget.find(function(y){return y.id===x.catId;});
+    if(b&&b.auto==='tithe'){ add(acctOn('line:'+b.id,x.date,'family'),-num(x.amount)); return; }
+    add(b&&lineAway(b)?lineAway(b):b&&mainOf(b)==='dad'?acctOn('main:dad',x.date,'family'):acctOf('family'), -num(x.amount)); });
   S.moves.forEach(function(m){
     var a=num(m.amount), f=num(m.fee);
     if(m.kind==='draw'){ if(m.noMove) return; var td=num(m.toDebt); add(acctOf('tank'),-a-f); add(acctOf('family'),a-td); add(acctOf('debt'),td); }
@@ -1611,7 +1636,8 @@ function acctPlan(){
   tx.forEach(function(t){
     var onward=tx.filter(function(u){return u.from===t.to;}), on=sum(onward,function(u){return u.amount;}), own=Math.max(0,t.amount-on);
     var rr=rowOf(t.to.id);
-    t.parts=own>0.5?[{name:'for '+t.to.name+' ('+rr.ps.filter(function(p){return p.amt>0.5;}).map(function(p){return p.name;}).join(', ')+')', icon:'', v:own}]:[];
+    var pn=rr.ps.filter(function(p){return p.amt>0.5;}).map(function(p){return p.name;});
+    t.parts=own>0.5?[{name:pn.length?'for '+pn.join(', '):'to cover what was sent/spent from '+t.to.name, icon:'', v:own}]:[];
     onward.forEach(function(u){ t.parts.push({name:'to pass on → '+u.to.name, icon:'↪', v:u.amount}); });
   });
   // A transfer that only passes money on says so.
@@ -1622,6 +1648,24 @@ function acctPlan(){
 }
 function acctLogo(a, big){ return a&&a.logo?'<img class="wlogo'+(big?' big':'')+'" src="'+esc(a.logo)+'" alt="">':'<span class="wlogo e'+(big?' big':'')+'" aria-hidden="true">🏦</span>'; }
 // Home: the day's routine in four steps.
+// Home: this month's money in three splits.
+function splitDashboard(){
+  var cm=thisMonth(); if(!opcOn(cm)) return '';
+  var f=monthFlow(cm), sales=f.revenue, P=f.president||0;
+  var draws=S.moves.filter(function(m){return m.kind==='draw'&&monthKey(m.date)===cm;});
+  var salT=sum(draws,function(m){return num(m.tithe);}), debt=sum(draws,function(m){return num(m.toDebt);}), bud=sum(draws,function(m){return num(m.amount)-num(m.tithe)-num(m.toDebt);});
+  var bizT=f.tithe, tithe=bizT+salT;
+  var dad=mainFunded('dad',cm), mom=mainFunded('wife',cm);
+  var row=function(title,total,parts,go){ var t=sum(parts,function(x){return Math.max(0,x.v);});
+    return '<div class="sdrow" data-go="'+go+'" role="button" tabindex="0"><div class="row between"><b>'+title+'</b><b class="num">'+money(total)+'</b></div>'+
+      (t>0?stackBar(parts):'<div class="bar"><i style="width:0"></i></div>')+
+      '<div class="sdleg">'+parts.map(function(x){return '<span><i style="background:'+x.color+'"></i>'+x.label+' <b class="num">'+money(x.v)+'</b>'+(t>0?' <small>'+Math.round(Math.max(0,x.v)/t*100)+'%</small>':'')+'</span>';}).join('')+'</div></div>'; };
+  return '<div class="card"><h2>📊 '+monthLabel(cm)+' money split</h2>'+
+    row('💼 Income',sales,[{label:'🙏 Tithe',v:tithe,color:slotColor(3)},{label:'🏪 Business',v:sales-P-bizT,color:slotColor(1)},{label:'👔 Salary',v:P-salT,color:slotColor(5)}],'income')+
+    row('👔 Salary paid out',debt+bud,[{label:'💰 Debt',v:debt,color:slotColor(2)},{label:'🧾 Budget',v:bud,color:slotColor(4)}],'debts')+
+    row('🧾 Budget',dad+mom,[{label:'👨 Dad',v:dad,color:slotColor(7)},{label:'👩 Mom',v:mom,color:slotColor(6)}],'budget')+
+    '<small class="muted">Tithe = business '+money(bizT)+' + salary '+money(salT)+' · salary '+(100-salaryDebtPct())+'/'+salaryDebtPct()+' budget/debt · budget '+mainPct('dad')+'/'+mainPct('wife')+' Dad/Mom.</small></div>';
+}
 function todayCard(){
   var t=todayISO(), sales=sum(S.incomes.filter(function(x){return x.date===t;}),function(x){return num(x.amount);});
   var dT=sum(debtSavings(),function(x){return x.today;}), bT=sum(budgetDaily(),function(x){return x.today;}), oT=sum(opexSavings(),function(x){return x.today;});
@@ -1997,6 +2041,7 @@ V.home=function(){
     '<div class="dots" aria-hidden="true">'+st.list.map(function(s){return '<i class="'+s.state+'"></i>';}).join('')+'</div></div>';
 
   h+=todayCard();
+  h+=splitDashboard();
   h+=accountsCard();
 
   var salDue=salaryDueSoFar(), used=salarySpent(), salLeft=drawn-used.total, perDay=sal/daysIn(cm);
@@ -2063,7 +2108,7 @@ V.income=function(){
 
   // Business dashboard, wallet (with daily opex savings), opex report and the
   // per-business view — each folds away, since there may be several businesses.
-  h+=tabWallets(['tank','biz:*','opex:*'],'Income & business wallets');
+  h+=tabWallets(['tank','biz:*','opex:*','tithe:*'],'Income & business wallets');
   h+=bizDashboard();
   h+=metaCard();
   h+=bizTitheCard(incMk);
@@ -2292,7 +2337,7 @@ var editGroups={};   // budget groups currently in edit mode
 V.budget=function(){
   var cm=thisMonth();
   var groups=[]; S.budget.forEach(function(b){ if(groups.indexOf(b.group)<0) groups.push(b.group); });
-  var h=tabWallets(['main:wife','main:dad','family','acct:wife'],'Budget wallets');
+  var h=tabWallets(['main:wife','main:dad','family','acct:wife','line:*'],'Budget wallets');
   // Salary money for the budget this month (debt share and tithe already set apart).
   var paidOut=drawnThisMonth(), toDebt=sum(S.moves.filter(function(m){return m.kind==='draw'&&monthKey(m.date)===cm;}),function(m){return num(m.toDebt);});
   var free=Math.max(0,availableMoney(cm)), pt=S.budget.find(function(b){return b.auto==='tithe';});
@@ -2608,6 +2653,8 @@ V.debts=function(){
   }
 
   h+=tabWallets(['debt'],'Debt savings wallet');
+  (function(){ var cm=thisMonth(), dr=S.moves.filter(function(m){return m.kind==='draw'&&monthKey(m.date)===cm;});
+    if(dr.length) h+='<div class="card tight"><div class="row between"><span>💰 From salary this month ('+salaryDebtPct()+'%)</span><b class="num">'+money(sum(dr,function(m){return num(m.toDebt);}))+'</b></div><small class="muted">Each daily salary payout puts its debt share into the soonest-due debt.</small></div>'; })();
   var d30=upcomingDues(30);
   h+='<div class="card"><div class="row between"><span class="k">Total debt</span><button class="primary sm" data-act="debt">+ Add</button></div>'+
     '<div class="v num" style="font-size:32px;margin:2px 0 6px">'+money(td)+'</div>'+
@@ -2990,7 +3037,8 @@ ACT.deltx=function(el){
   if(coll==='moves') reverseMove(x);
   S[coll]=S[coll].filter(function(y){return y!==x;});
   if(coll==='moves'&&x.kind==='draw'){ S.moves=S.moves.filter(function(y){return y.draw!==x.id;});
-    if(num(x.tithe)>0){ var tk=monthKey(x.date); setAlloc('ptithe',Math.max(0,num(allocMap(tk)['ptithe'])-num(x.tithe)),tk); } }
+    if(num(x.tithe)>0){ var tk=monthKey(x.date); setAlloc('ptithe',Math.max(0,num(allocMap(tk)['ptithe'])-num(x.tithe)),tk); }
+    if(x.split){ var sk=monthKey(x.date); Object.keys(x.split).forEach(function(k){ setAlloc('main:'+k,Math.max(0,num(allocMap(sk)['main:'+k])-num(x.split[k])),sk); }); } }
   if(dlg.open) dlg.close();
   save(); render(); toast('Deleted');
 };
@@ -3313,13 +3361,18 @@ ACT.sendwife=function(){
 };
 // Plan of a main budget: its items' total, or a number set by hand.
 ACT.mainplan=function(el){
-  var k=el.dataset.main, m=mainsCfg()[k];
+  var k=el.dataset.main, m=mainsCfg()[k], mode=m.mode||(m.manual!=null&&m.manual!==''?'manual':'items');
+  var r=function(v,label){ return '<label class="check"><input type="radio" name="mode" value="'+v+'"'+(mode===v?' checked':'')+'><span>'+label+'</span></label>'; };
   openDialog(m.icon+' '+m.name+' · plan',
-    '<label class="check"><input type="checkbox" name="byitems"'+(m.manual==null||m.manual===''?' checked':'')+'><span>Use the total of its items ('+money(sum(mainLines(k),planOf))+')</span></label>'+
-    field('manual','Or set the monthly plan','inputmode="decimal"',m.manual!=null&&m.manual!==''?num(m.manual):'')+
-    field('name','Name','',m.name),
-    function(v){ m.manual=v.byitems?null:num(v.manual); m.name=(v.name||'').trim()||m.name; toast('Plan '+money(mainPlan(k))+' a month'); }, 'Save');
+    r('split','A share of the budget from salary ('+money(budgetMonthly())+' a month)')+field('pct','Share %','inputmode="decimal"',mainPct(k))+
+    r('items','The total of its items ('+money(sum(mainLines(k),planOf))+')')+
+    r('manual','A set monthly amount')+field('manual','Monthly amount','inputmode="decimal"',m.manual!=null&&m.manual!==''?num(m.manual):'')+
+    field('name','Name','',m.name)+
+    '<p class="muted" style="font-size:13px">With a share, every salary payout fills this budget automatically.</p>',
+    function(v){ m.mode=v.mode||'items'; if(m.mode==='split'){ m.pct=num(v.pct); var o=MAINS.find(function(x){return x!==k;}); if(o&&mainsCfg()[o].mode==='split') mainsCfg()[o].pct=Math.max(0,100-m.pct); }
+      m.manual=m.mode==='manual'?num(v.manual):null; m.name=(v.name||'').trim()||m.name; toast('Plan '+money(mainPlan(k))+' a month'); }, 'Save');
 };
+
 
 // Allot for a line or a debt: today's share, a few days ahead, or everything still needed.
 function allotDialog(title, perDay, td, need, free, onSave){
@@ -3360,7 +3413,7 @@ ACT.allot=function(el){
 // ---- accounts actions
 function applyFlow(){
   var get=function(n){ var a=ACC().find(function(x){return x.name.toLowerCase()===n.toLowerCase();}); if(!a){ a={id:uid(),name:n}; ACC().push(a); } return a; };
-  var g=get('GCash'), m=get('Maya'), ms=get('Maya Savings'), w=get('GCash - Wife'), s2=get('GSave');
+  var g=get('GCash'), m=get('Maya'), ms=get('Maya Savings'), w=get('GCash - Wife'), s2=get('GSave'), pp=get('Palawan Pay');
   // GCash is the income tank: every sale lands there and the family share waits
   // there until salary is paid out. Maya is the business wallet (pays every
   // business expense). Maya Savings holds debt repayment savings. GCash - Wife
@@ -3368,17 +3421,19 @@ function applyFlow(){
   // protection funds (and dream savings).
   // Dad's budget and the Wife's budget (until it's sent each week) stay with the tank in GCash.
   S.assign={tank:g.id, family:g.id, wife:w.id, debt:ms.id, protect:s2.id, dreams:s2.id};
-  // Both tithes (the business's and the salary's) are kept in the business wallet.
-  var tl=(S.budget||[]).find(function(x){return x.auto==='tithe';}); if(tl) S.assign['line:'+tl.id]=m.id;
+  // Dad's budget lives in Palawan Pay; both tithes (business and salary) in GSave.
+  S.assign['main:dad']=pp.id; S.assign['tithe:biz']=s2.id;
+  S.since=S.since||{}; var td0=todayISO(); ['main:dad','tithe:biz'].forEach(function(k){ if(!S.since[k]) S.since[k]=td0; });
+  var tl=(S.budget||[]).find(function(x){return x.auto==='tithe';}); if(tl){ S.assign['line:'+tl.id]=s2.id; if(!S.since['line:'+tl.id]) S.since['line:'+tl.id]=td0; }
   // Where each wallet gets its money from: sales come into GCash; the business
   // wallet (Maya) is filled from GCash and fills Maya Savings for debts.
-  S.feed={}; S.feed[m.id]=g.id; S.feed[ms.id]=m.id; S.feed[w.id]=g.id; S.feed[s2.id]=g.id;
+  S.feed={}; S.feed[m.id]=g.id; S.feed[ms.id]=m.id; S.feed[w.id]=g.id; S.feed[s2.id]=g.id; S.feed[pp.id]=g.id;
   S.businesses.forEach(function(b){ S.assign['biz:'+b.id]=m.id; S.assign['in:biz:'+b.id]=g.id; });
-  var order=[g,m,ms,w,s2]; S.accounts=order.concat(ACC().filter(function(a){return order.indexOf(a)<0;}));
+  var order=[g,m,ms,w,pp,s2]; S.accounts=order.concat(ACC().filter(function(a){return order.indexOf(a)<0;}));
 }
 
 ACT.acctpreset=function(){
-  checkpoint('set up accounts'); applyFlow(); S.flowV=6;
+  checkpoint('set up accounts'); applyFlow(); S.flowV=7;
   if(dlg.open) dlg.close();
   save(); render(); toast('GCash income · Maya business · Maya Savings debts · GCash - Wife budget · GSave protection');
 };
@@ -3392,7 +3447,7 @@ ACT.acctsetup=function(){
     '<div class="k">Accounts (e.g. GCash, Maya, GSave)</div>'+acc.map(function(a,i){return '<input name="acc'+i+'" value="'+esc(a.name)+'" placeholder="Account '+(i+1)+'" style="margin-bottom:6px">';}).join('')+
     '<div class="k" style="margin-top:10px">Where each kind of money is kept</div>'+
     S.businesses.map(function(b){return row('in:biz:'+b.id,'📥 '+esc(b.name)+' sales arrive in')+row('biz:'+b.id,'🏪 '+esc(b.name)+' money kept in');}).join('')+
-    row('tank','🛢️ Salary tank (family share waiting)')+row('family','👨 Dad budget & salary money')+row('wife','👩 Wife\'s wallet (gets the weekly send)','—')+row('debt','💰 Debt savings')+row('protect','🛡️ Protection funds')+row('dreams','⭐ Dream savings')+
+    row('tank','🛢️ Salary tank (family share waiting)')+row('family','👪 Salary money (until split)')+row('main:dad','👨 Dad budget')+row('tithe:biz','🙏 Business tithe')+row('wife','👩 Wife\'s wallet (gets the weekly send)','—')+row('debt','💰 Debt savings')+row('protect','🛡️ Protection funds')+row('dreams','⭐ Dream savings')+
     '<details class="more"><summary>Where each wallet is filled from</summary>'+acc.map(function(a,i){ var cur=(S.feed||{})[a.id];
       return '<label class="f asgrow"><span>'+esc(a.name||'Account '+(i+1))+' ← from</span><select name="feed:'+i+'"><option value="">— (money arrives here)</option>'+acc.map(function(b2,j){return j===i?'':'<option value="'+j+'"'+(cur===b2.id?' selected':'')+'>'+esc(b2.name||'Account '+(j+1))+'</option>';}).join('')+'</select></label>'; }).join('')+'</details>'+
     '<details class="more"><summary>Bills paid from a different account</summary>'+
@@ -3777,12 +3832,21 @@ ACT.getahead=function(el){
 
 // Record a salary payout: tithe first (OPC), then the debt share into debt
 // savings (soonest due first), the rest is budget money.
+// The budget share of a payout goes straight into the main budgets that are
+// split by percentage (Dad and Mom 50/50 by default) — logged by date.
+function splitBudget(B, date){
+  var mk=monthKey(date), cfg=mainsCfg(), out={};
+  MAINS.forEach(function(k){ if(cfg[k].mode!=='split') return; var v=Math.round(B*mainPct(k)/100*100)/100; if(v<0.01) return;
+    setAlloc('main:'+k,num(allocMap(mk)['main:'+k])+v,mk); S.allocLog=S.allocLog||[]; S.allocLog.push({date:date,key:'main:'+k,amount:v,auto:true}); out[k]=v; });
+  return Object.keys(out).length?out:null;
+}
 function paySalary(a, pc, date, auto){
   var T=opcOn(monthKey(date))?Math.round(a*personalTithePct()/100*100)/100:0;
   var sp=splitToDebtJars((a-T)*pc/100), D=(a-T)*pc/100-sp.left;
   if(T>0.5) setAlloc('ptithe',num(allocMap(monthKey(date))['ptithe'])+T,monthKey(date));
   S.salarySplit=S.salarySplit||{}; S.salarySplit.debt=pc;
-  var dm={id:uid(),date:date,kind:'draw',amount:Math.round(a*100)/100,fee:0,toDebt:Math.round(D*100)/100,tithe:T||undefined,noMove:true,auto:auto||undefined,note:auto?'Salary (daily)':'Salary'};
+  var B=splitBudget(a-T-D,date);
+  var dm={id:uid(),date:date,kind:'draw',amount:Math.round(a*100)/100,fee:0,toDebt:Math.round(D*100)/100,tithe:T||undefined,split:B||undefined,noMove:true,auto:auto||undefined,note:auto?'Salary (daily)':'Salary'};
   S.moves.push(dm);
   sp.legs.forEach(function(l){ S.moves.push({id:uid(),date:date,kind:'debtsave',to:l[0].id,amount:Math.round(l[1]*100)/100,note:'Salary share → '+l[0].name,draw:dm.id}); });
   return dm;
